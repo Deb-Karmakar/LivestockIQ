@@ -1,0 +1,22 @@
+import { axiosInstance } from '../contexts/AuthContext';
+
+// Fetches a vet's public details by their unique code
+export const getVetDetailsByCode = async (vetId) => {
+    try {
+        const { data } = await axiosInstance.get(`/vets/code/${vetId}`);
+        return data;
+    } catch (error) {
+        console.error("Error fetching vet details:", error);
+        throw error;
+    }
+};
+
+export const getTreatmentRequests = async () => {
+    try {
+        const { data } = await axiosInstance.get('/vets/treatment-requests');
+        return data;
+    } catch (error) {
+        console.error("Error fetching treatment requests:", error);
+        throw error;
+    }
+};
