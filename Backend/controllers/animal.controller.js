@@ -1,5 +1,6 @@
 import Animal from '../models/animal.model.js';
-
+import Treatment from '../models/treatment.model.js';
+import Sale from '../models/sale.model.js';
 // @desc    Add a new animal
 // @route   POST /api/animals
 // @access  Private
@@ -96,6 +97,65 @@ export const deleteAnimal = async (req, res) => {
 
     } catch (error) {
         console.error('Delete animal error:', error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getAnimalHistory = async (req, res) => {
+    try {
+        const { animalId } = req.params;
+
+        // 1. Fetch all data concurrently
+        const [animal, treatments, sales] = await Promise.all([
+            Animal.findOne({ tagId: animalId }),
+            Treatment.find({ animalId: animalId, status: 'Approved' }).sort({ startDate: 'asc' }),
+            Sale.find({ animalId: animalId }).sort({ saleDate: 'asc' })
+        ]);
+
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found' });
+        }
+
+        // 2. Create a unified timeline array
+        const timelineEvents = [];
+
+        // Add the birth/logging event
+        timelineEvents.push({
+            type: 'LOGGED',
+            date: animal.createdAt,
+            title: 'Animal Logged in System',
+            details: `Species: ${animal.species}, Gender: ${animal.gender || 'N/A'}`
+        });
+
+        // Add approved treatment events
+        treatments.forEach(t => {
+            timelineEvents.push({
+                type: 'TREATMENT',
+                date: t.startDate,
+                title: `Treatment: ${t.drugName}`,
+                details: `Dose: ${t.dose}. Vet Notes: ${t.vetNotes || 'N/A'}. Withdrawal ends: ${t.withdrawalEndDate ? t.withdrawalEndDate.toLocaleDateString() : 'N/A'}`
+            });
+        });
+
+        // Add sale events
+        sales.forEach(s => {
+            timelineEvents.push({
+                type: 'SALE',
+                date: s.saleDate,
+                title: `Sale: ${s.productType}`,
+                details: `Sold ${s.quantity} ${s.unit} for ₹${s.price.toLocaleString('en-IN')}.`
+            });
+        });
+        
+        // 3. Sort the entire timeline by date
+        const sortedTimeline = timelineEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        res.json({
+            animalDetails: animal,
+            timeline: sortedTimeline
+        });
+
+    } catch (error) {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };

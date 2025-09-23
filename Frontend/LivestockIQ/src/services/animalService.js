@@ -51,3 +51,13 @@ export const deleteAnimal = async (id) => {
         throw error;
     }
 };
+
+export const getAnimalHistory = async (animalId) => {
+    try {
+        const { data } = await axiosInstance.get(`/animals/${animalId}/history`);
+        return data;
+    } catch (error) {
+        console.error("Error fetching animal history:", error);
+        throw error;
+    }
+};

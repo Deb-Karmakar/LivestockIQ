@@ -1,3 +1,5 @@
+// frontend/src/pages/farmer/AnimalsPage.jsx
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreHorizontal, QrCode, Trash2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, QrCode, Trash2, FileText } from "lucide-react"; // UPDATED: Added FileText icon
 import BarcodeScannerDialog from "../../components/animals/BarcodeScannerDialog";
+import AnimalHistoryDialog from '../../components/AnimalHistoryDialog'; // NEW: 1. Import the history dialog
 import { getAnimals, addAnimal, updateAnimal, deleteAnimal } from '../../services/animalService';
 import { useToast } from '../../hooks/use-toast';
 
@@ -28,18 +31,16 @@ const AnimalsPage = () => {
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAnimal, setEditingAnimal] = useState(null);
+    const [viewingHistoryOf, setViewingHistoryOf] = useState(null); // NEW: 2. Add state for the history dialog
     const { toast } = useToast();
     
+    // fetchAnimals and other handlers remain unchanged
     const fetchAnimals = useCallback(async () => {
         try {
             setLoading(true);
-            console.log("Fetching animals...");
             const data = await getAnimals();
-            console.log("Animals data received:", data);
             setAnimals(data);
         } catch (error) {
-            console.error("Error in fetchAnimals:", error);
-            console.error("Error response:", error.response);
             toast({ 
                 variant: "destructive", 
                 title: "Error", 
@@ -173,6 +174,7 @@ const AnimalsPage = () => {
                                             onEdit={() => handleEditClick(animal)}
                                             onSetStatus={(status) => handleSetStatus(animal._id, status)}
                                             onDelete={() => handleDeleteAnimal(animal._id)}
+                                            onViewHistory={() => setViewingHistoryOf(animal.tagId)} // UPDATED: 3. Pass the handler
                                         />
                                     </TableCell>
                                 </TableRow>
@@ -181,11 +183,19 @@ const AnimalsPage = () => {
                     </Table>
                 </CardContent>
             </Card>
+
+            {/* NEW: 4. Render the history dialog */}
+            <AnimalHistoryDialog 
+                animalId={viewingHistoryOf}
+                isOpen={!!viewingHistoryOf}
+                onClose={() => setViewingHistoryOf(null)}
+            />
         </div>
     );
 };
 
 const AnimalFormDialog = ({ onSave, animal, onClose }) => {
+    // This component remains unchanged.
     const [formData, setFormData] = useState({
         tagId: animal?.tagId || "",
         name: animal?.name || "",
@@ -374,7 +384,7 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
     );
 };
 
-const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete }) => {
+const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory }) => { // UPDATED: 5. Accept the new prop
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -386,7 +396,11 @@ const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete }) => {
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={onEdit}>Edit Profile</DropdownMenuItem>
-                <DropdownMenuItem>View Treatment History</DropdownMenuItem>
+                {/* UPDATED: 6. Make the button call the handler */}
+                <DropdownMenuItem onClick={onViewHistory}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    View History
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onSetStatus("Sold")} className="text-green-600">
                     Mark as Sold

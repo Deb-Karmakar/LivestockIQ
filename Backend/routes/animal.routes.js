@@ -1,5 +1,5 @@
 import express from 'express';
-import { addAnimal, getMyAnimals, updateAnimal, deleteAnimal } from '../controllers/animal.controller.js';
+import { addAnimal, getMyAnimals, updateAnimal, deleteAnimal, getAnimalHistory } from '../controllers/animal.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -13,5 +13,8 @@ router.route('/')
 router.route('/:id')
     .put(protect, updateAnimal)
     .delete(protect, deleteAnimal);
+
+// Route for getting animal history by ID
+router.get('/:animalId/history', protect, getAnimalHistory);
 
 export default router;

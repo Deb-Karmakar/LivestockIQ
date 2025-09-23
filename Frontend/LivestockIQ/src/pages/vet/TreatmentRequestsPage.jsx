@@ -1,3 +1,5 @@
+// frontend/src/pages/vet/TreatmentRequestsPage.jsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +13,7 @@ import { useToast } from '../../hooks/use-toast';
 import { getTreatmentRequests } from '../../services/vetService';
 import { updateTreatmentByVet } from '../../services/treatmentService';
 import EditRequestDialog from './EditRequestDialog';
+import AnimalHistoryDialog from '../../components/AnimalHistoryDialog'; // NEW: 1. Import the history dialog
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,24 +40,22 @@ const StatusBadge = ({ status }) => {
     return <Badge className={`flex items-center gap-1.5 w-fit ${finalConfig.color} hover:${finalConfig.color}`}>{finalConfig.icon}{finalConfig.text}</Badge>;
 };
 
-// UPDATED: PDF generation function now includes the brand name
 const generateVetPdfCopy = (treatment, vet) => {
     const doc = new jsPDF();
     
-    // Add LivestockIQ logo (text-based) in green
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
-    doc.setTextColor(34, 139, 34); // Forest Green color
+    doc.setTextColor(34, 139, 34);
     doc.text("LivestockIQ", 14, 22);
 
-    // Reset font for the rest of the document
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40); // Black color
+    doc.setTextColor(40, 40, 40);
 
     doc.setFontSize(18);
     doc.text(`Prescription for Animal ${treatment.animalId}`, 14, 40);
     doc.setFontSize(12);
-    doc.text(`Issued by: ${vet.name}`, 14, 48);
+    // Use fullName which is available on the vetUser object from auth context
+    doc.text(`Issued by: ${vet.fullName}`, 14, 48);
     
     autoTable(doc, {
         startY: 60,
@@ -79,6 +80,7 @@ const TreatmentRequestsPage = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingRequest, setEditingRequest] = useState(null);
+    const [viewingHistoryOf, setViewingHistoryOf] = useState(null); // NEW: 2. Add state for the history dialog
     const { toast } = useToast();
     const { user: vetUser } = useAuth();
 
@@ -172,22 +174,25 @@ const TreatmentRequestsPage = () => {
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={req.status === 'Approved' || req.status === 'Rejected'}>
+                                                {/* Button is now always enabled to allow viewing history */}
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => setEditingRequest(req)}>
+                                                {/* Review and Reject are disabled if already actioned */}
+                                                <DropdownMenuItem onClick={() => setEditingRequest(req)} disabled={req.status !== 'Pending'}>
                                                     <Star className="mr-2 h-4 w-4" />
-                                                    <span>Review</span>
+                                                    <span>Review & Approve</span>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem>
+                                                {/* UPDATED: 3. Add onClick handler to the button */}
+                                                <DropdownMenuItem onClick={() => setViewingHistoryOf(req.animalId)}>
                                                     <FileText className="mr-2 h-4 w-4" />
                                                     <span>View History</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => handleUpdateRequest(req._id, { status: 'Rejected' })} className="text-red-600">
+                                                <DropdownMenuItem onClick={() => handleUpdateRequest(req._id, { status: 'Rejected' })} className="text-red-600" disabled={req.status !== 'Pending'}>
                                                     <XCircle className="mr-2 h-4 w-4" />
                                                     <span>Reject</span>
                                                 </DropdownMenuItem>
@@ -208,6 +213,13 @@ const TreatmentRequestsPage = () => {
                     onSave={handleUpdateRequest}
                 />
             )}
+
+            {/* NEW: 4. Render the dialog component at the bottom of the page */}
+            <AnimalHistoryDialog 
+                animalId={viewingHistoryOf}
+                isOpen={!!viewingHistoryOf}
+                onClose={() => setViewingHistoryOf(null)}
+            />
         </div>
     );
 };
