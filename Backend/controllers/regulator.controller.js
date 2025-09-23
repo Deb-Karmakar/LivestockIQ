@@ -4,6 +4,7 @@ import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
 import Treatment from '../models/treatment.model.js';
 import ComplianceAlert from '../models/complianceAlert.model.js';
+import Animal from '../models/animal.model.js';
 import { subMonths, format, subDays } from 'date-fns';
 
 export const getDashboardStats = async (req, res) => {
@@ -157,6 +158,82 @@ export const getComplianceData = async (req, res) => {
 
     } catch (error) {
         console.error("Error in getComplianceData:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getTrendAnalysisData = async (req, res) => {
+    try {
+        const twelveMonthsAgo = subMonths(new Date(), 12);
+
+        // Run both complex queries concurrently
+        const [amuByDrugRaw, amuBySpeciesRaw] = await Promise.all([
+            // Query 1: Group treatments by drug name and month
+            Treatment.aggregate([
+                { $match: { status: 'Approved', startDate: { $gte: twelveMonthsAgo } } },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: '$startDate' },
+                            month: { $month: '$startDate' },
+                            drugName: '$drugName'
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { '_id.year': 1, '_id.month': 1 } }
+            ]),
+            // Query 2: Group treatments by animal species and month
+            Treatment.aggregate([
+                { $match: { status: 'Approved', startDate: { $gte: twelveMonthsAgo } } },
+                {
+                    $lookup: {
+                        from: 'animals', // The name of the Animal collection
+                        localField: 'animalId',
+                        foreignField: 'tagId',
+                        as: 'animalInfo'
+                    }
+                },
+                { $unwind: '$animalInfo' },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: '$startDate' },
+                            month: { $month: '$startDate' },
+                            species: '$animalInfo.species'
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { '_id.year': 1, '_id.month': 1 } }
+            ])
+        ]);
+
+        // Helper function to process and pivot the aggregated data for charts
+        const processDataForChart = (rawData, categoryField) => {
+            const dataMap = new Map();
+            const categories = new Set();
+
+            rawData.forEach(item => {
+                const monthName = format(new Date(item._id.year, item._id.month - 1), 'MMM yyyy');
+                const category = item._id[categoryField];
+                categories.add(category);
+
+                if (!dataMap.has(monthName)) {
+                    dataMap.set(monthName, { name: format(new Date(item._id.year, item._id.month - 1), 'MMM') });
+                }
+                dataMap.get(monthName)[category] = item.count;
+            });
+            return { data: Array.from(dataMap.values()), keys: Array.from(categories) };
+        };
+
+        const amuByDrug = processDataForChart(amuByDrugRaw, 'drugName');
+        const amuBySpecies = processDataForChart(amuBySpeciesRaw, 'species');
+
+        res.json({ amuByDrug, amuBySpecies });
+
+    } catch (error) {
+        console.error("Error in getTrendAnalysisData:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };

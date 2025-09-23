@@ -35,6 +35,7 @@ import CompliancePage from "./pages/regulator/CompliancePage";
 import MapViewPage from "./pages/regulator/MapViewPage";
 import RegulatorReportsPage from "./pages/regulator/ReportsPage";
 import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
+import TrendsPage from "./pages/regulator/TrendsPage";
 
 
 // --- Route Protection Components ---
@@ -153,6 +154,7 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<RegulatorDashboardPage />} />
             <Route path="compliance" element={<CompliancePage />} />
+            <Route path="trends" element={<TrendsPage />} />
             <Route path="map" element={<MapViewPage />} />
             <Route path="reports" element={<RegulatorReportsPage />} />
             <Route path="settings" element={<RegulatorSettingsPage />} />

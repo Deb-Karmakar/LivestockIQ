@@ -11,6 +11,7 @@ import {
     LogOut,
     Menu,
     X,
+    TrendingUp,
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -18,6 +19,7 @@ import {
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/regulator/dashboard', icon: LayoutDashboard },
     { name: 'Compliance', path: '/regulator/compliance', icon: ClipboardCheck },
+    { name: 'Trends', path: '/regulator/trends', icon: TrendingUp },
     { name: 'Map View', path: '/regulator/map', icon: Map },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
 ];

@@ -21,3 +21,13 @@ export const getComplianceData = async () => {
         throw error;
     }
 };
+
+export const getTrendData = async () => {
+    try {
+        const { data } = await axiosInstance.get('/regulator/trends');
+        return data;
+    } catch (error) {
+        console.error("Error fetching trend data:", error);
+        throw error;
+    }
+};
