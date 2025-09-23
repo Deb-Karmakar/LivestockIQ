@@ -32,7 +32,6 @@ const primaryNavLinks = [
 const secondaryNavLinks = [
     { name: 'Inventory', path: '/farmer/inventory', icon: Package },
     { name: 'Reports', path: '/farmer/reports', icon: FileText },
-    { name: 'Prescriptions', path: '/farmer/prescriptions', icon: ClipboardCheck },
     { name: 'Settings', path: '/farmer/settings', icon: Settings },
 ];
 

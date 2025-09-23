@@ -9,7 +9,8 @@ import treatmentRoutes from './routes/treatment.routes.js';
 import prescriptionRoutes from './routes/prescription.routes.js';
 import farmerRoutes from './routes/farmer.routes.js';
 import saleRoutes from './routes/sales.routes.js';
-
+import inventoryRoutes from './routes/inventory.routes.js';
+import reportRoutes from './routes/reports.routes.js';
 
 dotenv.config();
 connectDB();
@@ -30,6 +31,8 @@ app.use('/api/treatments', treatmentRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/farmers', farmerRoutes);
 app.use('/api/sales', saleRoutes);
+app.use('/api/inventory', inventoryRoutes); 
+app.use('/api/reports', reportRoutes)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

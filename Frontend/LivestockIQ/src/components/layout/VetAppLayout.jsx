@@ -21,14 +21,12 @@ import {
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/vet/dashboard', icon: LayoutDashboard },
     { name: 'Requests', path: '/vet/requests', icon: ClipboardList },
-    { name: 'Animals', path: '/vet/animals', icon: PawPrint },
+    { name: 'Farmers', path: '/vet/farmers', icon: Users },
     { name: 'Alerts', path: '/vet/alerts', icon: Bell },
     { name: 'Reports', path: '/vet/reports', icon: FileText },
 ];
 
 const secondaryNavLinks = [
-    { name: 'Prescriptions', path: '/vet/prescriptions', icon: ClipboardCheck },
-    { name: 'Farmers', path: '/vet/farmers', icon: Users },
     { name: 'Settings', path: '/vet/settings', icon: Settings },
 ];
 
@@ -64,7 +62,6 @@ const Sidebar = () => {
                     </NavLink>
                 ))}
             </nav>
-            <div className="px-4 py-4 border-t"><button onClick={logout} className="flex items-center w-full px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100"><LogOut className="w-5 h-5 mr-3" />Logout</button></div>
         </aside>
     );
 };

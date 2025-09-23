@@ -65,3 +65,70 @@ export const getTreatmentRequests = async (req, res) => {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
+
+export const getAnimalsForFarmerByVet = async (req, res) => {
+    try {
+        const { farmerId } = req.params;
+        const vetId = req.user.vetId; // Get the logged-in vet's unique ID
+
+        // 1. Authorization Check: Ensure the farmer is linked to this vet
+        const farmer = await Farmer.findById(farmerId);
+        if (!farmer) {
+            return res.status(404).json({ message: 'Farmer not found.' });
+        }
+        if (farmer.vetId !== vetId) {
+            return res.status(401).json({ message: 'Not authorized to view this farmer\'s animals.' });
+        }
+
+        // 2. If authorized, fetch the animals
+        const animals = await Animal.find({ farmerId: farmer._id }).sort({ createdAt: -1 });
+        res.json(animals);
+
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const updateVetProfile = async (req, res) => {
+    try {
+        const vet = await Veterinarian.findById(req.user._id);
+
+        if (vet) {
+            // Update fields from request body
+            vet.fullName = req.body.fullName || vet.fullName;
+            vet.specialization = req.body.specialization || vet.specialization;
+            vet.phoneNumber = req.body.phoneNumber || vet.phoneNumber;
+            
+            // Update notification preferences if they are provided
+            if (req.body.notificationPrefs) {
+                vet.notificationPrefs = { ...vet.notificationPrefs, ...req.body.notificationPrefs };
+            }
+
+            const updatedVet = await vet.save();
+
+            res.json({
+                _id: updatedVet._id,
+                fullName: updatedVet.fullName,
+                email: updatedVet.email,
+                specialization: updatedVet.specialization,
+                phoneNumber: updatedVet.phoneNumber,
+                notificationPrefs: updatedVet.notificationPrefs,
+                // Add any other fields you want to return
+            });
+        } else {
+            res.status(404).json({ message: 'Veterinarian not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getVetProfile = async (req, res) => {
+    // req.user is attached by the 'protect' middleware
+    const vet = await Veterinarian.findById(req.user._id).select('-password');
+    if (vet) {
+        res.json(vet);
+    } else {
+        res.status(404).json({ message: 'Veterinarian not found' });
+    }
+};

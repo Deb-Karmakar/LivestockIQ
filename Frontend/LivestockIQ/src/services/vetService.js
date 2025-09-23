@@ -20,3 +20,18 @@ export const getTreatmentRequests = async () => {
         throw error;
     }
 };
+
+export const getAnimalsForFarmer = async (farmerId) => {
+    const { data } = await axiosInstance.get(`/vets/farmers/${farmerId}/animals`);
+    return data;
+};
+
+export const getVetProfile = async () => {
+    const { data } = await axiosInstance.get('/vets/profile');
+    return data;
+};
+
+export const updateVetProfile = async (profileData) => {
+    const { data } = await axiosInstance.put('/vets/profile', profileData);
+    return data;
+};

@@ -18,7 +18,6 @@ import SellPage from './pages/farmer/SellPage';
 import InventoryPage from "./pages/farmer/InventoryPage";
 import AlertsPage from "./pages/farmer/AlertsPage";
 import ReportsPage from "./pages/farmer/ReportsPage";
-import PrescriptionsPage from "./pages/farmer/PrescriptionsPage";
 import SettingsPage from "./pages/farmer/SettingsPage";
 
 // Vet Page Imports
@@ -103,7 +102,6 @@ function App() {
             <Route path="inventory" element={<InventoryPage />} />
             <Route path="alerts" element={<AlertsPage />} />
             <Route path="reports" element={<ReportsPage />} />
-            <Route path="prescriptions" element={<PrescriptionsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
 

@@ -1,4 +1,6 @@
-import React from 'react';
+// frontend/src/pages/vet/VetSettingsPage.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,33 +8,83 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
-import { User, Stethoscope, Mail, Bell, LogOut } from 'lucide-react';
+import { Stethoscope, Mail, Bell, LogOut, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { getVetProfile, updateVetProfile } from '@/services/vetService';
 
-// --- Main Vet's Settings Page Component ---
 const VetSettingsPage = () => {
-    const { user, logout } = useAuth();
+    const { logout } = useAuth();
+    const { toast } = useToast();
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // In a real app, this data would be part of the vet's user object from the context
-    const mockVetProfile = {
-        name: 'Dr. Anjali Sharma',
-        license: 'VCI/12345',
-        specialization: 'Large Animal Medicine',
-        phone: '+91-9123456789',
-        email: 'anjali.sharma@vet.com',
+    const fetchProfile = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await getVetProfile();
+            setProfile(data);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to load profile data.' });
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
+
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setProfile(prev => ({ ...prev, [id]: value }));
     };
+
+    const handleSwitchChange = async (key, value) => {
+        const updatedPrefs = { ...profile.notificationPrefs, [key]: value };
+        setProfile(prev => ({ ...prev, notificationPrefs: updatedPrefs }));
+        try {
+            await updateVetProfile({ notificationPrefs: updatedPrefs });
+            toast({ title: 'Success', description: 'Notification settings updated.' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save notification settings.' });
+            setProfile(prev => ({ ...prev, notificationPrefs: { ...prev.notificationPrefs, [key]: !value } }));
+        }
+    };
+
+    const handleSaveChanges = async (section) => {
+        let dataToSave = {};
+        // UPDATED: 'fullName' is no longer sent for updates
+        if (section === 'professional') {
+            dataToSave = { specialization: profile.specialization };
+        } else if (section === 'contact') {
+            dataToSave = { phoneNumber: profile.phoneNumber };
+        }
+
+        try {
+            await updateVetProfile(dataToSave);
+            toast({ title: 'Success', description: `${section === 'professional' ? 'Professional' : 'Contact'} details saved.` });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to save changes.' });
+        }
+    };
+
+    if (loading) {
+        return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+
+    if (!profile) {
+        return <div className="text-center p-8">Could not load profile data.</div>;
+    }
 
     return (
         <div className="space-y-8">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold">Settings & Profile</h1>
                 <p className="mt-1 text-gray-600">Manage your professional credentials and notification preferences.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                {/* Left Column: Profile Information */}
                 <div className="lg:col-span-2 space-y-8">
-                    {/* Professional Details Card */}
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
@@ -46,25 +98,25 @@ const VetSettingsPage = () => {
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Full Name</Label>
-                                <Input id="fullName" defaultValue={mockVetProfile.name} />
+                                {/* UPDATED: Added the 'disabled' prop to make this field read-only */}
+                                <Input id="fullName" value={profile.fullName || ''} onChange={handleInputChange} disabled />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="license">Veterinary License Number</Label>
-                                    <Input id="license" defaultValue={mockVetProfile.license} disabled />
+                                    <Label htmlFor="licenseNumber">Veterinary License Number</Label>
+                                    <Input id="licenseNumber" value={profile.licenseNumber || ''} disabled />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="specialization">Specialization</Label>
-                                    <Input id="specialization" defaultValue={mockVetProfile.specialization} />
+                                    <Input id="specialization" value={profile.specialization || ''} onChange={handleInputChange} />
                                 </div>
                             </div>
-                             <div className="flex justify-end">
-                                <Button>Save Professional Details</Button>
+                            <div className="flex justify-end">
+                                <Button onClick={() => handleSaveChanges('professional')}>Save Professional Details</Button>
                             </div>
                         </CardContent>
                     </Card>
 
-                     {/* Contact & Account Card */}
                     <Card>
                         <CardHeader>
                             <div className="flex items-center gap-3">
@@ -79,50 +131,47 @@ const VetSettingsPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email Address</Label>
-                                    <Input id="email" type="email" defaultValue={mockVetProfile.email} disabled />
+                                    <Input id="email" type="email" value={profile.email || ''} disabled />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone Number</Label>
-                                    <Input id="phone" type="tel" defaultValue={mockVetProfile.phone} />
+                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Input id="phoneNumber" type="tel" value={profile.phoneNumber || ''} onChange={handleInputChange} />
                                 </div>
                             </div>
-                             <div className="flex justify-between items-center pt-2">
-                                <Button variant="outline">Change Password</Button>
-                                <Button>Save Contact Info</Button>
+                            <div className="flex justify-between items-center pt-2">
+                                <Button variant="outline" disabled>Change Password (Soon)</Button>
+                                <Button onClick={() => handleSaveChanges('contact')}>Save Contact Info</Button>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Right Column: Notifications & Logout */}
                 <div className="space-y-8">
-                    {/* Notification Preferences */}
                     <Card>
                         <CardHeader>
-                             <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3">
                                 <Bell className="w-6 h-6" />
                                 <CardTitle>Notifications</CardTitle>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <div className="flex items-center justify-between">
-                                <Label htmlFor="new-requests" className="font-normal">New Treatment Requests</Label>
-                                <Switch id="new-requests" defaultChecked />
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="newRequests" className="font-normal">New Treatment Requests</Label>
+                                <Switch id="newRequests" checked={profile.notificationPrefs.newRequests} onCheckedChange={(value) => handleSwitchChange('newRequests', value)} />
                             </div>
-                             <Separator />
-                             <div className="flex items-center justify-between">
-                                <Label htmlFor="compliance-alerts" className="font-normal">Farm Compliance Alerts</Label>
-                                <Switch id="compliance-alerts" defaultChecked />
+                            <Separator />
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="complianceAlerts" className="font-normal">Farm Compliance Alerts</Label>
+                                <Switch id="complianceAlerts" checked={profile.notificationPrefs.complianceAlerts} onCheckedChange={(value) => handleSwitchChange('complianceAlerts', value)} />
                             </div>
-                             <Separator />
-                              <div className="flex items-center justify-between">
-                                <Label htmlFor="weekly-summary" className="font-normal">Weekly Summary Email</Label>
-                                <Switch id="weekly-summary" />
+                            <Separator />
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="weeklySummary" className="font-normal">Weekly Summary Email</Label>
+                                <Switch id="weeklySummary" checked={profile.notificationPrefs.weeklySummary} onCheckedChange={(value) => handleSwitchChange('weeklySummary', value)} />
                             </div>
                         </CardContent>
                     </Card>
                     
-                    {/* Logout Button */}
                     <Button variant="destructive" className="w-full" onClick={logout}>
                         <LogOut className="mr-2 h-4 w-4" /> Logout
                     </Button>

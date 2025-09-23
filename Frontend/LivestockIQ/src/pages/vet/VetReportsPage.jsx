@@ -1,50 +1,97 @@
-import React, { useState } from 'react';
+// frontend/src/pages/vet/VetReportsPage.jsx
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Calendar as CalendarIcon, FileDown, Tractor, ClipboardCheck } from 'lucide-react';
+import { Calendar as CalendarIcon, FileDown, Tractor, ClipboardCheck, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useToast } from '../../hooks/use-toast';
+import { axiosInstance } from '../../contexts/AuthContext'; // To fetch farmers
+import { generateFarmAmuReportForVet, generateVetSignedLog } from '../../services/reportsService';
 
-// --- Mock Data ---
-const mockFarms = [
-    { id: 'FARM-01', name: 'Green Valley Farms' },
-    { id: 'FARM-02', name: 'Sunrise Dairy' },
-    { id: 'FARM-03', name: 'Himalayan Goats Co.' },
-];
-
-// --- Main Vet's Reports Page Component ---
 const VetReportsPage = () => {
+    const [farms, setFarms] = useState([]);
+    const [selectedFarm, setSelectedFarm] = useState('');
     const [farmReportDateRange, setFarmReportDateRange] = useState(undefined);
     const [vetLogDateRange, setVetLogDateRange] = useState(undefined);
+    const [isGeneratingFarmReport, setIsGeneratingFarmReport] = useState(false);
+    const [isGeneratingVetLog, setIsGeneratingVetLog] = useState(false);
+    const { toast } = useToast();
 
-    const handleGenerateFarmReport = () => {
-        if (!farmReportDateRange?.from || !farmReportDateRange?.to) {
-            alert("Please select a valid date range for the farm report.");
+    useEffect(() => {
+        const fetchFarms = async () => {
+            try {
+                const { data } = await axiosInstance.get('/vets/my-farmers');
+                setFarms(data || []);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to load your supervised farms.' });
+            }
+        };
+        fetchFarms();
+    }, [toast]);
+
+    const handleDownload = (data, reportType) => {
+        const blob = new Blob([data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${reportType}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    };
+
+    const handleGenerateFarmReport = async () => {
+        if (!selectedFarm || !farmReportDateRange?.from || !farmReportDateRange?.to) {
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a farm and a valid date range.' });
             return;
         }
-        alert(`Generating farm report from ${format(farmReportDateRange.from, 'PPP')} to ${format(farmReportDateRange.to, 'PPP')}.`);
+        setIsGeneratingFarmReport(true);
+        try {
+            const data = await generateFarmAmuReportForVet({
+                farmerId: selectedFarm,
+                from: farmReportDateRange.from.toISOString(),
+                to: farmReportDateRange.to.toISOString(),
+            });
+            handleDownload(data, 'Farm_AMU');
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate farm report.' });
+        } finally {
+            setIsGeneratingFarmReport(false);
+        }
     };
     
-    const handleGenerateVetLog = () => {
+    const handleGenerateVetLog = async () => {
         if (!vetLogDateRange?.from || !vetLogDateRange?.to) {
-            alert("Please select a valid date range for your signed log.");
+            toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select a valid date range.' });
             return;
         }
-        alert(`Generating your signed log from ${format(vetLogDateRange.from, 'PPP')} to ${format(vetLogDateRange.to, 'PPP')}.`);
+        setIsGeneratingVetLog(true);
+        try {
+            const data = await generateVetSignedLog({
+                from: vetLogDateRange.from.toISOString(),
+                to: vetLogDateRange.to.toISOString(),
+            });
+            handleDownload(data, 'Vet_Signed_Log');
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate your signed log.' });
+        } finally {
+            setIsGeneratingVetLog(false);
+        }
     };
 
     return (
         <div className="space-y-8">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold">Reports & Logs</h1>
                 <p className="mt-1 text-gray-600">Generate compliance and usage reports for your records.</p>
             </div>
 
-            {/* Farm-wise AMU Usage Report */}
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-3">
@@ -59,9 +106,11 @@ const VetReportsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Select Farm</Label>
-                            <Select>
+                            <Select value={selectedFarm} onValueChange={setSelectedFarm}>
                                 <SelectTrigger><SelectValue placeholder="Choose a farm..." /></SelectTrigger>
-                                <SelectContent>{mockFarms.map(farm => <SelectItem key={farm.id} value={farm.id}>{farm.name}</SelectItem>)}</SelectContent>
+                                <SelectContent>
+                                    {farms.map(farm => <SelectItem key={farm._id} value={farm._id}>{farm.farmName} ({farm.farmOwner})</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
@@ -79,13 +128,13 @@ const VetReportsPage = () => {
                             </Popover>
                         </div>
                     </div>
-                    <Button className="w-full" onClick={handleGenerateFarmReport}>
-                        <FileDown className="mr-2 h-4 w-4" /> Generate Farm Report
+                    <Button className="w-full" onClick={handleGenerateFarmReport} disabled={isGeneratingFarmReport}>
+                        {isGeneratingFarmReport ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                        {isGeneratingFarmReport ? 'Generating...' : 'Generate Farm Report'}
                     </Button>
                 </CardContent>
             </Card>
 
-            {/* Vet's Signed Logs */}
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-3">
@@ -111,8 +160,9 @@ const VetReportsPage = () => {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <Button className="w-full" onClick={handleGenerateVetLog}>
-                        <FileDown className="mr-2 h-4 w-4" /> Generate My Log
+                    <Button className="w-full" onClick={handleGenerateVetLog} disabled={isGeneratingVetLog}>
+                         {isGeneratingVetLog ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                        {isGeneratingVetLog ? 'Generating...' : 'Generate My Log'}
                     </Button>
                 </CardContent>
             </Card>

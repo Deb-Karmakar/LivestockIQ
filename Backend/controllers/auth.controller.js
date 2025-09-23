@@ -1,3 +1,5 @@
+// backend/controllers/auth.controller.js
+
 import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
 import jwt from 'jsonwebtoken';
@@ -12,7 +14,7 @@ export const registerFarmer = async (req, res) => {
     try {
         const vetExists = await Veterinarian.findOne({ vetId: vetId });
         if (!vetExists) {
-            return res.status(400).json({ message: 'Invalid Veterinarian ID. Please check the code and try again.' });
+            return res.status(400).json({ message: 'Invalid Veterinarian ID.' });
         }
 
         const farmerExists = await Farmer.findOne({ email });
@@ -25,13 +27,15 @@ export const registerFarmer = async (req, res) => {
         });
         
         if (farmer) {
+            // THE FIX: Send both `farmOwner` and `farmName` consistently
             res.status(201).json({
                 _id: farmer._id,
-                name: farmer.farmOwner,
+                farmOwner: farmer.farmOwner,
+                farmName: farmer.farmName,
                 email: farmer.email,
                 role: 'farmer',
                 token: generateToken(farmer._id),
-                vetId: farmer.vetId, // Also include vetId on registration
+                vetId: farmer.vetId,
             });
         } else {
             res.status(400).json({ message: 'Invalid farmer data' });
@@ -49,14 +53,11 @@ export const registerVet = async (req, res) => {
         if (vetExists) {
             return res.status(400).json({ message: 'Veterinarian already exists' });
         }
-        const vet = await Veterinarian.create({
-            fullName, email, password, licenseNumber,
-            ...req.body
-        });
+        const vet = await Veterinarian.create({ fullName, email, password, licenseNumber, ...req.body });
         if (vet) {
             res.status(201).json({
                 _id: vet._id,
-                name: vet.fullName,
+                fullName: vet.fullName,
                 email: vet.email,
                 role: 'veterinarian',
                 vetId: vet.vetId,
@@ -70,35 +71,34 @@ export const registerVet = async (req, res) => {
     }
 };
 
+
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
         let user = await Farmer.findOne({ email });
         let role = 'farmer';
-        let name = user?.farmOwner;
 
         if (!user) {
             user = await Veterinarian.findOne({ email });
             role = 'veterinarian';
-            name = user?.fullName;
         }
 
         if (user && (await bcrypt.compare(password, user.password))) {
             const responsePayload = {
                 _id: user._id,
-                name: name,
                 email: user.email,
                 role: role,
                 token: generateToken(user._id),
-                lastUpdated: user.updatedAt 
             };
             
-            // Also add vetId to the login response if the user is a vet
+            // THE FIX: Add the correct, specific fields to the payload based on the user's role
             if (role === 'veterinarian') {
+                responsePayload.fullName = user.fullName;
                 responsePayload.vetId = user.vetId;
             }
-            // UPDATED: Also add vetId to the login response if the user is a farmer
             if (role === 'farmer') {
+                responsePayload.farmOwner = user.farmOwner;
+                responsePayload.farmName = user.farmName;
                 responsePayload.vetId = user.vetId;
             }
 

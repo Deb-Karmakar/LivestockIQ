@@ -17,6 +17,11 @@ const vetSchema = new mongoose.Schema({
         unique: true,
         // Generates a random 7-character string like 'x7b2k1j'
         default: () => Math.random().toString(36).substring(2, 9)
+    },
+     notificationPrefs: {
+        newRequests: { type: Boolean, default: true },
+        complianceAlerts: { type: Boolean, default: true },
+        weeklySummary: { type: Boolean, default: false },
     }
 }, { timestamps: true });
 

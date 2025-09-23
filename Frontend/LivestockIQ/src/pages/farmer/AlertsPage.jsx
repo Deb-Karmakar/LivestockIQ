@@ -1,46 +1,89 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Bell, FileSignature, BrainCircuit, ShieldAlert } from 'lucide-react';
+import { Bell, FileSignature, BrainCircuit, ShieldAlert, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-// --- Mock Data ---
-// In a real app, this data would be dynamically generated based on treatment records and vet signatures.
-const operationalAlerts = [
-    {
-        id: 'alert-1',
-        type: 'withdrawal',
-        severity: 'destructive', // Red for high priority
-        icon: <ShieldAlert className="h-4 w-4" />,
-        title: "Withdrawal Nearing End: Animal C-012",
-        description: "The withdrawal period for Enrofloxacin ends in 2 days. The animal will be safe for sale on Sep 18, 2025.",
-        action: "View Treatment",
-    },
-    {
-        id: 'alert-2',
-        type: 'signature',
-        severity: 'warning', // Amber for medium priority
-        icon: <FileSignature className="h-4 w-4" />,
-        title: "Vet Signature Required: Treatment TMT-003",
-        description: "The treatment for animal 458921789123 (Ivermectin) is complete but awaits signature from Dr. Gupta for compliance.",
-        action: "Notify Vet",
-    },
-    {
-        id: 'alert-3',
-        type: 'withdrawal',
-        severity: 'warning',
-        icon: <ShieldAlert className="h-4 w-4" />,
-        title: "Withdrawal Nearing End: Animal C-009",
-        description: "The withdrawal period for Tylosin ends in 5 days. The animal will be safe for sale on Sep 21, 2025.",
-        action: "View Treatment",
-    },
-];
-
-
-// --- Main Alerts Page Component ---
+import { getTreatments } from '../../services/treatmentService';
+import { useToast } from '../../hooks/use-toast';
+import { differenceInDays, format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 
 const AlertsPage = () => {
+    const [treatments, setTreatments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
+    const { toast } = useToast();
+    const navigate = useNavigate();
+
+    const fetchLiveDate = useCallback(async () => {
+        try {
+            setLoading(true);
+            const data = await getTreatments();
+            setTreatments(data || []);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to load treatment data for alerts." });
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
+
+    useEffect(() => {
+        fetchLiveDate();
+    }, [fetchLiveDate]);
+
+    const operationalAlerts = useMemo(() => {
+        const alerts = [];
+        const now = new Date();
+
+        treatments.forEach(treatment => {
+            // Check for treatments needing a signature
+            if (treatment.status === 'Pending') {
+                alerts.push({
+                    id: `${treatment._id}-signature`,
+                    type: 'signature',
+                    severity: 'warning',
+                    icon: <FileSignature className="h-4 w-4" />,
+                    title: `Vet Signature Required: Animal ${treatment.animalId}`,
+                    description: `The treatment with ${treatment.drugName} on ${format(new Date(treatment.startDate), 'PPP')} is awaiting vet approval.`,
+                    action: "View Treatment",
+                    animalId: treatment.animalId, 
+                });
+            }
+
+            // Check for upcoming withdrawal end dates
+            if (treatment.status === 'Approved' && treatment.withdrawalEndDate) {
+                const endDate = new Date(treatment.withdrawalEndDate);
+                const daysLeft = differenceInDays(endDate, now);
+
+                if (daysLeft >= 0 && daysLeft <= 7) {
+                    alerts.push({
+                        id: `${treatment._id}-withdrawal`,
+                        type: 'withdrawal',
+                        severity: daysLeft <= 2 ? 'destructive' : 'warning',
+                        icon: <ShieldAlert className="h-4 w-4" />,
+                        title: `Withdrawal Nearing End: Animal ${treatment.animalId}`,
+                        description: `The withdrawal period for ${treatment.drugName} ends in ${daysLeft} day(s). The animal will be safe for sale on ${format(endDate, 'PPP')}.`,
+                        action: "View Record",
+                        animalId: treatment.animalId,
+                    });
+                }
+            }
+        });
+        
+        return alerts.sort((a, b) => (a.severity === 'destructive' ? -1 : 1));
+
+    }, [treatments]);
+
+    const handleAlertAction = (alert) => {
+        if (alert.type === 'signature') {
+            navigate('/farmer/treatments');
+        } else if (alert.type === 'withdrawal') {
+            setViewingHistoryOf(alert.animalId);
+        }
+    };
+
     return (
         <div className="space-y-8">
             {/* Page Header */}
@@ -61,7 +104,9 @@ const AlertsPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {operationalAlerts.length > 0 ? (
+                    {loading ? (
+                         <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                    ) : operationalAlerts.length > 0 ? (
                         operationalAlerts.map(alert => (
                             <Alert key={alert.id} variant={alert.severity}>
                                 {alert.icon}
@@ -69,7 +114,13 @@ const AlertsPage = () => {
                                     <AlertTitle>{alert.title}</AlertTitle>
                                     <AlertDescription>{alert.description}</AlertDescription>
                                 </div>
-                                <Button size="sm" variant={alert.severity === 'destructive' ? 'destructive' : 'secondary'}>{alert.action}</Button>
+                                <Button 
+                                    size="sm" 
+                                    variant={alert.severity === 'destructive' ? 'destructive' : 'secondary'}
+                                    onClick={() => handleAlertAction(alert)}
+                                >
+                                    {alert.action}
+                                </Button>
                             </Alert>
                         ))
                     ) : (
@@ -78,7 +129,7 @@ const AlertsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* Section 2: AI-Powered Disease Surveillance */}
+            {/* Section 2: AI-Powered Disease Surveillance (Unchanged) */}
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
                 <CardHeader>
                      <div className="flex items-center gap-3">
@@ -103,9 +154,14 @@ const AlertsPage = () => {
                     </div>
                 </CardContent>
             </Card>
+
+            <AnimalHistoryDialog 
+                animalId={viewingHistoryOf}
+                isOpen={!!viewingHistoryOf}
+                onClose={() => setViewingHistoryOf(null)}
+            />
         </div>
     );
 };
 
 export default AlertsPage;
-
