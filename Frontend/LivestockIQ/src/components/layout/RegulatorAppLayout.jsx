@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     TrendingUp,
+    Users2,
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -20,11 +21,12 @@ const primaryNavLinks = [
     { name: 'Dashboard', path: '/regulator/dashboard', icon: LayoutDashboard },
     { name: 'Compliance', path: '/regulator/compliance', icon: ClipboardCheck },
     { name: 'Trends', path: '/regulator/trends', icon: TrendingUp },
+    { name: 'Demographics', path: '/regulator/demographics', icon: Users2 },
     { name: 'Map View', path: '/regulator/map', icon: Map },
-    { name: 'Reports', path: '/regulator/reports', icon: FileText },
 ];
 
 const secondaryNavLinks = [
+    { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'Settings', path: '/regulator/settings', icon: Settings },
 ];
 

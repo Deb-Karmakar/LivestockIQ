@@ -31,3 +31,13 @@ export const getTrendData = async () => {
         throw error;
     }
 };
+
+export const getDemographicsData = async () => {
+    try {
+        const { data } = await axiosInstance.get('/regulator/demographics');
+        return data;
+    } catch (error) {
+        console.error("Error fetching demographics data:", error);
+        throw error;
+    }
+};
