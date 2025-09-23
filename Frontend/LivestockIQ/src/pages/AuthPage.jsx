@@ -1,19 +1,15 @@
 import React, { useState } from 'react';
-// 1. Import useLocation to read the current URL
 import { useLocation } from 'react-router-dom';
 import LoginView from '../components/auth/LoginView';
 import RoleSelectionStep from '../components/auth/RoleSelectionStep';
 import FarmerSignUpStep from '../components/auth/FarmerSignUpStep';
 import VetSignUpStep from '../components/auth/VetSignUpStep';
+// NEW: 1. Import the new regulator sign-up component
+import RegulatorSignUpStep from '../components/auth/RegulatorSignUpStep';
 
 const AuthPage = () => {
-    // 2. Get the current location object
     const location = useLocation();
-
-    // 3. Set the initial state based on the URL path
-    // If the path is '/login', isLoginView will be true. Otherwise, it will be false.
     const [isLoginView, setIsLoginView] = useState(location.pathname === '/login');
-
     const [userRole, setUserRole] = useState(null);
 
     const handleRoleSelect = (role) => {
@@ -24,7 +20,6 @@ const AuthPage = () => {
         setUserRole(null);
     };
 
-    // This logic now works correctly
     if (isLoginView) {
         return <LoginView onToggleView={() => setIsLoginView(false)} />;
     }
@@ -38,6 +33,9 @@ const AuthPage = () => {
             return <FarmerSignUpStep onBack={handleBackToRoleSelect} />;
         case 'veterinarian':
             return <VetSignUpStep onBack={handleBackToRoleSelect} />;
+        // NEW: 2. Add the case for the regulator role
+        case 'regulator':
+            return <RegulatorSignUpStep onBack={handleBackToRoleSelect} />;
         default:
             return <RoleSelectionStep onSelectRole={handleRoleSelect} onToggleView={() => setIsLoginView(true)} />;
     }

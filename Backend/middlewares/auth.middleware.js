@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import Veterinarian from '../models/vet.model.js';
 import Farmer from '../models/farmer.model.js';
+import Regulator from '../models/regulator.model.js';
 
 const protect = async (req, res, next) => {
     let token;

@@ -9,20 +9,16 @@ const axiosInstance = axios.create({
     baseURL: API_URL,
 });
 
-// Add request interceptor for debugging
+// Interceptors for debugging (unchanged)
 axiosInstance.interceptors.request.use(
     (config) => {
         console.log('Making request to:', config.url);
-        console.log('Request headers:', config.headers);
         return config;
     },
     (error) => {
-        console.error('Request error:', error);
         return Promise.reject(error);
     }
 );
-
-// Add response interceptor for debugging
 axiosInstance.interceptors.response.use(
     (response) => {
         console.log('Response received:', response.data);
@@ -42,11 +38,9 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem('userInfo');
         if (storedUser) {
             const parsedUser = JSON.parse(storedUser);
-            console.log('Loaded user from localStorage:', parsedUser);
             setUser(parsedUser);
             if (parsedUser.token) {
                 axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${parsedUser.token}`;
-                console.log('Set Authorization header:', parsedUser.token);
             }
         }
     }, []);
@@ -81,17 +75,35 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // NEW: Function to handle regulator registration
+    const registerRegulator = async (regulatorData) => {
+        try {
+            const { data } = await axiosInstance.post('/auth/register/regulator', regulatorData);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            setUser(data);
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+            navigate('/regulator/dashboard'); // Redirect to the regulator's dashboard
+        } catch (error) {
+            console.error("Regulator registration failed:", error.response.data.message);
+            alert(`Registration failed: ${error.response.data.message}`);
+        }
+    };
+
     const login = async (email, password) => {
         try {
             const response = await axiosInstance.post('auth/login', { email, password });
             if (response.data) {
-                console.log('Login successful:', response.data);
                 localStorage.setItem('userInfo', JSON.stringify(response.data));
                 setUser(response.data);
                 axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-                if (response.data.role === 'veterinarian') {
+                
+                // UPDATED: Handle redirect for all three roles
+                const { role } = response.data;
+                if (role === 'veterinarian') {
                     navigate('/vet/dashboard');
-                } else {
+                } else if (role === 'regulator') {
+                    navigate('/regulator/dashboard');
+                } else { // Default to farmer
                     navigate('/farmer/dashboard');
                 }
             }
@@ -114,6 +126,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         registerVet,
+        registerRegulator, // EXPORT: Make the new function available
         logout,
     };
 

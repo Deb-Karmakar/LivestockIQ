@@ -12,7 +12,7 @@ const RoleSelectionStep = ({ onSelectRole, onToggleView }) => {
     const roles = [
         { id: 'farmer', name: 'Farmer', icon: <Tractor className="w-8 h-8 text-green-700" /> },
         { id: 'veterinarian', name: 'Veterinarian', icon: <Stethoscope className="w-8 h-8 text-blue-700" /> },
-        { id: 'authority', name: 'Regulator', icon: <Building className="w-8 h-8 text-gray-700" /> },
+        { id: 'regulator', name: 'Regulator', icon: <Building className="w-8 h-8 text-gray-700" /> },
         { id: 'admin', name: 'Admin', icon: <UserCog className="w-8 h-8 text-orange-700" /> },
     ];
 

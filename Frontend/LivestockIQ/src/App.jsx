@@ -24,12 +24,17 @@ import SettingsPage from "./pages/farmer/SettingsPage";
 import VetAppLayout from "./components/layout/VetAppLayout";
 import VetDashboardPage from "./pages/vet/VetDashboardPage";
 import TreatmentRequestsPage from "./pages/vet/TreatmentRequestsPage";
-import VetAnimalsPage from "./pages/vet/VetAnimalsPage";
-import VetAlertsPage from "./pages/vet/VetAlertsPage";
-import VetReportsPage from "./pages/vet/VetReportsPage";
-import VetPrescriptionsPage from "./pages/vet/VetPrescriptionsPage";
 import FarmerDirectoryPage from "./pages/vet/FarmerDirectoryPage";
+import VetReportsPage from "./pages/vet/VetReportsPage";
 import VetSettingsPage from "./pages/vet/VetSettingsPage";
+
+// NEW: Regulator Page Imports
+import RegulatorAppLayout from "./components/layout/RegulatorAppLayout";
+import RegulatorDashboardPage from "./pages/regulator/DashboardPage";
+import CompliancePage from "./pages/regulator/CompliancePage";
+import MapViewPage from "./pages/regulator/MapViewPage";
+import RegulatorReportsPage from "./pages/regulator/ReportsPage";
+import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 
 
 // --- Route Protection Components ---
@@ -61,16 +66,26 @@ const VetRoute = ({ children }) => {
     return children;
 }
 
+// NEW: Role-specific route for regulators
+const RegulatorRoute = ({ children }) => {
+    const { user } = useAuth();
+    if (user?.role !== 'regulator') {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+}
+
 // --- Main App Component ---
 
 function App() {
   const { isAuth, user } = useAuth();
 
-  // Helper to determine where to redirect logged-in users
+  // UPDATED: Helper to determine where to redirect logged-in users
   const getHomeRedirect = () => {
       if (!isAuth) return <AuthPage />;
       if (user?.role === 'veterinarian') return <Navigate to="/vet/dashboard" />;
-      return <Navigate to="/farmer/dashboard" />;
+      if (user?.role === 'regulator') return <Navigate to="/regulator/dashboard" />;
+      return <Navigate to="/farmer/dashboard" />; // Default to farmer
   }
 
   return (
@@ -106,7 +121,7 @@ function App() {
           </Route>
 
           {/* Protected Vet Routes */}
-           <Route
+            <Route
             path="/vet"
             element={
               <ProtectedRoute>
@@ -119,12 +134,28 @@ function App() {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<VetDashboardPage />} />
             <Route path="requests" element={<TreatmentRequestsPage />} />
-            <Route path="animals" element={<VetAnimalsPage />} />
-            <Route path="alerts" element={<VetAlertsPage />} />
-            <Route path="reports" element={<VetReportsPage />} />
-            <Route path="prescriptions" element={<VetPrescriptionsPage />} />
             <Route path="farmers" element={<FarmerDirectoryPage />} />
+            <Route path="reports" element={<VetReportsPage />} />
             <Route path="settings" element={<VetSettingsPage />} />
+          </Route>
+          
+          {/* NEW: Protected Regulator Routes */}
+          <Route
+            path="/regulator"
+            element={
+                <ProtectedRoute>
+                    <RegulatorRoute>
+                        <RegulatorAppLayout />
+                    </RegulatorRoute>
+                </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<RegulatorDashboardPage />} />
+            <Route path="compliance" element={<CompliancePage />} />
+            <Route path="map" element={<MapViewPage />} />
+            <Route path="reports" element={<RegulatorReportsPage />} />
+            <Route path="settings" element={<RegulatorSettingsPage />} />
           </Route>
 
           {/* 404 Fallback */}
@@ -136,4 +167,3 @@ function App() {
 }
 
 export default App;
-
