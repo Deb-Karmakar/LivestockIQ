@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '../../hooks/use-toast';
 import { getDemographicsData } from '../../services/regulatorService';
-import { Loader2, PawPrint, Cake } from 'lucide-react';
+import { Loader2, PawPrint, Cake, Users } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'];
 
@@ -60,30 +61,18 @@ const DemographicsPage = () => {
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <PawPrint className="w-5 h-5" />
-                            Herd Composition by Species
-                        </CardTitle>
+                        <CardTitle className="flex items-center gap-2"><PawPrint className="w-5 h-5" /> Herd Composition by Species</CardTitle>
                         <CardDescription>Percentage of each animal species across all farms.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-96">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
-                                <Pie
-                                    data={demographicsData.herdComposition}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                    outerRadius={120}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                >
+                                <Pie data={demographicsData.herdComposition} cx="50%" cy="50%" labelLine={false} label={renderCustomizedLabel} outerRadius={120} fill="#8884d8" dataKey="value">
                                     {demographicsData.herdComposition.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value) => [`${value} Animals`, 'Count']} />
+                                <Tooltip formatter={(value) => [`${value.toLocaleString('en-IN')} Animals`, 'Count']} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -92,10 +81,7 @@ const DemographicsPage = () => {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Cake className="w-5 h-5" />
-                            Population by Age Group
-                        </CardTitle>
+                        <CardTitle className="flex items-center gap-2"><Cake className="w-5 h-5" /> Population by Age Group</CardTitle>
                         <CardDescription>Total number of animals within predefined age ranges.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-96">
@@ -103,8 +89,8 @@ const DemographicsPage = () => {
                             <BarChart data={demographicsData.ageDistribution} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
+                                <YAxis tickFormatter={(value) => value.toLocaleString('en-IN')} />
+                                <Tooltip formatter={(value) => value.toLocaleString('en-IN')} />
                                 <Legend />
                                 <Bar dataKey="count" fill="#82ca9d" name="Animal Count" />
                             </BarChart>
@@ -112,6 +98,36 @@ const DemographicsPage = () => {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* NEW: Species & Gender Breakdown Table */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5" /> Species Details</CardTitle>
+                    <CardDescription>A detailed breakdown of the animal population by species and gender.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Species</TableHead>
+                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">Male</TableHead>
+                                <TableHead className="text-right">Female</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {demographicsData.speciesGenderBreakdown.map(item => (
+                                <TableRow key={item.species}>
+                                    <TableCell className="font-medium">{item.species}</TableCell>
+                                    <TableCell className="text-right font-bold">{item.total.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right">{item.Male.toLocaleString('en-IN')}</TableCell>
+                                    <TableCell className="text-right">{item.Female.toLocaleString('en-IN')}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 };
