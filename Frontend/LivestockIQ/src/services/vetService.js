@@ -35,3 +35,8 @@ export const updateVetProfile = async (profileData) => {
     const { data } = await axiosInstance.put('/vets/profile', profileData);
     return data;
 };
+
+export const reportFarmer = async (reportData) => {
+    const { data } = await axiosInstance.post('/vets/report-farmer', reportData);
+    return data;
+};

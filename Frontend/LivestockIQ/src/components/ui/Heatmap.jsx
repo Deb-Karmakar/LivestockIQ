@@ -11,21 +11,17 @@ const Heatmap = ({ points }) => {
     useEffect(() => {
         if (!map || !points || points.length === 0) return;
 
-        // NEW: Define a custom color gradient from blue (cool) to red (hot)
-        const gradient = {
-            0.4: 'blue',
-            0.6: 'lime',
-            0.7: 'yellow',
-            0.8: 'orange',
-            1.0: 'red'
-        };
+        // --- NEW: FINAL DIAGNOSTIC LOG ---
+        // This will show us the exact data the component is receiving.
+        console.log("Data points being sent to heatmap:", points);
+        // ------------------------------------
 
-        // UPDATED: Pass the new gradient and other options to the heat layer
-        const heatLayer = L.heatLayer(points, { 
-            radius: 25,
-            blur: 20,
-            maxZoom: 18,
-            gradient: gradient, // Use the custom gradient
+        const latLngPoints = points.map(p => L.latLng(p[0], p[1], p[2]));
+
+        const gradient = { 0.4: 'blue', 0.6: 'lime', 0.7: 'yellow', 0.8: 'orange', 1.0: 'red' };
+
+        const heatLayer = L.heatLayer(latLngPoints, { 
+            radius: 25, blur: 20, maxZoom: 18, minOpacity: 0.5, max: 100.0, gradient: gradient,
         });
 
         heatLayer.addTo(map);

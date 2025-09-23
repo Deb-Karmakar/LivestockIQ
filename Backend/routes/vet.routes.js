@@ -1,6 +1,6 @@
 import express from 'express';
 // 1. Import the new controller function
-import { getMyFarmers, getVetByCode, getTreatmentRequests, getAnimalsForFarmerByVet, getVetProfile, updateVetProfile } from '../controllers/vet.controller.js';
+import { getMyFarmers, getVetByCode, getTreatmentRequests, getAnimalsForFarmerByVet, getVetProfile, updateVetProfile, reportFarmer  } from '../controllers/vet.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -15,5 +15,7 @@ router.get('/farmers/:farmerId/animals', protect, getAnimalsForFarmerByVet);
 router.route('/profile')
     .get(protect, getVetProfile)
     .put(protect, updateVetProfile);
+
+router.post('/report-farmer', protect, reportFarmer);
 
 export default router;

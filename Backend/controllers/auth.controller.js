@@ -9,11 +9,12 @@ const generateToken = (id) => {
 };
 
 export const registerFarmer = async (req, res) => {
-    const { farmOwner, email, password, farmName, vetId, phoneNumber } = req.body;
+    // UPDATED: Added 'location' to the list of expected fields
+    const { farmOwner, email, password, farmName, vetId, phoneNumber, location } = req.body;
     try {
         const vetExists = await Veterinarian.findOne({ vetId: vetId });
         if (!vetExists) {
-            return res.status(400).json({ message: 'Invalid Veterinarian ID. Please check the code and try again.' });
+            return res.status(400).json({ message: 'Invalid Veterinarian ID.' });
         }
 
         const farmerExists = await Farmer.findOne({ email });
@@ -22,7 +23,13 @@ export const registerFarmer = async (req, res) => {
         }
         
         const farmer = await Farmer.create({
-            farmOwner, email, password, farmName, vetId, phoneNumber
+            farmOwner, 
+            email, 
+            password, 
+            farmName, 
+            vetId, 
+            phoneNumber, 
+            location // UPDATED: Pass the location object to be saved
         });
         
         if (farmer) {

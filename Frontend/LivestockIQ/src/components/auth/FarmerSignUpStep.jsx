@@ -3,44 +3,56 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, MapPin } from 'lucide-react';
 
 const FarmerSignUpStep = ({ onBack }) => {
     const { register } = useAuth();
+    const { toast } = useToast();
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
     
-    // Updated state to include phoneNumber
+    // State to hold all form data, including location object
     const [formData, setFormData] = useState({
-        email: '', password: '', confirmPassword: '', farmOwner: '', phoneNumber: '',
-        farmName: '', location: '', species: '', herdSize: '', vetId: ''
+        farmOwner: '',
+        phoneNumber: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        farmName: '',
+        vetId: '',
+        location: null // Will hold { latitude, longitude }
     });
+    
+    // State for providing user feedback on location fetching
+    const [locationMessage, setLocationMessage] = useState('Click button to get your farm\'s current location.');
 
     const handleChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
 
-    const handleSpeciesChange = (value) => {
-        setFormData(prev => ({ ...prev, species: value }));
-    };
-
     const handleGetLocation = () => {
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
+            setLocationMessage("Geolocation is not supported by your browser.");
+            toast({ variant: 'destructive', title: 'Error', description: "Geolocation is not supported." });
             return;
         }
         setIsFetchingLocation(true);
+        setLocationMessage("Fetching location...");
+
         navigator.geolocation.getCurrentPosition(
             (position) => {
                 const { latitude, longitude } = position.coords;
                 setFormData(prev => ({ ...prev, location: { latitude, longitude } }));
+                setLocationMessage('Location captured successfully!');
+                toast({ title: 'Success', description: 'GPS coordinates have been captured.' });
                 setIsFetchingLocation(false);
             },
             (error) => {
-                alert("Unable to retrieve your location.");
+                setLocationMessage('Permission denied. Please enable location services in your browser settings.');
+                toast({ variant: 'destructive', title: 'Location Error', description: 'Could not retrieve your location.' });
                 setIsFetchingLocation(false);
             }
         );
@@ -49,7 +61,12 @@ const FarmerSignUpStep = ({ onBack }) => {
     const handleSignUp = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            alert("Passwords do not match!");
+            toast({ variant: 'destructive', title: 'Error', description: 'Passwords do not match!' });
+            return;
+        }
+        // Ensure location is not null before registering
+        if (!formData.location) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide your farm location.' });
             return;
         }
         await register(formData);
@@ -71,85 +88,70 @@ const FarmerSignUpStep = ({ onBack }) => {
                 </CardHeader>
                 <form onSubmit={handleSignUp}>
                     <CardContent className="space-y-6">
-                        {/* Section 1: Personal Details */}
+                        {/* Personal & Account Details */}
                         <div>
-                            <h3 className="text-lg font-medium mb-2">Personal Details</h3>
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="farmOwner">Full Name</Label>
-                                        <Input id="farmOwner" placeholder="E.g., Rahul Sharma" value={formData.farmOwner} onChange={handleChange} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="phoneNumber">Phone Number</Label>
-                                        <Input id="phoneNumber" type="tel" placeholder="+91 98765 43210" value={formData.phoneNumber} onChange={handleChange} required />
-                                    </div>
+                            <h3 className="text-lg font-medium mb-2">1. Account Details</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="farmOwner">Full Name</Label>
+                                    <Input id="farmOwner" value={formData.farmOwner} onChange={handleChange} required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" placeholder="you@example.com" value={formData.email} onChange={handleChange} required />
+                                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                                    <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange} required />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="password">Password</Label>
-                                        <Input id="password" type="password" value={formData.password} onChange={handleChange} required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="confirmPassword">Confirm Password</Label>
-                                        <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
-                                    </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" type="email" value={formData.email} onChange={handleChange} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Password</Label>
+                                    <Input id="password" type="password" value={formData.password} onChange={handleChange} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                    <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
                                 </div>
                             </div>
                         </div>
 
                         <Separator />
 
-                        {/* Section 2: Farm & Professional Details */}
+                        {/* Farm & Professional Details */}
                         <div>
-                             <h3 className="text-lg font-medium mb-2">Farm Details</h3>
+                             <h3 className="text-lg font-medium mb-2">2. Farm Details</h3>
                              <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="farmName">Farm Name</Label>
-                                    <Input id="farmName" placeholder="E.g., Green Valley Farms" value={formData.farmName} onChange={handleChange} required />
+                                    <Input id="farmName" value={formData.farmName} onChange={handleChange} required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="location">Farm Location (GPS)</Label>
-                                    <div className="flex items-center gap-2">
-                                        <Input 
-                                            id="locationDisplay" 
-                                            value={formData.location ? `${formData.location.latitude.toFixed(5)}, ${formData.location.longitude.toFixed(5)}` : ''} 
-                                            placeholder="Click button to fetch GPS" 
-                                            readOnly 
-                                        />
+                                    <Label>Farm Location (GPS)</Label>
+                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                        <div className="flex-grow grid grid-cols-2 gap-2">
+                                             <Input 
+                                                id="latitude" 
+                                                value={formData.location ? formData.location.latitude.toFixed(6) : ''} 
+                                                placeholder="Latitude" 
+                                                readOnly 
+                                             />
+                                             <Input 
+                                                id="longitude" 
+                                                value={formData.location ? formData.location.longitude.toFixed(6) : ''} 
+                                                placeholder="Longitude" 
+                                                readOnly 
+                                             />
+                                        </div>
                                         <Button type="button" variant="outline" onClick={handleGetLocation} disabled={isFetchingLocation}>
                                             <MapPin className="w-4 h-4 mr-2"/>
-                                            {isFetchingLocation ? 'Fetching...' : 'Get Location'}
+                                            {isFetchingLocation ? 'Fetching...' : 'Get'}
                                         </Button>
                                     </div>
+                                    <p className="text-xs text-gray-500 px-1">{locationMessage}</p>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>Species Reared</Label>
-                                        <Select value={formData.species} onValueChange={handleSpeciesChange}>
-                                            <SelectTrigger><SelectValue placeholder="Select species" /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="cattle">Cattle</SelectItem>
-                                                <SelectItem value="poultry">Goat</SelectItem>
-                                                <SelectItem value="sheep">Sheep</SelectItem>
-                                                <SelectItem value="pig">Pig</SelectItem>
-                                                <SelectItem value="mixed">Mixed</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="herdSize">Herd Size</Label>
-                                        <Input id="herdSize" type="number" placeholder="E.g., 50" value={formData.herdSize} onChange={handleChange} />
-                                    </div>
-                                </div>
-                                 <div className="space-y-2">
+                                <div className="space-y-2">
                                     <Label htmlFor="vetId">Veterinarian ID</Label>
                                     <Input id="vetId" placeholder="Enter the unique ID provided by your vet" value={formData.vetId} onChange={handleChange} required />
-                                    <p className="text-xs text-gray-500">This is required to link your account with your supervising veterinarian.</p>
                                 </div>
                              </div>
                         </div>

@@ -2,6 +2,7 @@ import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
 import Treatment from '../models/treatment.model.js';
 import Animal from '../models/animal.model.js';
+import ComplianceAlert from '../models/complianceAlert.model.js';
 
 // @desc    Get all farmers assigned to the logged-in vet
 // @route   GET /api/vets/my-farmers
@@ -130,5 +131,31 @@ export const getVetProfile = async (req, res) => {
         res.json(vet);
     } else {
         res.status(404).json({ message: 'Veterinarian not found' });
+    }
+};
+
+export const reportFarmer = async (req, res) => {
+    try {
+        const { farmerId, reason, details } = req.body;
+        const vetId = req.user._id;
+
+        const farmer = await Farmer.findById(farmerId);
+        if (!farmer || farmer.vetId !== req.user.vetId) {
+            return res.status(401).json({ message: 'Not authorized to report this farmer.' });
+        }
+
+        await ComplianceAlert.create({
+            farmerId,
+            vetId,
+            reason,
+            details
+        });
+
+        res.status(201).json({ message: 'Farmer reported successfully. The alert has been sent to the regulator.' });
+
+    } catch (error) {
+        // NEW: This line will print the actual error to your backend terminal
+        console.error("Error reporting farmer:", error); 
+        res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
