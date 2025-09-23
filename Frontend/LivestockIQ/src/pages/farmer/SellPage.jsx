@@ -1,188 +1,278 @@
-import React, { useState, useMemo } from 'react';
+// frontend/src/pages/farmer/SellPage.jsx
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { ShieldCheck, ShieldAlert, ShoppingCart } from 'lucide-react';
-import { addDays, differenceInDays } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { PlusCircle, CalendarIcon, ShieldCheck, ShoppingCart } from 'lucide-react'; // Added ShoppingCart icon
+import { format } from 'date-fns';
+import { useToast } from '../../hooks/use-toast';
+import { getAnimals } from '../../services/animalService';
+import { getTreatments } from '../../services/treatmentService';
+import { addSale, getSales } from '../../services/salesService';
 
-// --- Mock Data ---
-// In a real app, this would be a combination of your animals and treatments data.
-const mockAnimalStatus = [
-    { id: '342987123456', name: 'Gauri', species: 'Cattle', lastTreatmentDate: new Date('2025-09-14'), withdrawalDays: 7 },
-    { id: '342987123457', name: 'Nandi', species: 'Cattle', lastTreatmentDate: new Date('2025-08-01'), withdrawalDays: 14 },
-    { id: '458921789123', name: 'Sheru', species: 'Goat', lastTreatmentDate: new Date('2025-09-15'), withdrawalDays: 28 },
-    { id: 'P-101', name: 'Batch A', species: 'Poultry', lastTreatmentDate: null, withdrawalDays: 0 },
-];
-
-// --- Helper to calculate withdrawal status ---
-const getSaleStatus = (animal) => {
-    if (!animal.lastTreatmentDate) return { isSafe: true, daysLeft: 0 };
-    const withdrawalEndDate = addDays(animal.lastTreatmentDate, animal.withdrawalDays);
-    const daysLeft = differenceInDays(withdrawalEndDate, new Date());
-    return {
-        isSafe: daysLeft <= 0,
-        daysLeft: daysLeft > 0 ? daysLeft : 0,
-    };
-};
-
-// --- Main Sell Page Component ---
+// Main Page Component
 const SellPage = () => {
-    const [selectedAnimal, setSelectedAnimal] = useState(null);
+    const [animals, setAnimals] = useState([]);
+    const [treatments, setTreatments] = useState([]);
+    const [sales, setSales] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const { toast } = useToast();
 
-    const animalsWithStatus = useMemo(() => mockAnimalStatus.map(animal => ({
-        ...animal,
-        ...getSaleStatus(animal)
-    })), [mockAnimalStatus]);
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [animalsData, treatmentsData, salesData] = await Promise.all([
+                getAnimals(),
+                getTreatments(),
+                getSales()
+            ]);
+            setAnimals(Array.isArray(animalsData) ? animalsData : []);
+            setTreatments(Array.isArray(treatmentsData) ? treatmentsData : []);
+            setSales(Array.isArray(salesData) ? salesData : []);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to load page data." });
+        } finally {
+            setLoading(false);
+        }
+    }, [toast]);
 
-    const availableAnimals = animalsWithStatus.filter(a => a.isSafe);
-    const unavailableAnimals = animalsWithStatus.filter(a => !a.isSafe);
-    
-    const handleLogSale = (formData) => {
-        console.log("Sale Logged:", formData);
-        alert(`Sale of ${formData.quantity} ${formData.unit} of ${formData.product} from animal ${formData.animalId} has been logged!`);
-        setSelectedAnimal(null); // Close the dialog
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    const safeToSellAnimals = useMemo(() => {
+        return animals.filter(animal => {
+            const animalTreatments = treatments.filter(t => t.animalId === animal.tagId && t.status === 'Approved');
+            if (animalTreatments.length === 0) return true;
+
+            const lastTreatment = animalTreatments.sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
+            if (!lastTreatment.withdrawalEndDate) return false;
+
+            return new Date() > new Date(lastTreatment.withdrawalEndDate);
+        });
+    }, [animals, treatments]);
+
+    const handleSaveSale = async (saleData) => {
+        try {
+            await addSale(saleData);
+            toast({ title: "Success", description: "Sale has been logged successfully." });
+            fetchData();
+            setIsFormOpen(false);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Sale Failed", description: error.message || "Could not log the sale." });
+        }
     };
+
+    if (loading) return <div>Loading data...</div>;
 
     return (
-        <div className="space-y-8">
-            {/* Page Header */}
-            <div>
-                <h1 className="text-3xl font-bold">Sell Products</h1>
-                <p className="mt-1 text-gray-600">Log sales for animals that have completed their withdrawal periods.</p>
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Log Sales</h1>
+                    <p className="mt-1 text-gray-600">Record sales for animal products that have cleared their withdrawal periods.</p>
+                </div>
+                <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                    <DialogTrigger asChild>
+                        <Button><PlusCircle className="mr-2 h-4 w-4" /> Log New Sale</Button>
+                    </DialogTrigger>
+                    <SaleFormDialog
+                        safeAnimals={safeToSellAnimals}
+                        onSave={handleSaveSale}
+                        onClose={() => setIsFormOpen(false)}
+                    />
+                </Dialog>
             </div>
 
-            {/* Section 1: Available for Sale */}
             <Card>
                 <CardHeader>
-                    <div className="flex items-center gap-3 text-green-600">
-                        <ShieldCheck className="w-6 h-6" />
-                        <div>
-                            <CardTitle>Available for Sale ({availableAnimals.length})</CardTitle>
-                            <CardDescription>These animals have completed all withdrawal periods.</CardDescription>
-                        </div>
-                    </div>
+                    <CardTitle className="flex items-center gap-2">
+                        <ShieldCheck className="text-green-600" />
+                        Animals Safe for Sale
+                    </CardTitle>
+                    <CardDescription>
+                        This list shows animals whose products have cleared all treatment withdrawal periods. You can only log sales for these animals.
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {availableAnimals.map(animal => (
-                        <Card key={animal.id} className="flex flex-col">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-base">{animal.name}</CardTitle>
-                                <CardDescription>ID: {animal.id}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow flex items-end">
-                                <Button className="w-full" onClick={() => setSelectedAnimal(animal)}>
-                                    <ShoppingCart className="mr-2 h-4 w-4" /> Log Sale
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </CardContent>
-            </Card>
-            
-            <Separator />
-
-            {/* Section 2: Under Withdrawal Period */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3 text-red-600">
-                        <ShieldAlert className="w-6 h-6" />
-                        <div>
-                            <CardTitle>Not Available for Sale ({unavailableAnimals.length})</CardTitle>
-                            <CardDescription>These animals are currently within a withdrawal period.</CardDescription>
-                        </div>
-                    </div>
-                </CardHeader>
-                 <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {unavailableAnimals.map(animal => (
-                        <Card key={animal.id} className="bg-gray-50 opacity-70">
-                            <CardHeader>
-                                <CardTitle className="text-base">{animal.name}</CardTitle>
-                                <CardDescription>ID: {animal.id}</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-center bg-red-100 text-red-800 p-2 rounded-md">
-                                    <p className="font-bold text-lg">{animal.daysLeft} days</p>
-                                    <p className="text-xs">left on withdrawal</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Animal ID</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Species</TableHead>
+                                <TableHead>Last Cleared On</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {safeToSellAnimals.length > 0 ? safeToSellAnimals.map(animal => {
+                                const lastTreatment = treatments
+                                    .filter(t => t.animalId === animal.tagId && t.status === 'Approved')
+                                    .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
+                                
+                                return (
+                                    <TableRow key={animal._id}>
+                                        <TableCell className="font-medium">{animal.tagId}</TableCell>
+                                        <TableCell>{animal.name || 'N/A'}</TableCell>
+                                        <TableCell>{animal.species}</TableCell>
+                                        <TableCell>
+                                            {lastTreatment?.withdrawalEndDate ? format(new Date(lastTreatment.withdrawalEndDate), 'PPP') : 'No treatments'}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            }) : (
+                                <TableRow>
+                                    <TableCell colSpan="4" className="text-center h-24">No animals are currently safe for sale.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </CardContent>
             </Card>
 
-            {/* Sale Logging Dialog */}
-            <SellFormDialog 
-                animal={selectedAnimal}
-                onClose={() => setSelectedAnimal(null)}
-                onSave={handleLogSale}
-            />
+            {/* --- NEW: SALES HISTORY TABLE --- */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <ShoppingCart className="text-blue-600" />
+                        Sales History
+                    </CardTitle>
+                    <CardDescription>
+                        A log of all your previously recorded sales.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Animal ID</TableHead>
+                                <TableHead>Product</TableHead>
+                                <TableHead>Quantity</TableHead>
+                                <TableHead>Sale Price</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {sales.length > 0 ? sales.map(sale => (
+                                <TableRow key={sale._id}>
+                                    <TableCell>{format(new Date(sale.saleDate), 'PPP')}</TableCell>
+                                    <TableCell className="font-medium">{sale.animalId}</TableCell>
+                                    <TableCell>{sale.productType}</TableCell>
+                                    <TableCell>{sale.quantity} {sale.unit}</TableCell>
+                                    <TableCell>
+                                        {sale.price.toLocaleString('en-IN', {
+                                            style: 'currency',
+                                            currency: 'INR',
+                                        })}
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan="5" className="text-center h-24">
+                                        You have not logged any sales yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     );
 };
 
-
-// --- Sell Form Dialog Sub-component ---
-const SellFormDialog = ({ animal, onClose, onSave }) => {
-    if (!animal) return null;
+// Form Dialog Component (unchanged)
+const SaleFormDialog = ({ safeAnimals, onSave, onClose }) => {
+    const [saleDate, setSaleDate] = useState(new Date());
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = {
-            animalId: animal.id,
-            product: formData.get('product'),
-            quantity: formData.get('quantity'),
+            animalId: formData.get('animalId'),
+            productType: formData.get('productType'),
+            quantity: parseFloat(formData.get('quantity')),
             unit: formData.get('unit'),
-            saleDate: new Date(),
+            price: parseFloat(formData.get('price')),
+            saleDate: saleDate,
+            notes: formData.get('notes'),
         };
         onSave(data);
     };
 
     return (
-        <Dialog open={!!animal} onOpenChange={onClose}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Log Sale for {animal.name} (ID: {animal.id})</DialogTitle>
-                    <DialogDescription>Enter the details of the product being sold.</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit}>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="product">Product Type</Label>
-                            <Select name="product" required>
-                                <SelectTrigger><SelectValue placeholder="Select product..." /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Milk">Milk</SelectItem>
-                                    <SelectItem value="Meat">Meat</SelectItem>
-                                    <SelectItem value="Eggs">Eggs</SelectItem>
-                                    <SelectItem value="Live Animal">Live Animal</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                         <div className="grid grid-cols-3 gap-4">
-                            <div className="space-y-2 col-span-2">
-                                <Label htmlFor="quantity">Quantity</Label>
-                                <Input id="quantity" name="quantity" type="number" placeholder="e.g., 20" required/>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="unit">Unit</Label>
-                                <Input id="unit" name="unit" placeholder="e.g., Liters" required/>
-                            </div>
-                        </div>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Log a New Sale</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="animalId">Animal</Label>
+                    <Select name="animalId" required>
+                        <SelectTrigger><SelectValue placeholder="Select a safe animal" /></SelectTrigger>
+                        <SelectContent>
+                            {safeAnimals.map(animal => (
+                                <SelectItem key={animal.tagId} value={animal.tagId}>
+                                    {animal.tagId} ({animal.name || animal.species})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="productType">Product</Label>
+                        <Select name="productType" required>
+                            <SelectTrigger><SelectValue placeholder="Select product type" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Milk">Milk</SelectItem>
+                                <SelectItem value="Meat">Meat</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-                        <Button type="submit">Log Sale</Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                     <div className="space-y-2">
+                        <Label htmlFor="price">Total Price (₹)</Label>
+                        <Input id="price" name="price" type="number" step="0.01" placeholder="e.g., 150.50" required />
+                    </div>
+                </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="quantity">Quantity</Label>
+                        <Input id="quantity" name="quantity" type="number" placeholder="e.g., 50" required />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="unit">Unit</Label>
+                        <Input id="unit" name="unit" placeholder="e.g., Liters, kg" required />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="saleDate">Date of Sale</Label>
+                     <Popover>
+                        <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{format(saleDate, 'PPP')}</Button></PopoverTrigger>
+                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={saleDate} onSelect={setSaleDate} /></PopoverContent>
+                    </Popover>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Textarea id="notes" name="notes" placeholder="e.g., Sold to local market" />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button type="submit">Log Sale</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
     );
 };
-
 
 export default SellPage;
