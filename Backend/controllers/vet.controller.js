@@ -95,18 +95,22 @@ export const updateVetProfile = async (req, res) => {
         const vet = await Veterinarian.findById(req.user._id);
 
         if (vet) {
-            // Update fields from request body
-            vet.fullName = req.body.fullName || vet.fullName;
-            vet.specialization = req.body.specialization || vet.specialization;
-            vet.phoneNumber = req.body.phoneNumber || vet.phoneNumber;
+            // Only update the fields that are meant to be editable
+            vet.specialization = req.body.specialization ?? vet.specialization;
+            vet.phoneNumber = req.body.phoneNumber ?? vet.phoneNumber;
             
-            // Update notification preferences if they are provided
+            // NEW: Add logic to update location if it's provided
+            if (req.body.location) {
+                vet.location = req.body.location;
+            }
+            
             if (req.body.notificationPrefs) {
                 vet.notificationPrefs = { ...vet.notificationPrefs, ...req.body.notificationPrefs };
             }
 
             const updatedVet = await vet.save();
 
+            // Return the updated profile
             res.json({
                 _id: updatedVet._id,
                 fullName: updatedVet.fullName,
@@ -114,7 +118,7 @@ export const updateVetProfile = async (req, res) => {
                 specialization: updatedVet.specialization,
                 phoneNumber: updatedVet.phoneNumber,
                 notificationPrefs: updatedVet.notificationPrefs,
-                // Add any other fields you want to return
+                location: updatedVet.location, // Include location in the response
             });
         } else {
             res.status(404).json({ message: 'Veterinarian not found' });

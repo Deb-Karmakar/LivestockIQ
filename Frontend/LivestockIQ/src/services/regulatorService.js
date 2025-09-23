@@ -41,3 +41,13 @@ export const getDemographicsData = async () => {
         throw error;
     }
 };
+
+export const getMapData = async () => {
+    try {
+        const { data } = await axiosInstance.get('/regulator/map-data');
+        return data;
+    } catch (error) {
+        console.error("Error fetching map data:", error);
+        throw error;
+    }
+};

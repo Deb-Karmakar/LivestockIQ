@@ -302,3 +302,25 @@ export const getDemographicsData = async (req, res) => {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
+
+export const getMapData = async (req, res) => {
+    try {
+        // Fetch farms with location data
+        const farms = await Farmer.find({ 
+            'location.latitude': { $exists: true, $ne: null },
+            'location.longitude': { $exists: true, $ne: null } 
+        }).select('farmName farmOwner location');
+
+        // FIXED: Now actually fetching vets with location data
+        const vets = await Veterinarian.find({
+            'location.latitude': { $exists: true, $ne: null },
+            'location.longitude': { $exists: true, $ne: null }
+        }).select('fullName specialization licenseNumber location');
+
+        res.json({ farms, vets });
+
+    } catch (error) {
+        console.error("Error in getMapData:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};

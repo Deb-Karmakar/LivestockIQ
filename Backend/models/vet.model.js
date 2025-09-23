@@ -22,7 +22,11 @@ const vetSchema = new mongoose.Schema({
         newRequests: { type: Boolean, default: true },
         complianceAlerts: { type: Boolean, default: true },
         weeklySummary: { type: Boolean, default: false },
-    }
+    },
+    location: {
+        latitude: { type: Number },
+        longitude: { type: Number },
+    },
 }, { timestamps: true });
 
 // Hash password before saving

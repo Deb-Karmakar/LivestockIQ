@@ -1,7 +1,7 @@
 // backend/routes/regulator.routes.js
 
 import express from 'express';
-import { getDashboardStats, getComplianceData, getTrendAnalysisData, getDemographicsData    } from '../controllers/regulator.controller.js';
+import { getDashboardStats, getComplianceData, getTrendAnalysisData, getDemographicsData, getMapData   } from '../controllers/regulator.controller.js';
 import { protect, protectRegulator } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -10,8 +10,8 @@ const router = express.Router();
 router.get('/dashboard-stats', protect, protectRegulator, getDashboardStats);
 router.get('/compliance-data', protect, protectRegulator, getComplianceData);
 router.get('/trends', protect, protectRegulator, getTrendAnalysisData);
-router.get('/demographics', protect, protectRegulator, getDemographicsData); // 2. Add the new route
-
+router.get('/demographics', protect, protectRegulator, getDemographicsData);
+router.get('/map-data', protect, protectRegulator, getMapData)
 
 
 export default router;

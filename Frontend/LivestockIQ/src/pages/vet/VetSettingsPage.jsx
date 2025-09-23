@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
-import { Stethoscope, Mail, Bell, LogOut, Loader2 } from 'lucide-react';
+import { Stethoscope, Mail, Bell, LogOut, Loader2, MapPin } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getVetProfile, updateVetProfile } from '@/services/vetService';
 
@@ -17,6 +17,8 @@ const VetSettingsPage = () => {
     const { toast } = useToast();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    // NEW: State for location fetching feedback
+    const [locationMessage, setLocationMessage] = useState('Click to fetch your current GPS coordinates.');
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -51,13 +53,33 @@ const VetSettingsPage = () => {
         }
     };
 
+    // NEW: Function to get the vet's location
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            return toast({ variant: 'destructive', title: 'Error', description: "Geolocation is not supported by your browser." });
+        }
+        setLocationMessage("Fetching location...");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setProfile(prev => ({ ...prev, location: { latitude, longitude } }));
+                setLocationMessage('Location captured! Click "Save Contact Info" to apply.');
+                toast({ title: 'Success', description: 'Location captured.' });
+            },
+            () => {
+                setLocationMessage('Permission denied. Please enable location services.');
+                toast({ variant: 'destructive', title: 'Location Error', description: 'Could not retrieve your location.' });
+            }
+        );
+    };
+
     const handleSaveChanges = async (section) => {
         let dataToSave = {};
-        // UPDATED: 'fullName' is no longer sent for updates
         if (section === 'professional') {
             dataToSave = { specialization: profile.specialization };
         } else if (section === 'contact') {
-            dataToSave = { phoneNumber: profile.phoneNumber };
+            // UPDATED: Now saves phone number AND location
+            dataToSave = { phoneNumber: profile.phoneNumber, location: profile.location };
         }
 
         try {
@@ -98,7 +120,6 @@ const VetSettingsPage = () => {
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Full Name</Label>
-                                {/* UPDATED: Added the 'disabled' prop to make this field read-only */}
                                 <Input id="fullName" value={profile.fullName || ''} onChange={handleInputChange} disabled />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -138,6 +159,30 @@ const VetSettingsPage = () => {
                                     <Input id="phoneNumber" type="tel" value={profile.phoneNumber || ''} onChange={handleInputChange} />
                                 </div>
                             </div>
+                            
+                            {/* NEW: Location fetching section */}
+                            <div className="space-y-2">
+                                <Label>Practice Location (for Regulator Map)</Label>
+                                <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
+                                    <div className="flex-grow grid grid-cols-2 gap-2">
+                                         <Input 
+                                            value={profile.location ? profile.location.latitude.toFixed(6) : ''} 
+                                            placeholder="Latitude" 
+                                            readOnly 
+                                         />
+                                         <Input 
+                                            value={profile.location ? profile.location.longitude.toFixed(6) : ''} 
+                                            placeholder="Longitude" 
+                                            readOnly 
+                                         />
+                                    </div>
+                                    <Button type="button" variant="outline" onClick={handleGetLocation}>
+                                        <MapPin className="w-4 h-4 mr-2"/> Get Location
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-gray-500 px-1">{locationMessage}</p>
+                            </div>
+
                             <div className="flex justify-between items-center pt-2">
                                 <Button variant="outline" disabled>Change Password (Soon)</Button>
                                 <Button onClick={() => handleSaveChanges('contact')}>Save Contact Info</Button>
