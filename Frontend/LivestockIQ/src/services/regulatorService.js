@@ -11,3 +11,13 @@ export const getDashboardStats = async () => {
         throw error;
     }
 };
+
+export const getComplianceData = async () => {
+    try {
+        const { data } = await axiosInstance.get('/regulator/compliance-data');
+        return data;
+    } catch (error) {
+        console.error("Error fetching regulator compliance data:", error);
+        throw error;
+    }
+};
