@@ -1,3 +1,5 @@
+// backend/models/treatment.model.js
+
 import mongoose from 'mongoose';
 
 const treatmentSchema = new mongoose.Schema({
@@ -31,9 +33,17 @@ const treatmentSchema = new mongoose.Schema({
         default: false,
     },
     notes: { type: String },
-    // Attachment path can be stored after file upload
     vetNotes: { type: String },
-    attachment: { type: String }, 
+    attachment: { type: String },
+    
+    // --- NEW FIELD ---
+    // Add the status field so Mongoose can save it
+    status: {
+        type: String,
+        enum: ['Pending', 'Approved', 'Rejected'],
+        default: 'Pending',
+    },
+
 }, {
     timestamps: true // Essential for offline sync
 });

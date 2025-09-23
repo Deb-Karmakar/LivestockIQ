@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.routes.js';
 import vetRoutes from './routes/vet.routes.js';
 import animalRoutes from './routes/animal.routes.js';
 import treatmentRoutes from './routes/treatment.routes.js'; 
+import prescriptionRoutes from './routes/prescription.routes.js';
+import farmerRoutes from './routes/farmer.routes.js';
 
 
 dotenv.config();
@@ -24,6 +26,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/vets', vetRoutes);
 app.use('/api/animals', animalRoutes);
 app.use('/api/treatments', treatmentRoutes);
+app.use('/api/prescriptions', prescriptionRoutes);
+app.use('/api/farmers', farmerRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
