@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import LandingPage from "@/pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./contexts/AuthContext";
+import { ChatWidget } from "./components/ChatWidget"; // NEW: 1. Import the ChatWidget
 
 // Farmer Page Imports
 import AppLayout from "./components/layout/AppLayout";
@@ -28,7 +29,7 @@ import FarmerDirectoryPage from "./pages/vet/FarmerDirectoryPage";
 import VetReportsPage from "./pages/vet/VetReportsPage";
 import VetSettingsPage from "./pages/vet/VetSettingsPage";
 
-// NEW: Regulator Page Imports
+// Regulator Page Imports
 import RegulatorAppLayout from "./components/layout/RegulatorAppLayout";
 import RegulatorDashboardPage from "./pages/regulator/DashboardPage";
 import CompliancePage from "./pages/regulator/CompliancePage";
@@ -38,10 +39,8 @@ import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
 
-
 // --- Route Protection Components ---
 
-// General protected route: checks if user is logged in at all
 const ProtectedRoute = ({ children }) => {
   const { isAuth } = useAuth();
   if (!isAuth) {
@@ -50,7 +49,6 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Role-specific route for farmers
 const FarmerRoute = ({ children }) => {
     const { user } = useAuth();
     if (user?.role !== 'farmer') {
@@ -59,7 +57,6 @@ const FarmerRoute = ({ children }) => {
     return children;
 }
 
-// Role-specific route for vets
 const VetRoute = ({ children }) => {
     const { user } = useAuth();
     if (user?.role !== 'veterinarian') {
@@ -68,7 +65,6 @@ const VetRoute = ({ children }) => {
     return children;
 }
 
-// NEW: Role-specific route for regulators
 const RegulatorRoute = ({ children }) => {
     const { user } = useAuth();
     if (user?.role !== 'regulator') {
@@ -82,12 +78,11 @@ const RegulatorRoute = ({ children }) => {
 function App() {
   const { isAuth, user } = useAuth();
 
-  // UPDATED: Helper to determine where to redirect logged-in users
   const getHomeRedirect = () => {
       if (!isAuth) return <AuthPage />;
       if (user?.role === 'veterinarian') return <Navigate to="/vet/dashboard" />;
       if (user?.role === 'regulator') return <Navigate to="/regulator/dashboard" />;
-      return <Navigate to="/farmer/dashboard" />; // Default to farmer
+      return <Navigate to="/farmer/dashboard" />;
   }
 
   return (
@@ -141,7 +136,7 @@ function App() {
             <Route path="settings" element={<VetSettingsPage />} />
           </Route>
           
-          {/* NEW: Protected Regulator Routes */}
+          {/* Protected Regulator Routes */}
           <Route
             path="/regulator"
             element={
@@ -165,6 +160,10 @@ function App() {
           {/* 404 Fallback */}
           <Route path="*" element={<div><h1>404</h1><p>Page not found</p></div>} />
         </Routes>
+
+        {/* NEW: 2. Conditionally render the ChatWidget for any authenticated user */}
+        {isAuth && <ChatWidget />}
+        
       </TooltipProvider>
     </QueryClientProvider>
   );
