@@ -51,3 +51,25 @@ export const getMapData = async () => {
         throw error;
     }
 };
+
+export const generateComplianceReport = async (dateRange) => {
+    try {
+        const { data } = await axiosInstance.post('/regulator/reports/compliance', dateRange, {
+            responseType: 'blob',
+        });
+        return data;
+    } catch (error) {
+        console.error("Error generating compliance report:", error);
+        throw error;
+    }
+};
+
+export const getRegulatorProfile = async () => {
+    const { data } = await axiosInstance.get('/regulator/profile');
+    return data;
+};
+
+export const updateRegulatorProfile = async (profileData) => {
+    const { data } = await axiosInstance.put('/regulator/profile', profileData);
+    return data;
+};

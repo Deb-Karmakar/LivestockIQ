@@ -2,10 +2,12 @@
 
 import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
+import Regulator from '../models/regulator.model.js';
 import Treatment from '../models/treatment.model.js';
 import ComplianceAlert from '../models/complianceAlert.model.js';
 import Animal from '../models/animal.model.js';
 import { subMonths, format, subDays } from 'date-fns';
+import PDFDocument from 'pdfkit';
 
 export const getDashboardStats = async (req, res) => {
     try {
@@ -321,6 +323,131 @@ export const getMapData = async (req, res) => {
 
     } catch (error) {
         console.error("Error in getMapData:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const generateComplianceReport = async (req, res) => {
+    try {
+        const { from, to } = req.body;
+        const startDate = new Date(from);
+        const endDate = new Date(to);
+
+        // Fetch all necessary data concurrently
+        const [treatments, alerts] = await Promise.all([
+            Treatment.find({ createdAt: { $gte: startDate, $lte: endDate } }),
+            ComplianceAlert.find({ createdAt: { $gte: startDate, $lte: endDate } })
+                .populate('farmerId', 'farmName farmOwner')
+                .populate('vetId', 'fullName')
+                .sort({ createdAt: -1 })
+        ]);
+
+        // --- Calculate Statistics ---
+        const stats = { approved: 0, pending: 0, rejected: 0 };
+        treatments.forEach(t => {
+            if (stats.hasOwnProperty(t.status.toLowerCase())) {
+                stats[t.status.toLowerCase()]++;
+            }
+        });
+        const totalRecords = stats.approved + stats.pending + stats.rejected;
+        const complianceRate = totalRecords > 0 ? ((stats.approved / totalRecords) * 100).toFixed(1) : 100;
+
+        // --- PDF Generation ---
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+            const pdfBuffer = Buffer.concat(buffers);
+            res.writeHead(200, {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="Compliance_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf"`,
+                'Content-Length': pdfBuffer.length,
+            });
+            res.end(pdfBuffer);
+        });
+
+        // Header
+        doc.fillColor('#228B22').fontSize(24).font('Helvetica-Bold').text('LivestockIQ', 50, 50);
+        doc.fillColor('#000000').fontSize(12).font('Helvetica');
+        doc.moveDown(2);
+        doc.fontSize(20).font('Helvetica-Bold').text('Official Compliance Report', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).font('Helvetica').text(`Report Period: ${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`);
+        doc.moveDown(2);
+
+        // Section 1: Statistical Summary
+        doc.fontSize(14).font('Helvetica-Bold').text('Statistical Summary');
+        doc.fontSize(10).font('Helvetica').list([
+            `Total Treatment Records Submitted: ${totalRecords}`,
+            `Approved Records: ${stats.approved}`,
+            `Pending Vet Review: ${stats.pending}`,
+            `Rejected Records: ${stats.rejected}`,
+            `Overall Compliance Rate: ${complianceRate}%`,
+            `Total Non-Compliance Alerts Filed: ${alerts.length}`,
+        ]);
+        doc.moveDown(2);
+
+        // Section 2: Detailed Non-Compliance Alerts
+        doc.fontSize(14).font('Helvetica-Bold').text('Non-Compliance Alerts Log');
+        doc.moveDown();
+        if (alerts.length > 0) {
+            const tableTop = doc.y;
+            doc.fontSize(10).font('Helvetica-Bold');
+            doc.text('Date', 50, tableTop);
+            doc.text('Farm Name', 150, tableTop);
+            doc.text('Reason', 300, tableTop);
+            doc.text('Reporting Vet', 450, tableTop);
+            doc.font('Helvetica');
+            
+            let y = tableTop + 20;
+            alerts.forEach(alert => {
+                doc.text(format(new Date(alert.createdAt), 'P'), 50, y);
+                doc.text(alert.farmerId.farmName, 150, y, { width: 140 });
+                doc.text(alert.reason, 300, y, { width: 140 });
+                doc.text(alert.vetId.fullName, 450, y, { width: 100 });
+                y += 30; // Increased spacing for readability
+                if (y > 700) { doc.addPage(); y = 50; }
+            });
+        } else {
+            doc.fontSize(10).font('Helvetica').text('No non-compliance alerts were filed during this period.');
+        }
+
+        doc.end();
+
+    } catch (error) {
+        console.error("Error generating compliance report:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getRegulatorProfile = async (req, res) => {
+    const regulator = await Regulator.findById(req.user._id).select('-password');
+    if (regulator) {
+        res.json(regulator);
+    } else {
+        res.status(404).json({ message: 'Regulator not found' });
+    }
+};
+
+// NEW: Function to update the profile of the logged-in regulator
+export const updateRegulatorProfile = async (req, res) => {
+    try {
+        const regulator = await Regulator.findById(req.user._id);
+
+        if (regulator) {
+            // Only allow specific fields to be updated
+            regulator.phoneNumber = req.body.phoneNumber ?? regulator.phoneNumber;
+            
+            if (req.body.notificationPrefs) {
+                regulator.notificationPrefs = { ...regulator.notificationPrefs, ...req.body.notificationPrefs };
+            }
+
+            const updatedRegulator = await regulator.save();
+            res.json(updatedRegulator);
+        } else {
+            res.status(404).json({ message: 'Regulator not found' });
+        }
+    } catch (error) {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };

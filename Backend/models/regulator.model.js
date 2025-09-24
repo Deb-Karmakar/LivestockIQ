@@ -11,6 +11,11 @@ const regulatorSchema = new mongoose.Schema({
     agencyName: { type: String, required: true },
     regulatorId: { type: String, required: true, unique: true },
     jurisdiction: { type: String, required: true },
+    notificationPrefs: {
+        highAmuAlerts: { type: Boolean, default: true },
+        vetComplianceReports: { type: Boolean, default: true },
+        monthlySummary: { type: Boolean, default: false },
+    },
 }, { timestamps: true });
 
 // Hash password before saving
