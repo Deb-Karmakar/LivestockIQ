@@ -15,6 +15,7 @@ const AmuAlertDetailsDialog = ({ alertId, isOpen, onClose }) => {
         if (isOpen && alertId) {
             const fetchDetails = async () => {
                 setLoading(true);
+                setDetails(null); // Clear previous details
                 try {
                     const data = await getHighAmuAlertDetails(alertId);
                     setDetails(data);
@@ -30,13 +31,7 @@ const AmuAlertDetailsDialog = ({ alertId, isOpen, onClose }) => {
 
     const TreatmentTable = ({ treatments }) => (
         <Table>
-            <TableHeader>
-                <TableRow>
-                    <TableHead>Animal ID</TableHead>
-                    <TableHead>Drug</TableHead>
-                    <TableHead>Date</TableHead>
-                </TableRow>
-            </TableHeader>
+            <TableHeader><TableRow><TableHead>Animal ID</TableHead><TableHead>Drug</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
             <TableBody>
                 {treatments.map(t => (
                     <TableRow key={t._id}>
@@ -49,6 +44,45 @@ const AmuAlertDetailsDialog = ({ alertId, isOpen, onClose }) => {
         </Table>
     );
 
+    const renderContent = () => {
+        if (loading) {
+            return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        }
+        if (!details || !details.alert) {
+            return <p>Could not load alert details.</p>;
+        }
+
+        // UPDATED: Conditionally render content based on the alert type
+        if (details.alert.alertType === 'PEER_COMPARISON_SPIKE') {
+            return (
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-center">
+                        <p className="font-semibold">Your farm had <span className="font-bold text-lg">{details.alert.details.farmMonthlyUsage}</span> treatments last month.</p>
+                        <p>The average for similar farms was <span className="font-bold text-lg">{details.alert.details.peerMonthlyAverage}</span>.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold mb-2">Your Treatments from the Past Month</h3>
+                        <TreatmentTable treatments={details.farmMonthlyTreatments} />
+                    </div>
+                </div>
+            );
+        }
+
+        // Default to the historical spike view
+        return (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                <div>
+                    <h3 className="font-semibold mb-2">Recent Spike ({details.spikeTreatments.length} treatments last week)</h3>
+                    <TreatmentTable treatments={details.spikeTreatments} />
+                </div>
+                <div>
+                    <h3 className="font-semibold mb-2">Historical Baseline (representative sample)</h3>
+                    <TreatmentTable treatments={details.baselineTreatments.slice(0, 5)} />
+                </div>
+            </div>
+        );
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-2xl">
@@ -56,22 +90,7 @@ const AmuAlertDetailsDialog = ({ alertId, isOpen, onClose }) => {
                     <DialogTitle>High AMU Alert Details</DialogTitle>
                     <DialogDescription>{details?.alert.message}</DialogDescription>
                 </DialogHeader>
-                {loading ? (
-                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                ) : details ? (
-                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        <div>
-                            <h3 className="font-semibold mb-2">Recent Spike ({details.spikeTreatments.length} treatments last week)</h3>
-                            <TreatmentTable treatments={details.spikeTreatments} />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold mb-2">Historical Baseline (representative sample)</h3>
-                            <TreatmentTable treatments={details.baselineTreatments.slice(0, 5)} />
-                        </div>
-                    </div>
-                ) : (
-                    <p>Could not load alert details.</p>
-                )}
+                {renderContent()}
             </DialogContent>
         </Dialog>
     );

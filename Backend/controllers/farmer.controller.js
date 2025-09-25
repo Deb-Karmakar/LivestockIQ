@@ -76,34 +76,39 @@ export const getHighAmuAlertDetails = async (req, res) => {
         const { alertId } = req.params;
         const farmerId = req.user._id;
 
-        // 1. Find the alert and verify ownership
         const alert = await HighAmuAlert.findById(alertId);
         if (!alert || alert.farmerId.toString() !== farmerId.toString()) {
             return res.status(401).json({ message: 'Not authorized to view this alert.' });
         }
 
-        // 2. Re-calculate the date ranges based on when the alert was created
-        const alertDate = alert.createdAt;
-        const last7DaysStart = subDays(alertDate, 7);
-        const last6MonthsStart = subMonths(alertDate, 6);
-        
-        // 3. Fetch the specific treatments that contributed to the alert
-        const [spikeTreatments, baselineTreatments] = await Promise.all([
-            // Get the "spike" treatments from the week the alert was generated
-            Treatment.find({
-                farmerId: farmerId,
+        // NEW: Check the alert type and fetch the relevant data
+        if (alert.alertType === 'HISTORICAL_SPIKE') {
+            const alertDate = alert.createdAt;
+            const last7DaysStart = subDays(alertDate, 7);
+            const last6MonthsStart = subMonths(alertDate, 6);
+            
+            const [spikeTreatments, baselineTreatments] = await Promise.all([
+                Treatment.find({ farmerId, status: 'Approved', createdAt: { $gte: last7DaysStart, $lte: alertDate } }).sort({ createdAt: -1 }),
+                Treatment.find({ farmerId, status: 'Approved', createdAt: { $gte: last6MonthsStart, $lt: last7DaysStart } }).sort({ createdAt: -1 })
+            ]);
+            
+            res.json({ alert, spikeTreatments, baselineTreatments });
+
+        } else if (alert.alertType === 'PEER_COMPARISON_SPIKE') {
+            const alertDate = alert.createdAt;
+            const oneMonthAgo = subMonths(alertDate, 1);
+
+            // For peer comparison, we just need to show the treatments from the month in question
+            const farmMonthlyTreatments = await Treatment.find({
+                farmerId,
                 status: 'Approved',
-                createdAt: { $gte: last7DaysStart, $lte: alertDate }
-            }).sort({ createdAt: -1 }),
-            // Get the "baseline" treatments from the 6 months prior
-             Treatment.find({
-                farmerId: farmerId,
-                status: 'Approved',
-                createdAt: { $gte: last6MonthsStart, $lt: last7DaysStart }
-            }).sort({ createdAt: -1 })
-        ]);
-        
-        res.json({ alert, spikeTreatments, baselineTreatments });
+                createdAt: { $gte: oneMonthAgo, $lte: alertDate }
+            }).sort({ createdAt: -1 });
+
+            res.json({ alert, farmMonthlyTreatments });
+        } else {
+             res.status(400).json({ message: 'Unknown alert type.' });
+        }
 
     } catch (error) {
         console.error("Error fetching AMU alert details:", error);
