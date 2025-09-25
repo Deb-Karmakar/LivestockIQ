@@ -6,7 +6,6 @@ import Treatment from '../models/treatment.model.js';
 import HighAmuAlert from '../models/highAmuAlert.model.js';
 import { subDays, subMonths } from 'date-fns';
 
-// UPDATED: Added 'export' to make this function available for import
 export const runAmuAnalysis = async () => {
     console.log('Starting daily AMU analysis job...');
     const allFarmers = await Farmer.find().select('_id');
@@ -16,14 +15,12 @@ export const runAmuAnalysis = async () => {
         const last7Days = subDays(now, 7);
         const last6Months = subMonths(now, 6);
 
-        // 1. Calculate Recent Usage (last 7 days)
         const currentWeekCount = await Treatment.countDocuments({
             farmerId: farmer._id,
             status: 'Approved',
             createdAt: { $gte: last7Days }
         });
         
-        // 2. Calculate Historical Baseline (weekly average over last 6 months)
         const historicalCount = await Treatment.countDocuments({
             farmerId: farmer._id,
             status: 'Approved',
@@ -31,29 +28,40 @@ export const runAmuAnalysis = async () => {
         });
         const historicalWeeklyAverage = historicalCount / 25;
 
-        // 3. Compare and Flag (e.g., if current usage is > 200% of the average and at least 3 treatments)
         const threshold = 2.0;
         if (currentWeekCount > 3 && currentWeekCount > historicalWeeklyAverage * threshold) {
-            const message = `Farm has a ${Math.round((currentWeekCount / (historicalWeeklyAverage || 0.1)) * 100)}% spike in AMU this week.`;
             
-            // Create a new alert in the database
-            await HighAmuAlert.create({
+            // NEW: Check if an 'Open' alert for this farmer already exists before creating a new one.
+            const existingAlert = await HighAmuAlert.findOne({
                 farmerId: farmer._id,
-                alertType: 'HISTORICAL_SPIKE',
-                message: message,
-                details: {
-                    currentWeekCount,
-                    historicalWeeklyAverage: parseFloat(historicalWeeklyAverage.toFixed(2)),
-                    threshold: `>${threshold * 100}%`
-                }
+                status: 'New',
+                alertType: 'HISTORICAL_SPIKE'
             });
-            console.log(`High AMU alert generated for farmer ${farmer._id}`);
+
+            // Only create a new alert if one doesn't already exist
+            if (!existingAlert) {
+                const message = `Farm has a ${Math.round((currentWeekCount / (historicalWeeklyAverage || 0.1)) * 100)}% spike in AMU this week.`;
+                
+                await HighAmuAlert.create({
+                    farmerId: farmer._id,
+                    alertType: 'HISTORICAL_SPIKE',
+                    message: message,
+                    details: {
+                        currentWeekCount,
+                        historicalWeeklyAverage: parseFloat(historicalWeeklyAverage.toFixed(2)),
+                        threshold: `>${threshold * 100}%`
+                    }
+                });
+                console.log(`New High AMU alert generated for farmer ${farmer._id}`);
+            } else {
+                console.log(`High AMU alert for farmer ${farmer._id} already exists. Skipping.`);
+            }
         }
     }
     console.log('Daily AMU analysis job finished.');
 };
 
-// Schedule the job to run once every day at 2:00 AM
 export const startAmuAnalysisJob = () => {
     cron.schedule('0 2 * * *', runAmuAnalysis);
+    console.log('✅ AMU analysis job has been scheduled to run every night at 2:00 AM.');
 };
