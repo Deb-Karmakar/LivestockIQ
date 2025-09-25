@@ -5,6 +5,7 @@ import Veterinarian from '../models/vet.model.js';
 import Regulator from '../models/regulator.model.js';
 import Treatment from '../models/treatment.model.js';
 import ComplianceAlert from '../models/complianceAlert.model.js';
+import HighAmuAlert from '../models/highAmuAlert.model.js';
 import Animal from '../models/animal.model.js';
 import { subMonths, format, subDays } from 'date-fns';
 import PDFDocument from 'pdfkit';
@@ -447,6 +448,17 @@ export const updateRegulatorProfile = async (req, res) => {
         } else {
             res.status(404).json({ message: 'Regulator not found' });
         }
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getHighAmuAlerts = async (req, res) => {
+    try {
+        const alerts = await HighAmuAlert.find({ status: 'New' })
+            .populate('farmerId', 'farmName farmOwner')
+            .sort({ createdAt: -1 });
+        res.json(alerts);
     } catch (error) {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }

@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Bell, FileSignature, BrainCircuit, ShieldAlert, Loader2 } from 'lucide-react';
+import { Bell, FileSignature, BrainCircuit, ShieldAlert, Loader2, AlertCircle } from 'lucide-react'; // NEW: Added AlertCircle icon
 import { Badge } from '@/components/ui/badge';
 import { getTreatments } from '../../services/treatmentService';
+import { getMyHighAmuAlerts } from '../../services/farmerService'; // NEW: Import alert service
 import { useToast } from '../../hooks/use-toast';
 import { differenceInDays, format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -12,33 +13,40 @@ import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 
 const AlertsPage = () => {
     const [treatments, setTreatments] = useState([]);
+    const [highAmuAlerts, setHighAmuAlerts] = useState([]); // NEW: State for high AMU alerts
     const [loading, setLoading] = useState(true);
     const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
     const { toast } = useToast();
     const navigate = useNavigate();
 
-    const fetchLiveDate = useCallback(async () => {
+    // UPDATED: Fetch both treatments and high AMU alerts
+    const fetchAlertData = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await getTreatments();
-            setTreatments(data || []);
+            const [treatmentsData, highAmuAlertsData] = await Promise.all([
+                getTreatments(),
+                getMyHighAmuAlerts()
+            ]);
+            setTreatments(treatmentsData || []);
+            setHighAmuAlerts(highAmuAlertsData || []);
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Failed to load treatment data for alerts." });
+            toast({ variant: "destructive", title: "Error", description: "Failed to load alert data." });
         } finally {
             setLoading(false);
         }
     }, [toast]);
 
     useEffect(() => {
-        fetchLiveDate();
-    }, [fetchLiveDate]);
+        fetchAlertData();
+    }, [fetchAlertData]);
 
+    // UPDATED: Generate alerts from BOTH sources (treatments and high AMU alerts)
     const operationalAlerts = useMemo(() => {
         const alerts = [];
         const now = new Date();
 
+        // Generate alerts from treatments (as before)
         treatments.forEach(treatment => {
-            // Check for treatments needing a signature
             if (treatment.status === 'Pending') {
                 alerts.push({
                     id: `${treatment._id}-signature`,
@@ -46,17 +54,13 @@ const AlertsPage = () => {
                     severity: 'warning',
                     icon: <FileSignature className="h-4 w-4" />,
                     title: `Vet Signature Required: Animal ${treatment.animalId}`,
-                    description: `The treatment with ${treatment.drugName} on ${format(new Date(treatment.startDate), 'PPP')} is awaiting vet approval.`,
-                    action: "View Treatment",
-                    animalId: treatment.animalId, 
+                    description: `The treatment with ${treatment.drugName} is awaiting vet approval.`,
+                    actionText: "View Treatments",
+                    animalId: treatment.animalId,
                 });
             }
-
-            // Check for upcoming withdrawal end dates
             if (treatment.status === 'Approved' && treatment.withdrawalEndDate) {
-                const endDate = new Date(treatment.withdrawalEndDate);
-                const daysLeft = differenceInDays(endDate, now);
-
+                const daysLeft = differenceInDays(new Date(treatment.withdrawalEndDate), now);
                 if (daysLeft >= 0 && daysLeft <= 7) {
                     alerts.push({
                         id: `${treatment._id}-withdrawal`,
@@ -64,35 +68,53 @@ const AlertsPage = () => {
                         severity: daysLeft <= 2 ? 'destructive' : 'warning',
                         icon: <ShieldAlert className="h-4 w-4" />,
                         title: `Withdrawal Nearing End: Animal ${treatment.animalId}`,
-                        description: `The withdrawal period for ${treatment.drugName} ends in ${daysLeft} day(s). The animal will be safe for sale on ${format(endDate, 'PPP')}.`,
-                        action: "View Record",
+                        description: `Withdrawal period ends in ${daysLeft} day(s).`,
+                        actionText: "View History",
                         animalId: treatment.animalId,
                     });
                 }
             }
         });
         
+        // NEW: Generate alerts from the fetched highAmuAlerts
+        highAmuAlerts.forEach(alert => {
+            alerts.push({
+                id: alert._id,
+                type: 'high_amu',
+                severity: 'destructive',
+                icon: <AlertCircle className="h-4 w-4" />,
+                title: 'High Antimicrobial Usage Detected',
+                description: alert.message,
+                actionText: 'View Details',
+            });
+        });
+
         return alerts.sort((a, b) => (a.severity === 'destructive' ? -1 : 1));
+    }, [treatments, highAmuAlerts]);
 
-    }, [treatments]);
-
+    // UPDATED: Handle the action for the new alert type
     const handleAlertAction = (alert) => {
         if (alert.type === 'signature') {
             navigate('/farmer/treatments');
         } else if (alert.type === 'withdrawal') {
             setViewingHistoryOf(alert.animalId);
+        } else if (alert.type === 'high_amu') {
+            toast({
+                title: "Farm-Level Alert",
+                description: "This alert applies to your whole farm. Please review your recent treatments for more details.",
+            });
         }
     };
+    
+    if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
     return (
         <div className="space-y-8">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold">Alerts & Notifications</h1>
                 <p className="mt-1 text-gray-600">Urgent tasks and AI-powered insights for your farm.</p>
             </div>
 
-            {/* Section 1: Compliance & Operational Alerts */}
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-3">
@@ -104,9 +126,7 @@ const AlertsPage = () => {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {loading ? (
-                         <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                    ) : operationalAlerts.length > 0 ? (
+                    {operationalAlerts.length > 0 ? (
                         operationalAlerts.map(alert => (
                             <Alert key={alert.id} variant={alert.severity}>
                                 {alert.icon}
@@ -114,12 +134,8 @@ const AlertsPage = () => {
                                     <AlertTitle>{alert.title}</AlertTitle>
                                     <AlertDescription>{alert.description}</AlertDescription>
                                 </div>
-                                <Button 
-                                    size="sm" 
-                                    variant={alert.severity === 'destructive' ? 'destructive' : 'secondary'}
-                                    onClick={() => handleAlertAction(alert)}
-                                >
-                                    {alert.action}
+                                <Button size="sm" variant={alert.severity === 'destructive' ? 'destructive' : 'secondary'} onClick={() => handleAlertAction(alert)}>
+                                    {alert.actionText}
                                 </Button>
                             </Alert>
                         ))

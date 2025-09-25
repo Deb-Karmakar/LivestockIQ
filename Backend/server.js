@@ -13,6 +13,8 @@ import inventoryRoutes from './routes/inventory.routes.js';
 import reportRoutes from './routes/reports.routes.js';
 import regulatorRoutes from './routes/regulator.routes.js';
 import seedAdminUser from './config/seed.js';
+import adminRoutes from './routes/admin.routes.js';
+import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 
 dotenv.config();
 connectDB().then(() => {
@@ -38,8 +40,10 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/inventory', inventoryRoutes); 
 app.use('/api/reports', reportRoutes);
 app.use('/api/regulator', regulatorRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+    startAmuAnalysisJob();
 });

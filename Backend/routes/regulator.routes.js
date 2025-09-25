@@ -1,7 +1,7 @@
 // backend/routes/regulator.routes.js
 
 import express from 'express';
-import { getDashboardStats, getComplianceData, getTrendAnalysisData, getDemographicsData, getMapData, generateComplianceReport, getRegulatorProfile, updateRegulatorProfile   } from '../controllers/regulator.controller.js';
+import { getDashboardStats, getComplianceData, getTrendAnalysisData, getDemographicsData, getMapData, generateComplianceReport, getRegulatorProfile, updateRegulatorProfile, getHighAmuAlerts    } from '../controllers/regulator.controller.js';
 import { protect, protectRegulator } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -16,5 +16,7 @@ router.post('/reports/compliance', protect, protectRegulator, generateCompliance
 router.route('/profile')
     .get(protect, protectRegulator, getRegulatorProfile)
     .put(protect, protectRegulator, updateRegulatorProfile);
+
+router.get('/high-amu-alerts', protect, protectRegulator, getHighAmuAlerts);
 
 export default router;
