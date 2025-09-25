@@ -2,24 +2,25 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Bell, FileSignature, BrainCircuit, ShieldAlert, Loader2, AlertCircle } from 'lucide-react'; // NEW: Added AlertCircle icon
+import { Bell, FileSignature, BrainCircuit, ShieldAlert, Loader2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getTreatments } from '../../services/treatmentService';
-import { getMyHighAmuAlerts } from '../../services/farmerService'; // NEW: Import alert service
+import { getMyHighAmuAlerts } from '../../services/farmerService';
 import { useToast } from '../../hooks/use-toast';
 import { differenceInDays, format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
+import AmuAlertDetailsDialog from '../../components/AmuAlertDetailsDialog'; // 1. Import the new dialog
 
 const AlertsPage = () => {
     const [treatments, setTreatments] = useState([]);
-    const [highAmuAlerts, setHighAmuAlerts] = useState([]); // NEW: State for high AMU alerts
+    const [highAmuAlerts, setHighAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
+    const [viewingAlertDetails, setViewingAlertDetails] = useState(null); // 2. Add state for the new dialog
     const { toast } = useToast();
     const navigate = useNavigate();
 
-    // UPDATED: Fetch both treatments and high AMU alerts
     const fetchAlertData = useCallback(async () => {
         try {
             setLoading(true);
@@ -40,49 +41,36 @@ const AlertsPage = () => {
         fetchAlertData();
     }, [fetchAlertData]);
 
-    // UPDATED: Generate alerts from BOTH sources (treatments and high AMU alerts)
     const operationalAlerts = useMemo(() => {
         const alerts = [];
         const now = new Date();
 
-        // Generate alerts from treatments (as before)
         treatments.forEach(treatment => {
             if (treatment.status === 'Pending') {
                 alerts.push({
-                    id: `${treatment._id}-signature`,
-                    type: 'signature',
-                    severity: 'warning',
-                    icon: <FileSignature className="h-4 w-4" />,
+                    id: `${treatment._id}-signature`, type: 'signature', severity: 'warning', icon: <FileSignature className="h-4 w-4" />,
                     title: `Vet Signature Required: Animal ${treatment.animalId}`,
                     description: `The treatment with ${treatment.drugName} is awaiting vet approval.`,
-                    actionText: "View Treatments",
-                    animalId: treatment.animalId,
+                    actionText: "View Treatments", animalId: treatment.animalId,
                 });
             }
             if (treatment.status === 'Approved' && treatment.withdrawalEndDate) {
                 const daysLeft = differenceInDays(new Date(treatment.withdrawalEndDate), now);
                 if (daysLeft >= 0 && daysLeft <= 7) {
                     alerts.push({
-                        id: `${treatment._id}-withdrawal`,
-                        type: 'withdrawal',
-                        severity: daysLeft <= 2 ? 'destructive' : 'warning',
-                        icon: <ShieldAlert className="h-4 w-4" />,
-                        title: `Withdrawal Nearing End: Animal ${treatment.animalId}`,
+                        id: `${treatment._id}-withdrawal`, type: 'withdrawal', severity: daysLeft <= 2 ? 'destructive' : 'warning',
+                        icon: <ShieldAlert className="h-4 w-4" />, title: `Withdrawal Nearing End: Animal ${treatment.animalId}`,
                         description: `Withdrawal period ends in ${daysLeft} day(s).`,
-                        actionText: "View History",
-                        animalId: treatment.animalId,
+                        actionText: "View History", animalId: treatment.animalId,
                     });
                 }
             }
         });
         
-        // NEW: Generate alerts from the fetched highAmuAlerts
         highAmuAlerts.forEach(alert => {
             alerts.push({
-                id: alert._id,
-                type: 'high_amu',
-                severity: 'destructive',
-                icon: <AlertCircle className="h-4 w-4" />,
+                id: alert._id, // Use the actual alert ID
+                type: 'high_amu', severity: 'destructive', icon: <AlertCircle className="h-4 w-4" />,
                 title: 'High Antimicrobial Usage Detected',
                 description: alert.message,
                 actionText: 'View Details',
@@ -92,17 +80,14 @@ const AlertsPage = () => {
         return alerts.sort((a, b) => (a.severity === 'destructive' ? -1 : 1));
     }, [treatments, highAmuAlerts]);
 
-    // UPDATED: Handle the action for the new alert type
+    // 3. Update the handleAlertAction function to open the new dialog
     const handleAlertAction = (alert) => {
         if (alert.type === 'signature') {
             navigate('/farmer/treatments');
         } else if (alert.type === 'withdrawal') {
             setViewingHistoryOf(alert.animalId);
         } else if (alert.type === 'high_amu') {
-            toast({
-                title: "Farm-Level Alert",
-                description: "This alert applies to your whole farm. Please review your recent treatments for more details.",
-            });
+            setViewingAlertDetails(alert.id); // Open the details dialog with the alert's ID
         }
     };
     
@@ -145,28 +130,20 @@ const AlertsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* Section 2: AI-Powered Disease Surveillance (Unchanged) */}
             <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-200">
-                <CardHeader>
-                     <div className="flex items-center gap-3">
+                 <CardHeader>
+                    <div className="flex items-center gap-3">
                         <BrainCircuit className="w-6 h-6 text-indigo-600" />
                         <div>
-                            <CardTitle className="flex items-center gap-2">
-                                AI Disease Outbreak Prediction
-                                <Badge variant="outline" className="border-blue-400 text-blue-600">Coming Soon</Badge>
-                            </CardTitle>
+                            <CardTitle className="flex items-center gap-2">AI Disease Outbreak Prediction<Badge variant="outline" className="border-blue-400 text-blue-600">Coming Soon</Badge></CardTitle>
                             <CardDescription>Proactive insights to safeguard your herd's health.</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="text-center py-8 px-4 border-2 border-dashed border-blue-200 rounded-lg">
-                        <p className="text-gray-700">
-                            This upcoming feature will analyze your farm's location, local weather patterns, and regional health data to provide early warnings of potential disease outbreaks.
-                        </p>
-                        <Button className="mt-4" disabled>
-                            Activate AI Monitoring (Unavailable)
-                        </Button>
+                        <p className="text-gray-700">This upcoming feature will analyze your farm's location, local weather patterns, and regional health data to provide early warnings of potential disease outbreaks.</p>
+                        <Button className="mt-4" disabled>Activate AI Monitoring (Unavailable)</Button>
                     </div>
                 </CardContent>
             </Card>
@@ -175,6 +152,13 @@ const AlertsPage = () => {
                 animalId={viewingHistoryOf}
                 isOpen={!!viewingHistoryOf}
                 onClose={() => setViewingHistoryOf(null)}
+            />
+
+            {/* 4. Render the new AMU Alert Details Dialog */}
+            <AmuAlertDetailsDialog
+                alertId={viewingAlertDetails}
+                isOpen={!!viewingAlertDetails}
+                onClose={() => setViewingAlertDetails(null)}
             />
         </div>
     );

@@ -1,7 +1,8 @@
 // backend/controllers/farmer.controller.js
 import Farmer from '../models/farmer.model.js';
-import HighAmuAlert from '../models/highAmuAlert.model.js'; // 1. Import the alert model
-
+import HighAmuAlert from '../models/highAmuAlert.model.js'; 
+import Treatment from '../models/treatment.model.js';
+import { subDays, subMonths } from 'date-fns';
 
 // @desc    Get the profile of the logged-in farmer
 // @route   GET /api/farmers/profile
@@ -50,6 +51,46 @@ export const getMyHighAmuAlerts = async (req, res) => {
         
         res.json(alerts);
     } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getHighAmuAlertDetails = async (req, res) => {
+    try {
+        const { alertId } = req.params;
+        const farmerId = req.user._id;
+
+        // 1. Find the alert and verify ownership
+        const alert = await HighAmuAlert.findById(alertId);
+        if (!alert || alert.farmerId.toString() !== farmerId.toString()) {
+            return res.status(401).json({ message: 'Not authorized to view this alert.' });
+        }
+
+        // 2. Re-calculate the date ranges based on when the alert was created
+        const alertDate = alert.createdAt;
+        const last7DaysStart = subDays(alertDate, 7);
+        const last6MonthsStart = subMonths(alertDate, 6);
+        
+        // 3. Fetch the specific treatments that contributed to the alert
+        const [spikeTreatments, baselineTreatments] = await Promise.all([
+            // Get the "spike" treatments from the week the alert was generated
+            Treatment.find({
+                farmerId: farmerId,
+                status: 'Approved',
+                createdAt: { $gte: last7DaysStart, $lte: alertDate }
+            }).sort({ createdAt: -1 }),
+            // Get the "baseline" treatments from the 6 months prior
+             Treatment.find({
+                farmerId: farmerId,
+                status: 'Approved',
+                createdAt: { $gte: last6MonthsStart, $lt: last7DaysStart }
+            }).sort({ createdAt: -1 })
+        ]);
+        
+        res.json({ alert, spikeTreatments, baselineTreatments });
+
+    } catch (error) {
+        console.error("Error fetching AMU alert details:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };

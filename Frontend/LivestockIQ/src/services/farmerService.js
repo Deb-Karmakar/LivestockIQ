@@ -20,3 +20,13 @@ export const getMyHighAmuAlerts = async () => {
         throw error;
     }
 };
+
+export const getHighAmuAlertDetails = async (alertId) => {
+    try {
+        const { data } = await axiosInstance.get(`/farmers/high-amu-alerts/${alertId}/details`);
+        return data;
+    } catch (error) {
+        console.error("Error fetching high AMU alert details:", error);
+        throw error;
+    }
+};
