@@ -1,11 +1,16 @@
 // backend/routes/admin.routes.js
+
 import express from 'express';
-import { triggerAmuAnalysis } from '../controllers/admin.controller.js';
+// 1. Import the new controller function
+import { triggerAmuAnalysis, triggerPeerAnalysis } from '../controllers/admin.controller.js';
 import { protect, protectAdmin } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
-// This endpoint will be used for testing
-router.post('/trigger-amu-analysis', protect, triggerAmuAnalysis);
+// This endpoint triggers the HISTORICAL spike analysis
+router.post('/trigger-amu-analysis', protect, protectAdmin, triggerAmuAnalysis);
+
+// 2. Add the new route for the PEER-GROUP analysis
+router.post('/trigger-peer-analysis', protect, protectAdmin, triggerPeerAnalysis);
 
 export default router;

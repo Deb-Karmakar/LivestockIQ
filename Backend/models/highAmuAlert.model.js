@@ -1,5 +1,3 @@
-// backend/models/highAmuAlert.model.js
-
 import mongoose from 'mongoose';
 
 const highAmuAlertSchema = new mongoose.Schema({
@@ -11,15 +9,23 @@ const highAmuAlertSchema = new mongoose.Schema({
     alertType: {
         type: String,
         required: true,
-        enum: ['HISTORICAL_SPIKE'] // Can add 'PEER_COMPARISON_SPIKE' later
+        // UPDATED: Added the new alert type to the enum list
+        enum: ['HISTORICAL_SPIKE', 'PEER_COMPARISON_SPIKE'] 
     },
     message: {
         type: String,
         required: true,
     },
-    details: { // To store the data that triggered the alert
+    details: { // This object now holds details for either alert type
+        // Fields for HISTORICAL_SPIKE
         currentWeekCount: Number,
         historicalWeeklyAverage: Number,
+
+        // NEW: Fields for PEER_COMPARISON_SPIKE
+        farmMonthlyUsage: Number,
+        peerMonthlyAverage: Number,
+
+        // Common field
         threshold: String,
     },
     status: {

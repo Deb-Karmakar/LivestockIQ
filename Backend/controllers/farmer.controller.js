@@ -23,16 +23,32 @@ export const updateFarmerProfile = async (req, res) => {
         const farmer = await Farmer.findById(req.user._id);
 
         if (farmer) {
+            // Update editable fields from the request body
             farmer.farmOwner = req.body.farmOwner || farmer.farmOwner;
             farmer.phoneNumber = req.body.phoneNumber || farmer.phoneNumber;
             farmer.farmName = req.body.farmName || farmer.farmName;
             
+            // NEW: Add speciesReared and herdSize to the update logic
+            farmer.speciesReared = req.body.speciesReared || farmer.speciesReared;
+            farmer.herdSize = req.body.herdSize || farmer.herdSize;
+
             if (req.body.location) {
                 farmer.location = req.body.location;
             }
 
             const updatedFarmer = await farmer.save();
-            res.json(updatedFarmer);
+
+            // Send back the full updated user info (excluding password)
+            res.json({
+                _id: updatedFarmer._id,
+                farmOwner: updatedFarmer.farmOwner,
+                farmName: updatedFarmer.farmName,
+                email: updatedFarmer.email,
+                phoneNumber: updatedFarmer.phoneNumber,
+                location: updatedFarmer.location,
+                speciesReared: updatedFarmer.speciesReared,
+                herdSize: updatedFarmer.herdSize,
+            });
         } else {
             res.status(404).json({ message: 'Farmer not found' });
         }

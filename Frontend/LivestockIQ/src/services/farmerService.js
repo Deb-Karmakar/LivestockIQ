@@ -30,3 +30,13 @@ export const getHighAmuAlertDetails = async (alertId) => {
         throw error;
     }
 };
+
+export const updateMyProfile = async (profileData) => {
+    try {
+        const { data } = await axiosInstance.put('/farmers/profile', profileData);
+        return data;
+    } catch (error) {
+        console.error("Error updating farmer profile:", error);
+        throw error;
+    }
+};
