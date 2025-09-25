@@ -1,6 +1,7 @@
 import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
-import Regulator from '../models/regulator.model.js'; // NEW: Import the Regulator model
+import Regulator from '../models/regulator.model.js'; 
+import Admin from '../models/admin.model.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -114,20 +115,29 @@ export const registerRegulator = async (req, res) => {
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     try {
-        let user = await Farmer.findOne({ email });
-        let role = 'farmer';
+        let user;
+        let role;
+
+        // Sequentially check each collection to find the user
+        user = await Farmer.findOne({ email });
+        if (user) { role = 'farmer'; }
 
         if (!user) {
             user = await Veterinarian.findOne({ email });
-            role = 'veterinarian';
+            if (user) { role = 'veterinarian'; }
         }
         
-        // NEW: Check for Regulator if not a Farmer or Vet
         if (!user) {
             user = await Regulator.findOne({ email });
-            role = 'regulator';
+            if (user) { role = 'regulator'; }
         }
 
+        if (!user) {
+            user = await Admin.findOne({ email });
+            if (user) { role = 'admin'; }
+        }
+
+        // If a user was found in any collection, check the password
         if (user && (await bcrypt.compare(password, user.password))) {
             const responsePayload = {
                 _id: user._id,
@@ -136,6 +146,7 @@ export const loginUser = async (req, res) => {
                 token: generateToken(user._id),
             };
             
+            // Add role-specific details to the payload
             if (role === 'veterinarian') {
                 responsePayload.fullName = user.fullName;
                 responsePayload.vetId = user.vetId;
@@ -145,17 +156,21 @@ export const loginUser = async (req, res) => {
                 responsePayload.farmName = user.farmName;
                 responsePayload.vetId = user.vetId;
             }
-            // NEW: Add Regulator-specific details to the login response
             if (role === 'regulator') {
                 responsePayload.fullName = user.fullName;
                 responsePayload.agencyName = user.agencyName;
             }
+            if (role === 'admin') {
+                responsePayload.fullName = user.fullName;
+            }
 
-            res.json(responsePayload);
+            return res.json(responsePayload);
         } else {
-            res.status(401).json({ message: 'Invalid email or password' });
+            // If no user was found OR the password did not match
+            return res.status(401).json({ message: 'Invalid email or password' });
         }
     } catch (error) {
-        res.status(500).json({ message: `Server Error: ${error.message}` });
+        console.error("Error during login:", error);
+        return res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };

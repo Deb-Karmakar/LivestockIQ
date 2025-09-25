@@ -12,9 +12,12 @@ import saleRoutes from './routes/sales.routes.js';
 import inventoryRoutes from './routes/inventory.routes.js';
 import reportRoutes from './routes/reports.routes.js';
 import regulatorRoutes from './routes/regulator.routes.js';
+import seedAdminUser from './config/seed.js';
 
 dotenv.config();
-connectDB();
+connectDB().then(() => {
+    seedAdminUser(); // 2. Call the seed function after the DB connects
+});
 const app = express();
 
 app.use(cors());

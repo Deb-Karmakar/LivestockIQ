@@ -73,8 +73,8 @@ const FarmerSignUpStep = ({ onBack }) => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 py-12">
-            <Card className="w-full max-w-lg">
+        <div className="flex items-center justify-center min-h-screen py-12">
+            <Card className="w-full max-w-lg bg-white/90 backdrop-blur-sm border border-white/20 shadow-xl">
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="icon" onClick={onBack}>

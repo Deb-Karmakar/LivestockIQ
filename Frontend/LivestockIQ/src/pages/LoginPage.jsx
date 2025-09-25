@@ -14,7 +14,7 @@ import { Link } from "react-router-dom"
 const LoginPage = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm bg-white/90 backdrop-blur-sm border border-white/20 shadow-xl">
         <CardHeader>
           <CardTitle className="text-2xl">Login to LivestockIQ</CardTitle>
           <CardDescription>

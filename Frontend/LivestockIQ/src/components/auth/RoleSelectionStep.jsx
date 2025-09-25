@@ -79,8 +79,8 @@ const RoleSelectionStep = ({ onSelectRole, onToggleView }) => {
     ];
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
-            <Card className="w-full max-w-md">
+        <div className="flex items-center justify-center min-h-screen">
+            <Card className="w-full max-w-md bg-white/90 backdrop-blur-sm border border-white/20 shadow-xl">
                 <CardHeader>
                     <Button
                         variant="link"

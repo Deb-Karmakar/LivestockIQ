@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 // Core Component & Page Imports
-import Navigation from "@/components/Navigation"; // Assuming this is the main public navigation
+import Navigation from "@/components/Navigation";
 import LandingPage from "@/pages/LandingPage";
 import LearnMore from './components/LearnMore';
 import AuthPage from "./pages/AuthPage";
@@ -41,6 +41,14 @@ import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
 
+// NEW: Admin Page Imports (Using correct path alias)
+import AdminAppLayout from "./components/layout/AdminAppLayout";
+import AdminDashboardPage from "./pages/admin/DashboardPage";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import AuditsPage from "./pages/admin/AuditsPage";
+import SupportPage from "./pages/admin/SupportPage";
+import AdminSettingsPage from "./pages/admin/SettingsPage";
+
 
 // --- Layout Component for Public Pages ---
 const PublicLayout = () => {
@@ -48,7 +56,7 @@ const PublicLayout = () => {
         <div>
             <Navigation />
             <main>
-                <Outlet /> {/* Renders the child route's element */}
+                <Outlet />
             </main>
         </div>
     );
@@ -89,15 +97,26 @@ const RegulatorRoute = ({ children }) => {
     return children;
 }
 
+// NEW: Role-specific route for admins
+const AdminRoute = ({ children }) => {
+    const { user } = useAuth();
+    if (user?.role !== 'admin') {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+}
+
 // --- Main App Component ---
 
 function App() {
   const { isAuth, user } = useAuth();
 
+  // UPDATED: Helper now includes the admin role
   const getHomeRedirect = () => {
       if (!isAuth) return <AuthPage />;
       if (user?.role === 'veterinarian') return <Navigate to="/vet/dashboard" />;
       if (user?.role === 'regulator') return <Navigate to="/regulator/dashboard" />;
+      if (user?.role === 'admin') return <Navigate to="/admin/dashboard" />;
       return <Navigate to="/farmer/dashboard" />;
   }
 
@@ -176,6 +195,25 @@ function App() {
             <Route path="map" element={<MapViewPage />} />
             <Route path="reports" element={<RegulatorReportsPage />} />
             <Route path="settings" element={<RegulatorSettingsPage />} />
+          </Route>
+
+          {/* NEW: Protected Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+                <ProtectedRoute>
+                    <AdminRoute>
+                        <AdminAppLayout />
+                    </AdminRoute>
+                </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="users" element={<UserManagementPage />} />
+            <Route path="audits" element={<AuditsPage />} />
+            <Route path="support" element={<SupportPage />} />
+            <Route path="settings" element={<AdminSettingsPage />} />
           </Route>
 
           {/* 404 Fallback */}
