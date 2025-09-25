@@ -259,7 +259,7 @@ export const ChatWidget = () => {
                     className="rounded-full w-16 h-16 shadow-lg bg-green-700 hover:bg-green-800 transition-transform duration-200 hover:scale-110"
                     aria-label="Open IQ Buddy chat"
                 >
-                    {isOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+                    {isOpen ? <X className="!w-7 !h-7" /> : <Bot className="!w-7 !h-7" />}
                 </Button>
             </div>
 

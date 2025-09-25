@@ -1,4 +1,4 @@
-import Navigation from '@/components/Navigation';
+
 import HeroSection from '@/components/HeroSection';
 import StatsSection from '@/components/StatsSection';
 import ProductShowcase from '@/components/ProductShowcase';
@@ -10,7 +10,6 @@ import Footer from '@/components/Footer';
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
       <main>
         <HeroSection />
         <StatsSection />

@@ -1,14 +1,16 @@
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Route, Routes, Navigate, Outlet } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// Core Page Imports
+// Core Component & Page Imports
+import Navigation from "@/components/Navigation"; // Assuming this is the main public navigation
 import LandingPage from "@/pages/LandingPage";
+import LearnMore from './components/LearnMore';
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./contexts/AuthContext";
-import { ChatWidget } from "./components/ChatWidget"; // NEW: 1. Import the ChatWidget
+import { ChatWidget } from "./components/ChatWidget";
 
 // Farmer Page Imports
 import AppLayout from "./components/layout/AppLayout";
@@ -38,6 +40,20 @@ import RegulatorReportsPage from "./pages/regulator/ReportsPage";
 import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
+
+
+// --- Layout Component for Public Pages ---
+const PublicLayout = () => {
+    return (
+        <div>
+            <Navigation />
+            <main>
+                <Outlet /> {/* Renders the child route's element */}
+            </main>
+        </div>
+    );
+};
+
 
 // --- Route Protection Components ---
 
@@ -90,8 +106,13 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* Public Routes with Shared Navigation */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/learn-more" element={<LearnMore />} />
+          </Route>
+
+          {/* Standalone Auth Routes */}
           <Route path="/login" element={getHomeRedirect()} />
           <Route path="/register" element={getHomeRedirect()} />
 
@@ -161,7 +182,7 @@ function App() {
           <Route path="*" element={<div><h1>404</h1><p>Page not found</p></div>} />
         </Routes>
 
-        {/* NEW: 2. Conditionally render the ChatWidget for any authenticated user */}
+        {/* Conditionally render the ChatWidget for any authenticated user */}
         {isAuth && <ChatWidget />}
         
       </TooltipProvider>
@@ -170,3 +191,4 @@ function App() {
 }
 
 export default App;
+
