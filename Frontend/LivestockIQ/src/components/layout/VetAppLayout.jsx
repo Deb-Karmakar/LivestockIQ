@@ -22,7 +22,6 @@ const primaryNavLinks = [
     { name: 'Dashboard', path: '/vet/dashboard', icon: LayoutDashboard },
     { name: 'Requests', path: '/vet/requests', icon: ClipboardList },
     { name: 'Farmers', path: '/vet/farmers', icon: Users },
-    { name: 'Alerts', path: '/vet/alerts', icon: Bell },
     { name: 'Reports', path: '/vet/reports', icon: FileText },
 ];
 

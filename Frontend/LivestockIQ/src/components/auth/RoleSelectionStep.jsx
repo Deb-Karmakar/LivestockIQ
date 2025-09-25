@@ -1,26 +1,87 @@
 import React from 'react';
-// 1. Import useNavigate and ArrowLeft
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tractor, Stethoscope, Building, UserCog, ArrowLeft } from 'lucide-react';
+// 1. Remove Tractor from the import
+import { Stethoscope, Building, UserCog, ArrowLeft } from 'lucide-react';
+
+// 2. Import your video file
+// Note: Adjust the path if your file structure is different.
+// This path assumes RoleSelectionStep.jsx is in src/components/auth/
+import farmerVideo from '../../assets/generated_images/farmer.mp4';
+import doctorVideo from '../../assets/generated_images/doctor.mp4';
+import regulatorVideo from '../../assets/generated_images/regulator.mp4';
+import adminVideo from '../../assets/generated_images/admin.mp4';
+
 
 const RoleSelectionStep = ({ onSelectRole, onToggleView }) => {
-    // 2. Initialize the navigate function
     const navigate = useNavigate();
 
     const roles = [
-        { id: 'farmer', name: 'Farmer', icon: <Tractor className="w-8 h-8 text-green-700" /> },
-        { id: 'veterinarian', name: 'Veterinarian', icon: <Stethoscope className="w-8 h-8 text-blue-700" /> },
-        { id: 'regulator', name: 'Regulator', icon: <Building className="w-8 h-8 text-gray-700" /> },
-        { id: 'admin', name: 'Admin', icon: <UserCog className="w-8 h-8 text-orange-700" /> },
+        // 3. Replace the Lucide icon with a <video> element for the farmer
+        {
+            id: 'farmer',
+            name: 'Farmer',
+            icon: (
+                <video
+                    src={farmerVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-12 h-12" // Adjusted size for the video, feel free to change
+                />
+            )
+        },
+        {
+            id: 'veterinarian',
+            name: 'Veterinarian',
+            icon: (
+                <video
+                    src={doctorVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-12 h-12" // Adjusted size for the video, feel free to change
+                />
+            )
+        },
+        {
+            id: 'regulator',
+            name: 'Regulator',
+            icon: (
+                <video
+                    src={regulatorVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-12 h-12" // Adjusted size for the video, feel free to change
+                />
+            )
+        },
+        {
+            id: 'admin',
+            name: 'Admin',
+            icon: (
+                <video
+                    src={adminVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-12 h-12" // Adjusted size for the video, feel free to change
+                />
+            )
+        },
+        
     ];
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-50">
             <Card className="w-full max-w-md">
                 <CardHeader>
-                    {/* 3. Add the "Back to Home" button */}
                     <Button
                         variant="link"
                         className="p-0 h-auto justify-start text-sm text-gray-500 hover:text-gray-700 mb-4 no-underline hover:no-underline"
@@ -43,7 +104,6 @@ const RoleSelectionStep = ({ onSelectRole, onToggleView }) => {
                 <CardFooter className="flex justify-center mt-4">
                     <p className="text-sm text-gray-600">
                         Already have an account?{' '}
-                        {/* 4. Update the Login button for consistency */}
                         <Button
                             variant="link"
                             className="p-0 h-auto no-underline hover:no-underline"
