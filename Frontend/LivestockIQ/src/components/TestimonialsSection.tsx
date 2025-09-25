@@ -70,14 +70,14 @@ const TestimonialsSection = () => {
 
       <div className="relative flex flex-col h-full w-full items-center justify-center overflow-hidden rounded-lg bg-background gap-10">
         {/* First marquee - Right to Left */}
-        <Marquee pauseOnHover className="[--duration:90s]">
+        <Marquee pauseOnHover className="[--duration:80s]">
           {testimonials.map((testimonial) => (
             <TestimonialCard key={testimonial.author} {...testimonial} />
           ))}
         </Marquee>
 
         {/* Second marquee - Left to Right (reverse) */}
-        <Marquee reverse pauseOnHover className="[--duration:90s]">
+        <Marquee reverse pauseOnHover className="[--duration:80s]">
           {testimonials.map((testimonial, idx) => (
             <TestimonialCard key={`reverse-${idx}`} {...testimonial} />
           ))}
