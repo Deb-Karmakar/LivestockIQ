@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+dotenv.config();
 import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
@@ -14,9 +15,10 @@ import reportRoutes from './routes/reports.routes.js';
 import regulatorRoutes from './routes/regulator.routes.js';
 import seedAdminUser from './config/seed.js';
 import adminRoutes from './routes/admin.routes.js';
+import aiRoutes from './routes/ai.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
+import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 
-dotenv.config();
 connectDB().then(() => {
     seedAdminUser(); // 2. Call the seed function after the DB connects
 });
@@ -41,9 +43,11 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/regulator', regulatorRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     startAmuAnalysisJob();
+    startDiseasePredictionJob();
 });

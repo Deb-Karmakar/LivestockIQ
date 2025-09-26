@@ -40,3 +40,8 @@ export const updateMyProfile = async (profileData) => {
         throw error;
     }
 };
+
+export const getMyDiseaseAlerts = async () => {
+    const { data } = await axiosInstance.get('/farmers/disease-alerts');
+    return data;
+};

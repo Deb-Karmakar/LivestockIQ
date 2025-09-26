@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreHorizontal, QrCode, Trash2, FileText } from "lucide-react"; // UPDATED: Added FileText icon
+import { PlusCircle, MoreHorizontal, QrCode, Trash2, FileText, Edit, BrainCircuit, Loader2 } from "lucide-react";
 import BarcodeScannerDialog from "../../components/animals/BarcodeScannerDialog";
-import AnimalHistoryDialog from '../../components/AnimalHistoryDialog'; // NEW: 1. Import the history dialog
+import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 import { getAnimals, addAnimal, updateAnimal, deleteAnimal } from '../../services/animalService';
+import { getAnimalHealthTip } from '../../services/aiService';
 import { useToast } from '../../hooks/use-toast';
 
 const calculateAge = (dob) => {
@@ -31,10 +32,10 @@ const AnimalsPage = () => {
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAnimal, setEditingAnimal] = useState(null);
-    const [viewingHistoryOf, setViewingHistoryOf] = useState(null); // NEW: 2. Add state for the history dialog
+    const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
+    const [tipAnimal, setTipAnimal] = useState(null); // State for the AI tip dialog
     const { toast } = useToast();
     
-    // fetchAnimals and other handlers remain unchanged
     const fetchAnimals = useCallback(async () => {
         try {
             setLoading(true);
@@ -111,6 +112,11 @@ const AnimalsPage = () => {
         }
     };
 
+    // Handler for the AI Health Tip feature
+    const handleViewTipClick = (animal) => {
+        setTipAnimal(animal);
+    };
+
     if (loading) {
         return <div className="text-center p-8">Loading animal registry...</div>;
     }
@@ -174,7 +180,8 @@ const AnimalsPage = () => {
                                             onEdit={() => handleEditClick(animal)}
                                             onSetStatus={(status) => handleSetStatus(animal._id, status)}
                                             onDelete={() => handleDeleteAnimal(animal._id)}
-                                            onViewHistory={() => setViewingHistoryOf(animal.tagId)} // UPDATED: 3. Pass the handler
+                                            onViewHistory={() => setViewingHistoryOf(animal.tagId)}
+                                            onViewTip={() => handleViewTipClick(animal)}
                                         />
                                     </TableCell>
                                 </TableRow>
@@ -184,18 +191,24 @@ const AnimalsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* NEW: 4. Render the history dialog */}
+            {/* Animal History Dialog */}
             <AnimalHistoryDialog 
                 animalId={viewingHistoryOf}
                 isOpen={!!viewingHistoryOf}
                 onClose={() => setViewingHistoryOf(null)}
+            />
+            
+            {/* AI Health Tip Dialog */}
+            <HealthTipDialog 
+                animal={tipAnimal} 
+                isOpen={!!tipAnimal} 
+                onClose={() => setTipAnimal(null)}
             />
         </div>
     );
 };
 
 const AnimalFormDialog = ({ onSave, animal, onClose }) => {
-    // This component remains unchanged.
     const [formData, setFormData] = useState({
         tagId: animal?.tagId || "",
         name: animal?.name || "",
@@ -384,7 +397,8 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
     );
 };
 
-const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory }) => { // UPDATED: 5. Accept the new prop
+// Complete Actions Dropdown with all features
+const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onViewTip }) => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -395,25 +409,82 @@ const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory 
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={onEdit}>Edit Profile</DropdownMenuItem>
-                {/* UPDATED: 6. Make the button call the handler */}
+                <DropdownMenuItem onClick={onEdit}>
+                    <Edit className="mr-2 h-4 w-4" />Edit Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={onViewHistory}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    View History
+                    <FileText className="mr-2 h-4 w-4" />View History
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onViewTip} className="text-blue-600 focus:bg-blue-50 focus:text-blue-700">
+                    <BrainCircuit className="mr-2 h-4 w-4" />AI Health Tip
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onSetStatus("Sold")} className="text-green-600">
+                <DropdownMenuItem onClick={() => onSetStatus("Sold")} className="text-green-600 focus:bg-green-50 focus:text-green-700">
                     Mark as Sold
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSetStatus("Culled")} className="text-orange-600">
+                <DropdownMenuItem onClick={() => onSetStatus("Culled")} className="text-orange-600 focus:bg-orange-50 focus:text-orange-700">
                     Mark as Culled
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onDelete} className="text-red-600">
+                <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:bg-red-50 focus:text-red-700">
                     <Trash2 className="mr-2 h-4 w-4" />Delete Record
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
+    );
+};
+
+// AI Health Tip Dialog Component
+const HealthTipDialog = ({ animal, isOpen, onClose }) => {
+    const [tip, setTip] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen && animal) {
+            const fetchTip = async () => {
+                setIsLoading(true);
+                setTip('');
+                try {
+                    const data = await getAnimalHealthTip(animal._id);
+                    setTip(data.tip);
+                } catch (error) {
+                    setTip('Sorry, I was unable to generate a health tip at this time. Please try again later.');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchTip();
+        }
+    }, [isOpen, animal]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <BrainCircuit className="h-5 w-5 text-blue-600" /> 
+                        AI Health Tip for {animal?.name || animal?.tagId}
+                    </DialogTitle>
+                    <DialogDescription>
+                        A personalized tip based on this animal's profile and health history.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                        </div>
+                    ) : (
+                        <p className="text-gray-700 leading-relaxed bg-blue-50 p-4 rounded-md border border-blue-200">
+                            {tip}
+                        </p>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button onClick={onClose}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 

@@ -1,6 +1,7 @@
 // backend/controllers/farmer.controller.js
 import Farmer from '../models/farmer.model.js';
 import HighAmuAlert from '../models/highAmuAlert.model.js'; 
+import DiseaseAlert from '../models/diseaseAlert.model.js';
 import Treatment from '../models/treatment.model.js';
 import { subDays, subMonths } from 'date-fns';
 
@@ -112,6 +113,20 @@ export const getHighAmuAlertDetails = async (req, res) => {
 
     } catch (error) {
         console.error("Error fetching AMU alert details:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getMyDiseaseAlerts = async (req, res) => {
+    try {
+        const alerts = await DiseaseAlert.find({ 
+            farmerId: req.user._id,
+            status: 'New' 
+        }).sort({ createdAt: -1 });
+        res.json(alerts);
+    } catch (error) {
+        // NEW: This will print the actual error to your terminal
+        console.error("Error fetching disease alerts:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
