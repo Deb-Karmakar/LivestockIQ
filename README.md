@@ -124,13 +124,38 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **Dark/Light Mode**: Theme switching for user preference
 - **Accessibility**: WCAG compliant interface design
 
-#### Advanced Features
+#### AI-Powered Features
+- **AI Health Assistant (IQ Buddy)**: Intelligent chatbot powered by Groq/LLaMA for livestock health guidance
+- **Personalized Health Tips**: AI-generated health recommendations based on animal profiles and treatment history
+- **Automated AMU Analysis**: ML-powered antimicrobial usage spike detection and analysis
+- **Peer Comparison Analytics**: Compare farm AMU patterns with similar operations
+- **Disease Prediction**: Predictive analytics for early disease outbreak detection
+- **Intelligent Alerts**: AI-driven alerts for abnormal treatment patterns and health risks
+
+#### Advanced Analytics & Automation
+- **Automated Background Jobs**: Scheduled analysis of treatment patterns and health trends
+- **Historical Pattern Analysis**: Machine learning analysis of treatment effectiveness over time
+- **Real-time Anomaly Detection**: Automatic detection of unusual antimicrobial usage spikes
+- **Predictive Health Modeling**: Early warning systems for potential disease outbreaks
+- **Smart Recommendations**: Context-aware suggestions for treatment and management decisions
+
+#### Administrative & Management Tools
+- **Admin Dashboard**: Comprehensive system administration and monitoring
+- **Manual Job Triggers**: On-demand execution of analysis and prediction jobs
+- **System Health Monitoring**: Real-time monitoring of application performance and data integrity
+- **Advanced User Management**: Role-based access control with admin privileges
+- **Data Analytics Suite**: Comprehensive analytics tools for system administrators
+
+#### Technical Excellence
 - **Offline Capability**: Works with intermittent internet connectivity
 - **Data Caching**: Intelligent caching for improved performance
 - **Search & Filtering**: Advanced search and filtering across all data
 - **Barcode Integration**: QR code and barcode scanning capabilities
 - **Geographic Services**: Location-based features and mapping
 - **Multi-language Support**: Internationalization ready
+- **Microservices Architecture**: Modular backend design with specialized controllers
+- **Background Processing**: Automated job scheduling and execution
+- **AI/ML Integration**: Seamless integration with Groq AI and machine learning models
 
 ## 🛠️ Tech Stack
 
@@ -143,6 +168,9 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **PDFKit** - PDF generation
 - **Nodemailer** - Email functionality
 - **CORS** - Cross-origin resource sharing
+- **Groq AI** - AI-powered chat and health recommendations
+- **node-cron** - Automated background job scheduling
+- **date-fns** - Advanced date manipulation and formatting
 
 ### Frontend:
 - **React 19** - UI library with modern hooks
@@ -213,6 +241,13 @@ EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 EMAIL_FROM=your_email@gmail.com
+
+# AI Configuration
+GROQ_API_KEY=your_groq_api_key_here
+
+# Admin Configuration
+ADMIN_EMAIL=admin@livestockiq.com
+ADMIN_PASSWORD=secure_admin_password
 ```
 
 #### Start MongoDB
@@ -241,6 +276,20 @@ npm start
 ```
 
 The backend server will start on `http://localhost:5000`
+
+#### Configure AI Features (Optional)
+To enable AI-powered features:
+
+1. **Get Groq API Key:**
+   - Sign up at [Groq Console](https://console.groq.com/)
+   - Create a new API key
+   - Add it to your `.env` file as `GROQ_API_KEY`
+
+2. **Enable Background Jobs:**
+   The system automatically starts background jobs for:
+   - AMU analysis and spike detection
+   - Disease prediction and alerts
+   - Peer comparison analysis
 
 ### 3. Frontend Setup
 
@@ -275,8 +324,15 @@ Open your browser and go to `http://localhost:5173`
 Use your credentials to log into the system
 
 ### 4. Start Managing Livestock
-- **Farmers**: Add animals, schedule treatments, view prescriptions
+- **Farmers**: Add animals, schedule treatments, view prescriptions, get AI health tips
 - **Veterinarians**: Manage treatment requests, write prescriptions, view patient records
+- **Regulators**: Monitor compliance, view analytics, manage system-wide alerts
+
+### 5. Leverage AI Features
+- **Chat with IQ Buddy**: Click the AI assistant button for instant livestock health guidance
+- **Get Health Tips**: Receive personalized AI recommendations for each animal
+- **Automated Analysis**: System automatically analyzes treatment patterns and alerts for anomalies
+- **Predictive Insights**: Early warning systems for potential health issues
 
 ## 🏗️ Project Structure
 
@@ -286,9 +342,12 @@ LivestockIQ/
 │   ├── config/
 │   │   └── db.js                        # Database configuration
 │   ├── controllers/
+│   │   ├── admin.controller.js          # System administration
+│   │   ├── ai.controller.js             # AI health tips and recommendations
 │   │   ├── animal.controller.js         # Animal management
 │   │   ├── auth.controller.js           # Authentication & authorization
 │   │   ├── farmer.controller.js         # Farmer profile management
+│   │   ├── groq.controller.js           # Groq AI chat integration
 │   │   ├── inventory.controller.js      # Inventory management
 │   │   ├── prescription.controller.js   # Prescription handling
 │   │   ├── regulator.controller.js      # Regulatory oversight
@@ -309,9 +368,12 @@ LivestockIQ/
 │   │   ├── treatment.model.js           # Treatment record schema
 │   │   └── vet.model.js                 # Veterinarian profile schema
 │   ├── routes/
+│   │   ├── admin.routes.js              # System administration endpoints
+│   │   ├── ai.routes.js                 # AI health recommendations endpoints
 │   │   ├── animal.routes.js             # Animal management endpoints
 │   │   ├── auth.routes.js               # Authentication endpoints
 │   │   ├── farmer.routes.js             # Farmer-specific endpoints
+│   │   ├── groq.routes.js               # Groq AI chat endpoints
 │   │   ├── inventory.routes.js          # Inventory management endpoints
 │   │   ├── prescription.routes.js       # Prescription endpoints
 │   │   ├── regulator.routes.js          # Regulatory endpoints
@@ -319,6 +381,13 @@ LivestockIQ/
 │   │   ├── sales.routes.js              # Sales tracking endpoints
 │   │   ├── treatment.routes.js          # Treatment management endpoints
 │   │   └── vet.routes.js                # Veterinarian endpoints
+│   ├── jobs/                            # Background processing jobs
+│   │   ├── amuAnalysis.js               # AMU spike detection and peer analysis
+│   │   └── diseaseAlertJob.js           # Disease prediction and alerting
+│   ├── config/
+│   │   ├── db.js                        # Database configuration
+│   │   ├── groq.js                      # Groq AI configuration
+│   │   └── seed.js                      # Database seeding utilities
 │   ├── utils/
 │   │   ├── createPrescriptionPdf.js     # PDF generation for prescriptions
 │   │   ├── createTreatmentPdf.js        # PDF generation for treatments
@@ -348,6 +417,9 @@ LivestockIQ/
 │   │   │   │   └── VetSignUpStep.jsx
 │   │   │   ├── animals/                 # Animal-specific components
 │   │   │   │   └── BarcodeScannerDialog.jsx
+│   │   │   ├── ai/                      # AI-powered components
+│   │   │   │   ├── ChatWidget.jsx           # IQ Buddy AI assistant
+│   │   │   │   └── AmuAlertDetailsDialog.jsx # AMU alert details with AI analysis
 │   │   │   └── layout/                  # Layout components
 │   │   │       ├── AppLayout.jsx
 │   │   │       ├── Footer.jsx
@@ -385,11 +457,15 @@ LivestockIQ/
 │   │   │   ├── LoginPage.jsx            # Login page
 │   │   │   └── LandingPage.tsx          # Marketing landing page
 │   │   ├── services/                    # API service functions
+│   │   │   ├── aiService.js             # AI health tips and recommendations
 │   │   │   ├── animalService.js         # Animal API calls
+│   │   │   ├── chatService.js           # AI chat services (Groq integration)
 │   │   │   ├── treatmentService.js      # Treatment API calls
 │   │   │   ├── vetService.js            # Veterinarian API calls
 │   │   │   ├── farmerService.js         # Farmer API calls
 │   │   │   ├── inventoryService.js      # Inventory API calls
+│   │   │   ├── regulatorService.js      # Regulatory API calls
+│   │   │   ├── reportsService.js        # Report generation API calls
 │   │   │   └── salesService.js          # Sales API calls
 │   │   ├── contexts/                    # React contexts
 │   │   │   └── AuthContext.jsx          # Authentication context
@@ -525,6 +601,21 @@ npm run lint
 - `POST /api/regulator/alerts` - Create compliance alerts
 - `GET /api/regulator/heatmap` - Get treatment intensity heatmap data
 - `POST /api/regulator/reports` - Generate regulatory reports
+
+### AI & Machine Learning
+- `POST /api/ai/health-tip` - Generate AI-powered health tips for specific animals
+- `POST /api/groq/chat` - Chat with IQ Buddy AI assistant (Groq-powered)
+- `GET /api/ai/recommendations` - Get personalized recommendations
+- `POST /api/ai/analyze-pattern` - Analyze treatment patterns with AI
+
+### Administrative (Admin Access)
+- `POST /api/admin/trigger-amu-analysis` - Manually trigger AMU spike analysis job
+- `POST /api/admin/trigger-peer-analysis` - Manually trigger peer comparison analysis
+- `POST /api/admin/trigger-disease-prediction` - Manually trigger disease prediction job
+- `GET /api/admin/system-health` - Get system health and performance metrics
+- `GET /api/admin/job-status` - Get status of background analysis jobs
+- `POST /api/admin/reset-alerts` - Reset system alerts and notifications
+- `GET /api/admin/analytics` - Access comprehensive system analytics
 
 ## 🚀 Deployment
 
