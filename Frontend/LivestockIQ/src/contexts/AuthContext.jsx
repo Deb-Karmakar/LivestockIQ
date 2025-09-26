@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const AuthContext = createContext(null);
-const API_URL = 'http://localhost:5000/api/';
+// In frontend/src/contexts/AuthContext.jsx
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/';
 
 const axiosInstance = axios.create({
     baseURL: API_URL,

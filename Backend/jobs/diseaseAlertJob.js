@@ -5,9 +5,19 @@ import axios from 'axios';
 import Farmer from '../models/farmer.model.js';
 import DiseaseAlert from '../models/diseaseAlert.model.js';
 
+// Helper function to count periods based on a condition
+const countPeriods = (forecast, condition) => {
+    return forecast.list.filter(condition).length;
+};
+
 // --- Disease Rules Engine ---
 // We can add more complex rules here in the future
 const checkWeatherForDiseaseRisk = (forecast) => {
+    // Helper function to count periods
+    const countPeriods = (condition) => {
+        return forecast.list.filter(condition).length;
+    };
+
     // Rule for Haemorrhagic Septicaemia (HS), common in India during humid/rainy seasons
     const highHumidityDays = forecast.list.filter(period => {
         const forecastDate = new Date(period.dt * 1000);
@@ -28,6 +38,7 @@ const checkWeatherForDiseaseRisk = (forecast) => {
             ]
         };
     }
+
     const highTempAndHumidityPeriods = forecast.list.filter(p => p.main.humidity > 70 && p.main.temp > 28);
     if (highTempAndHumidityPeriods.length > 4) {
         return {
@@ -41,7 +52,8 @@ const checkWeatherForDiseaseRisk = (forecast) => {
             ]
         };
     }
-    const rainyPeriods = countPeriods(p => p.weather.some(w => w.main.toLowerCase().includes('rain')));
+
+    const rainyPeriods = countPeriods(p => p.weather && p.weather.some(w => w.main.toLowerCase().includes('rain')));
     if (rainyPeriods > 3) {
         return {
             diseaseName: 'Black Quarter (BQ)',
@@ -86,7 +98,7 @@ const checkWeatherForDiseaseRisk = (forecast) => {
     }
 
     // Rule 6: Lumpy Skin Disease (LSD)
-    const lsdRisk = countPeriods(p => p.main.humidity > 70 && p.weather.some(w => w.main.toLowerCase().includes('rain')));
+    const lsdRisk = countPeriods(p => p.main.humidity > 70 && p.weather && p.weather.some(w => w.main.toLowerCase().includes('rain')));
     if (lsdRisk > 2) {
         return {
             diseaseName: 'Lumpy Skin Disease (LSD)',
@@ -116,7 +128,7 @@ const checkWeatherForDiseaseRisk = (forecast) => {
     }
 
     // Rule 8: Anthrax
-    const anthraxRisk = countPeriods(p => p.weather.some(w => w.main.toLowerCase().includes('rain')));
+    const anthraxRisk = countPeriods(p => p.weather && p.weather.some(w => w.main.toLowerCase().includes('rain')));
     if (anthraxRisk > 2) {
         return {
             diseaseName: 'Anthrax',
@@ -131,7 +143,7 @@ const checkWeatherForDiseaseRisk = (forecast) => {
     }
 
     // Rule 9: Enterotoxaemia
-    const enterotoxaemiaRisk = countPeriods(p => p.weather.some(w => w.main.toLowerCase().includes('rain')));
+    const enterotoxaemiaRisk = countPeriods(p => p.weather && p.weather.some(w => w.main.toLowerCase().includes('rain')));
     if (enterotoxaemiaRisk > 3) {
         return {
             diseaseName: 'Enterotoxaemia (ET)',
@@ -146,7 +158,7 @@ const checkWeatherForDiseaseRisk = (forecast) => {
     }
 
     // Rule 10: Mastitis
-    const mastitisRisk = countPeriods(p => p.main.humidity > 75 && p.weather.some(w => w.main.toLowerCase().includes('rain')));
+    const mastitisRisk = countPeriods(p => p.main.humidity > 75 && p.weather && p.weather.some(w => w.main.toLowerCase().includes('rain')));
     if (mastitisRisk > 3) {
         return {
             diseaseName: 'Mastitis',
@@ -165,41 +177,124 @@ const checkWeatherForDiseaseRisk = (forecast) => {
 export const runDiseasePrediction = async () => {
     console.log('Starting daily disease prediction job...');
     try {
+        // Check if API key exists
+        const API_KEY = process.env.OPENWEATHER_API_KEY;
+        if (!API_KEY) {
+            console.error('OpenWeather API key is missing from environment variables');
+            return;
+        }
+
         // 1. Get all unique farm locations
         const uniqueLocations = await Farmer.distinct('location', { 
-            'location.latitude': { $exists: true, $ne: null }
+            'location.latitude': { $exists: true, $ne: null },
+            'location.longitude': { $exists: true, $ne: null }
         });
 
+        console.log(`Found ${uniqueLocations.length} unique locations to check`);
+
+        if (uniqueLocations.length === 0) {
+            console.log('No farmers with valid location data found');
+            return;
+        }
+
         for (const location of uniqueLocations) {
-            const { latitude, longitude } = location;
-            const API_KEY = process.env.OPENWEATHER_API_KEY;
-            const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`;
-
-            // 2. Fetch weather forecast for each location
-            const response = await axios.get(url);
-            const forecast = response.data;
-            
-            // 3. Check forecast against our rules
-            const risk = checkWeatherForDiseaseRisk(forecast);
-
-            if (risk) {
-                // 4. If risk is found, find all farmers in that location and create alerts
-                const farmersInRegion = await Farmer.find({ 'location.latitude': latitude, 'location.longitude': longitude });
-                for (const farmer of farmersInRegion) {
-                    // Check if a similar alert already exists
-                    const existingAlert = await DiseaseAlert.findOne({ farmerId: farmer._id, diseaseName: risk.diseaseName, status: 'New' });
-                    if (!existingAlert) {
-                        await DiseaseAlert.create({
-                            farmerId: farmer._id,
-                            ...risk
-                        });
-                        console.log(`Disease alert for ${risk.diseaseName} created for farmer ${farmer._id}`);
-                    }
+            try {
+                const { latitude, longitude } = location;
+                
+                // Validate coordinates
+                if (!latitude || !longitude || 
+                    isNaN(latitude) || isNaN(longitude) ||
+                    latitude < -90 || latitude > 90 ||
+                    longitude < -180 || longitude > 180) {
+                    console.log(`Invalid coordinates: lat=${latitude}, lon=${longitude}, skipping...`);
+                    continue;
                 }
+
+                console.log(`Checking weather for location: ${latitude}, ${longitude}`);
+                
+                const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`;
+
+                // 2. Fetch weather forecast for each location
+                const response = await axios.get(url, {
+                    timeout: 10000, // 10 second timeout
+                    headers: {
+                        'User-Agent': 'LivestockIQ-Disease-Prediction/1.0'
+                    }
+                });
+                
+                const forecast = response.data;
+                
+                // Validate forecast data
+                if (!forecast || !forecast.list || !Array.isArray(forecast.list)) {
+                    console.log(`Invalid forecast data received for location ${latitude}, ${longitude}`);
+                    continue;
+                }
+
+                console.log(`Received ${forecast.list.length} forecast periods for location ${latitude}, ${longitude}`);
+                
+                // 3. Check forecast against our rules
+                const risk = checkWeatherForDiseaseRisk(forecast);
+
+                if (risk) {
+                    console.log(`Disease risk detected: ${risk.diseaseName} (${risk.riskLevel}) for location ${latitude}, ${longitude}`);
+                    
+                    // 4. If risk is found, find all farmers in that location and create alerts
+                    const farmersInRegion = await Farmer.find({ 
+                        'location.latitude': latitude, 
+                        'location.longitude': longitude 
+                    });
+                    
+                    console.log(`Found ${farmersInRegion.length} farmers in this region`);
+                    
+                    for (const farmer of farmersInRegion) {
+                        try {
+                            // Check if a similar alert already exists
+                            const existingAlert = await DiseaseAlert.findOne({ 
+                                farmerId: farmer._id, 
+                                diseaseName: risk.diseaseName, 
+                                status: 'New' 
+                            });
+                            
+                            if (!existingAlert) {
+                                await DiseaseAlert.create({
+                                    farmerId: farmer._id,
+                                    ...risk
+                                });
+                                console.log(`✅ Disease alert for ${risk.diseaseName} created for farmer ${farmer._id}`);
+                            } else {
+                                console.log(`Alert for ${risk.diseaseName} already exists for farmer ${farmer._id}`);
+                            }
+                        } catch (alertError) {
+                            console.error(`Error creating alert for farmer ${farmer._id}:`, alertError.message);
+                        }
+                    }
+                } else {
+                    console.log(`No disease risk detected for location ${latitude}, ${longitude}`);
+                }
+
+                // Add a small delay between API calls to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+            } catch (locationError) {
+                if (locationError.response) {
+                    console.error(`API Error for location ${location.latitude}, ${location.longitude}:`, {
+                        status: locationError.response.status,
+                        statusText: locationError.response.statusText,
+                        data: locationError.response.data
+                    });
+                } else if (locationError.request) {
+                    console.error(`Network Error for location ${location.latitude}, ${location.longitude}:`, locationError.message);
+                } else {
+                    console.error(`Error for location ${location.latitude}, ${location.longitude}:`, locationError.message);
+                }
+                continue; // Continue with next location
             }
         }
     } catch (error) {
         console.error('Error during disease prediction job:', error.message);
+        if (error.stack) {
+            console.error('Stack trace:', error.stack);
+        }
     }
     console.log('Daily disease prediction job finished.');
 };

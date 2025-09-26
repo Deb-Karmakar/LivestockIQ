@@ -16,6 +16,7 @@ import regulatorRoutes from './routes/regulator.routes.js';
 import seedAdminUser from './config/seed.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import groqRoutes from './routes/groq.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 
@@ -44,6 +45,25 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/regulator', regulatorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/groq', groqRoutes);
+
+// Add this to your main app.js for debugging
+app.get('/debug/farmers', async (req, res) => {
+    try {
+        const uniqueLocations = await Farmer.distinct('location', { 
+            'location.latitude': { $exists: true, $ne: null },
+            'location.longitude': { $exists: true, $ne: null }
+        });
+        
+        console.log('Unique locations:', uniqueLocations);
+        res.json({
+            count: uniqueLocations.length,
+            locations: uniqueLocations
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
