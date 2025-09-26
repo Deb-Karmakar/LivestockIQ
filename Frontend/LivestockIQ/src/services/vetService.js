@@ -40,3 +40,8 @@ export const reportFarmer = async (reportData) => {
     const { data } = await axiosInstance.post('/vets/report-farmer', reportData);
     return data;
 };
+
+export const getVetDashboardData = async () => {
+    const { data } = await axiosInstance.get('/vets/dashboard');
+    return data;
+};

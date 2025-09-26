@@ -1,5 +1,3 @@
-// frontend/src/pages/vet/TreatmentRequestsPage.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,17 +5,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star } from 'lucide-react';
+import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star, Loader2, ArrowUpDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '../../hooks/use-toast';
 import { getTreatmentRequests } from '../../services/vetService';
 import { updateTreatmentByVet } from '../../services/treatmentService';
 import EditRequestDialog from './EditRequestDialog';
-import AnimalHistoryDialog from '../../components/AnimalHistoryDialog'; // NEW: 1. Import the history dialog
+import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { useRequestSorter } from '../../hooks/useRequestSorter'; // 1. Import the custom hook
 
 // --- Helper Functions ---
 const calculateAge = (dob) => {
@@ -54,15 +52,14 @@ const generateVetPdfCopy = (treatment, vet) => {
     doc.setFontSize(18);
     doc.text(`Prescription for Animal ${treatment.animalId}`, 14, 40);
     doc.setFontSize(12);
-    // Use fullName which is available on the vetUser object from auth context
     doc.text(`Issued by: ${vet.fullName}`, 14, 48);
     
     autoTable(doc, {
         startY: 60,
         head: [['Field', 'Details']],
         body: [
-            ['Farmer:', `${treatment.farmerId.farmOwner} (${treatment.farmerId.farmName})`],
-            ['Animal Species:', treatment.animal.species],
+            ['Farmer:', `${treatment.farmerId?.farmOwner || 'N/A'} (${treatment.farmerId?.farmName || 'N/A'})`],
+            ['Animal Species:', treatment.animal?.species || 'N/A'],
             ['Drug:', treatment.drugName],
             ['Dose:', treatment.dose],
             ['Route:', treatment.route],
@@ -80,45 +77,49 @@ const TreatmentRequestsPage = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingRequest, setEditingRequest] = useState(null);
-    const [viewingHistoryOf, setViewingHistoryOf] = useState(null); // NEW: 2. Add state for the history dialog
+    const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
     const { toast } = useToast();
     const { user: vetUser } = useAuth();
 
+    // 2. Call the hook to get sorting logic and the sorted data
+    const { sortedRequests, requestSort, sortConfig } = useRequestSorter(requests);
+
     const fetchRequests = useCallback(async () => {
         try {
-            setLoading(true);
             const data = await getTreatmentRequests();
             setRequests(data || []);
+            return data || [];
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Failed to load requests." });
-        } finally {
-            setLoading(false);
+            return [];
         }
     }, [toast]);
 
     useEffect(() => {
-        fetchRequests();
+        setLoading(true);
+        fetchRequests().finally(() => setLoading(false));
     }, [fetchRequests]);
 
     const handleUpdateRequest = async (requestId, updateData) => {
         try {
-            const updatedRecord = await updateTreatmentByVet(requestId, updateData);
+            await updateTreatmentByVet(requestId, updateData);
             toast({ title: "Success", description: `Treatment record has been updated.` });
+            
+            const updatedRequests = await fetchRequests();
 
             if (updateData.status === 'Approved') {
-                const originalRecord = requests.find(r => r._id === requestId);
-                const fullRecordForPdf = { ...originalRecord, ...updatedRecord };
-                generateVetPdfCopy(fullRecordForPdf, vetUser);
+                const fullRecordForPdf = updatedRequests.find(r => r._id === requestId);
+                if (fullRecordForPdf) {
+                    generateVetPdfCopy(fullRecordForPdf, vetUser);
+                }
             }
-
-            fetchRequests();
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Failed to update status." });
         }
         setEditingRequest(null);
     };
     
-    if (loading) return <div>Loading requests...</div>
+    if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
     return (
         <div className="space-y-6">
@@ -138,23 +139,31 @@ const TreatmentRequestsPage = () => {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Farmer</TableHead>
+                                <TableHead>
+                                    <Button variant="ghost" onClick={() => requestSort('farmer')}>
+                                        Farmer <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </TableHead>
                                 <TableHead>Animal Details</TableHead>
                                 <TableHead>Drug Used</TableHead>
-                                <TableHead>Withdrawal End Date</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>
+                                    <Button variant="ghost" onClick={() => requestSort('status')}>
+                                        Status <ArrowUpDown className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </TableHead>
                                 <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {requests.map(req => (
+                            {/* 3. Map over the 'sortedRequests' array from the hook */}
+                            {sortedRequests.map(req => (
                                 <TableRow key={req._id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-2">
-                                            <Avatar className="h-8 w-8"><AvatarFallback>{req.farmerId.farmOwner.charAt(0)}</AvatarFallback></Avatar>
+                                            <Avatar className="h-8 w-8"><AvatarFallback>{req.farmerId?.farmOwner?.charAt(0) || 'F'}</AvatarFallback></Avatar>
                                             <div>
-                                                <p className="font-semibold">{req.farmerId.farmOwner}</p>
-                                                <p className="text-xs text-gray-500">{req.farmerId.farmName}</p>
+                                                <p className="font-semibold">{req.farmerId?.farmOwner || 'Unknown Farmer'}</p>
+                                                <p className="text-xs text-gray-500">{req.farmerId?.farmName || 'Unknown Farm'}</p>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -162,31 +171,27 @@ const TreatmentRequestsPage = () => {
                                         <div className="font-medium">ID: {req.animalId}</div>
                                         {req.animal ? (
                                             <div className="text-sm text-muted-foreground">
-                                                {req.animal.species} • {req.animal.gender || ''} • {calculateAge(req.animal.dob)} • {req.animal.weight}
+                                                {req.animal.species} • {req.animal.gender || ''} • {calculateAge(req.animal.dob)}
                                             </div>
                                         ) : (
                                             <div className="text-sm text-destructive">Animal data not found</div>
                                         )}
                                     </TableCell>
                                     <TableCell>{req.drugName}</TableCell>
-                                    <TableCell>{req.withdrawalEndDate ? format(new Date(req.withdrawalEndDate), 'MMM d, yyyy') : 'Pending'}</TableCell>
                                     <TableCell><StatusBadge status={req.status || 'Pending'} /></TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                {/* Button is now always enabled to allow viewing history */}
                                                 <Button variant="ghost" className="h-8 w-8 p-0">
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                {/* Review and Reject are disabled if already actioned */}
                                                 <DropdownMenuItem onClick={() => setEditingRequest(req)} disabled={req.status !== 'Pending'}>
                                                     <Star className="mr-2 h-4 w-4" />
                                                     <span>Review & Approve</span>
                                                 </DropdownMenuItem>
-                                                {/* UPDATED: 3. Add onClick handler to the button */}
                                                 <DropdownMenuItem onClick={() => setViewingHistoryOf(req.animalId)}>
                                                     <FileText className="mr-2 h-4 w-4" />
                                                     <span>View History</span>
@@ -214,7 +219,6 @@ const TreatmentRequestsPage = () => {
                 />
             )}
 
-            {/* NEW: 4. Render the dialog component at the bottom of the page */}
             <AnimalHistoryDialog 
                 animalId={viewingHistoryOf}
                 isOpen={!!viewingHistoryOf}

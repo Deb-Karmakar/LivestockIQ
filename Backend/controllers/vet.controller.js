@@ -3,6 +3,7 @@ import Veterinarian from '../models/vet.model.js';
 import Treatment from '../models/treatment.model.js';
 import Animal from '../models/animal.model.js';
 import ComplianceAlert from '../models/complianceAlert.model.js';
+import HighAmuAlert from '../models/highAmuAlert.model.js';
 
 // @desc    Get all farmers assigned to the logged-in vet
 // @route   GET /api/vets/my-farmers
@@ -160,6 +161,42 @@ export const reportFarmer = async (req, res) => {
     } catch (error) {
         // NEW: This line will print the actual error to your backend terminal
         console.error("Error reporting farmer:", error); 
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+export const getVetDashboardData = async (req, res) => {
+    try {
+        const vetId = req.user.vetId;
+        const supervisedFarmers = await Farmer.find({ vetId: vetId }).select('_id');
+        const farmerIds = supervisedFarmers.map(f => f._id);
+        
+        const allTreatments = await Treatment.find({ farmerId: { $in: farmerIds } })
+            .populate('farmerId', 'farmOwner');
+
+        // This query will now work correctly
+        const highAmuAlerts = await HighAmuAlert.find({ farmerId: { $in: farmerIds }, status: 'New' });
+        
+        const pendingReviews = allTreatments.filter(t => t.status === 'Pending');
+        
+        const stats = {
+            pendingReviewCount: pendingReviews.length,
+            activeFarmAlertsCount: highAmuAlerts.length,
+            assignedFarmersCount: supervisedFarmers.length
+        };
+
+        const complianceRate = allTreatments.length > 0
+            ? ((allTreatments.filter(t => t.status === 'Approved').length / allTreatments.length) * 100).toFixed(0)
+            : 100;
+
+        res.json({
+            stats,
+            highPriorityRequests: pendingReviews.slice(0, 5),
+            complianceRate: parseInt(complianceRate)
+        });
+
+    } catch (error) {
+        console.error("Error fetching vet dashboard data:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
