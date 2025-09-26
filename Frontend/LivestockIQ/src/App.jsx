@@ -1,4 +1,6 @@
-import { Route, Routes, Navigate, Outlet } from "react-router-dom";
+import { Route, Routes, Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import ReactGA from 'react-ga4';
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -41,13 +43,34 @@ import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
 
-// NEW: Admin Page Imports (Using correct path alias)
+// Admin Page Imports
 import AdminAppLayout from "./components/layout/AdminAppLayout";
 import AdminDashboardPage from "./pages/admin/DashboardPage";
 import UserManagementPage from "./pages/admin/UserManagementPage";
 import AuditsPage from "./pages/admin/AuditsPage";
 import SupportPage from "./pages/admin/SupportPage";
 import AdminSettingsPage from "./pages/admin/SettingsPage";
+
+// --- Google Analytics Integration ---
+
+// Initialize Google Analytics
+const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID;
+if (GA_MEASUREMENT_ID) {
+    ReactGA.initialize(GA_MEASUREMENT_ID);
+}
+
+// Component to track page views on route changes
+const AnalyticsTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (GA_MEASUREMENT_ID) {
+      ReactGA.send({ hitType: "pageview", page: location.pathname + location.search, title: document.title });
+    }
+  }, [location]);
+
+  return null;
+};
 
 
 // --- Layout Component for Public Pages ---
@@ -97,7 +120,6 @@ const RegulatorRoute = ({ children }) => {
     return children;
 }
 
-// NEW: Role-specific route for admins
 const AdminRoute = ({ children }) => {
     const { user } = useAuth();
     if (user?.role !== 'admin') {
@@ -111,7 +133,6 @@ const AdminRoute = ({ children }) => {
 function App() {
   const { isAuth, user } = useAuth();
 
-  // UPDATED: Helper now includes the admin role
   const getHomeRedirect = () => {
       if (!isAuth) return <AuthPage />;
       if (user?.role === 'veterinarian') return <Navigate to="/vet/dashboard" />;
@@ -124,6 +145,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        
+        <AnalyticsTracker />
         <Routes>
           {/* Public Routes with Shared Navigation */}
           <Route element={<PublicLayout />}>
@@ -158,7 +181,7 @@ function App() {
           </Route>
 
           {/* Protected Vet Routes */}
-            <Route
+          <Route
             path="/vet"
             element={
               <ProtectedRoute>
@@ -180,11 +203,11 @@ function App() {
           <Route
             path="/regulator"
             element={
-                <ProtectedRoute>
-                    <RegulatorRoute>
-                        <RegulatorAppLayout />
-                    </RegulatorRoute>
-                </ProtectedRoute>
+              <ProtectedRoute>
+                <RegulatorRoute>
+                  <RegulatorAppLayout />
+                </RegulatorRoute>
+              </ProtectedRoute>
             }
           >
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -197,15 +220,15 @@ function App() {
             <Route path="settings" element={<RegulatorSettingsPage />} />
           </Route>
 
-          {/* NEW: Protected Admin Routes */}
+          {/* Protected Admin Routes */}
           <Route
             path="/admin"
             element={
-                <ProtectedRoute>
-                    <AdminRoute>
-                        <AdminAppLayout />
-                    </AdminRoute>
-                </ProtectedRoute>
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminAppLayout />
+                </AdminRoute>
+              </ProtectedRoute>
             }
           >
             <Route index element={<Navigate to="dashboard" replace />} />
@@ -229,4 +252,3 @@ function App() {
 }
 
 export default App;
-
