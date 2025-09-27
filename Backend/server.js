@@ -1,12 +1,10 @@
 import express from 'express';
-import dotenv from 'dotenv';
-dotenv.config();
 import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
 import vetRoutes from './routes/vet.routes.js';
 import animalRoutes from './routes/animal.routes.js';
-import treatmentRoutes from './routes/treatment.routes.js'; 
+import treatmentRoutes from './routes/treatment.routes.js';
 import prescriptionRoutes from './routes/prescription.routes.js';
 import farmerRoutes from './routes/farmer.routes.js';
 import saleRoutes from './routes/sales.routes.js';
@@ -20,16 +18,31 @@ import groqRoutes from './routes/groq.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 
+// ✅ Load .env only in development
+if (process.env.NODE_ENV !== 'production') {
+  const dotenv = await import('dotenv');
+  dotenv.config();
+}
+
+// Connect DB + seed admin user
 connectDB().then(() => {
-    seedAdminUser(); // 2. Call the seed function after the DB connects
+  seedAdminUser();
 });
+
 const app = express();
 
-app.use(cors());
+// ✅ Allow CORS (adjust frontend URL for production)
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // fallback for local dev
+  })
+);
+
 app.use(express.json());
 
+// Root route
 app.get('/', (req, res) => {
-    res.send('API is running...');
+  res.send('API is running...');
 });
 
 // Mount routes
@@ -40,34 +53,35 @@ app.use('/api/treatments', treatmentRoutes);
 app.use('/api/prescriptions', prescriptionRoutes);
 app.use('/api/farmers', farmerRoutes);
 app.use('/api/sales', saleRoutes);
-app.use('/api/inventory', inventoryRoutes); 
+app.use('/api/inventory', inventoryRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/regulator', regulatorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/groq', groqRoutes);
 
-// Add this to your main app.js for debugging
+// Debugging route
+import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported
 app.get('/debug/farmers', async (req, res) => {
-    try {
-        const uniqueLocations = await Farmer.distinct('location', { 
-            'location.latitude': { $exists: true, $ne: null },
-            'location.longitude': { $exists: true, $ne: null }
-        });
-        
-        console.log('Unique locations:', uniqueLocations);
-        res.json({
-            count: uniqueLocations.length,
-            locations: uniqueLocations
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  try {
+    const uniqueLocations = await Farmer.distinct('location', {
+      'location.latitude': { $exists: true, $ne: null },
+      'location.longitude': { $exists: true, $ne: null },
+    });
+
+    console.log('Unique locations:', uniqueLocations);
+    res.json({
+      count: uniqueLocations.length,
+      locations: uniqueLocations,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    startAmuAnalysisJob();
-    startDiseasePredictionJob();
+  console.log(`✅ Server running on port ${PORT}`);
+  startAmuAnalysisJob();
+  startDiseasePredictionJob();
 });
