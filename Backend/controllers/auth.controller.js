@@ -53,16 +53,23 @@ export const registerFarmer = async (req, res) => {
 
 
 export const registerVet = async (req, res) => {
-    const { fullName, email, password, licenseNumber } = req.body;
+    const { fullName, email, password, licenseNumber, location } = req.body;
     try {
         const vetExists = await Veterinarian.findOne({ email });
         if (vetExists) {
             return res.status(400).json({ message: 'Veterinarian already exists' });
         }
+        
+        // Create vet with all data including location
         const vet = await Veterinarian.create({
-            fullName, email, password, licenseNumber,
-            ...req.body
+            fullName, 
+            email, 
+            password, 
+            licenseNumber,
+            location, // Explicitly include location
+            ...req.body // This will capture all other fields
         });
+        
         if (vet) {
             res.status(201).json({
                 _id: vet._id,
@@ -70,6 +77,7 @@ export const registerVet = async (req, res) => {
                 email: vet.email,
                 role: 'veterinarian',
                 vetId: vet.vetId,
+                location: vet.location, // Include location in response
                 token: generateToken(vet._id),
             });
         } else {

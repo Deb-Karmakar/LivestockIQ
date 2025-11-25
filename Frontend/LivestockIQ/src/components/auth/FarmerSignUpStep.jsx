@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,12 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 
 const FarmerSignUpStep = ({ onBack }) => {
     const { register } = useAuth();
     const { toast } = useToast();
-    const [isFetchingLocation, setIsFetchingLocation] = useState(false);
     
     // State to hold all form data, including location object
     const [formData, setFormData] = useState({
@@ -25,50 +24,102 @@ const FarmerSignUpStep = ({ onBack }) => {
         location: null // Will hold { latitude, longitude }
     });
     
-    // State for providing user feedback on location fetching
-    const [locationMessage, setLocationMessage] = useState('Click button to get your farm\'s current location.');
+    const [locationStatus, setLocationStatus] = useState('idle'); // idle, loading, success, error
+    const [locationError, setLocationError] = useState('');
+
+    // Automatically fetch location when component mounts
+    useEffect(() => {
+        fetchLocation();
+    }, []);
+
+    const fetchLocation = () => {
+        setLocationStatus('loading');
+        setLocationError('');
+
+        if (!navigator.geolocation) {
+            setLocationStatus('error');
+            setLocationError('Geolocation is not supported by your browser');
+            toast({ 
+                variant: 'destructive', 
+                title: 'Error', 
+                description: "Geolocation is not supported by your browser." 
+            });
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const coords = {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                };
+                setFormData(prev => ({ ...prev, location: coords }));
+                setLocationStatus('success');
+                toast({ 
+                    title: 'Success', 
+                    description: 'Farm location captured successfully!' 
+                });
+                console.log('Location fetched:', coords);
+            },
+            (error) => {
+                setLocationStatus('error');
+                let errorMessage = 'Unable to fetch location';
+                
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location access denied. Please enable location permissions.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information unavailable';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out';
+                        break;
+                    default:
+                        errorMessage = 'An unknown error occurred';
+                }
+                
+                setLocationError(errorMessage);
+                toast({ 
+                    variant: 'destructive', 
+                    title: 'Location Error', 
+                    description: errorMessage 
+                });
+                console.error('Geolocation error:', error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    };
 
     const handleChange = (e) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
-
-    const handleGetLocation = () => {
-        if (!navigator.geolocation) {
-            setLocationMessage("Geolocation is not supported by your browser.");
-            toast({ variant: 'destructive', title: 'Error', description: "Geolocation is not supported." });
-            return;
-        }
-        setIsFetchingLocation(true);
-        setLocationMessage("Fetching location...");
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                setFormData(prev => ({ ...prev, location: { latitude, longitude } }));
-                setLocationMessage('Location captured successfully!');
-                toast({ title: 'Success', description: 'GPS coordinates have been captured.' });
-                setIsFetchingLocation(false);
-            },
-            (error) => {
-                setLocationMessage('Permission denied. Please enable location services in your browser settings.');
-                toast({ variant: 'destructive', title: 'Location Error', description: 'Could not retrieve your location.' });
-                setIsFetchingLocation(false);
-            }
-        );
-    };
     
     const handleSignUp = async (e) => {
         e.preventDefault();
+        
         if (formData.password !== formData.confirmPassword) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Passwords do not match!' });
+            toast({ 
+                variant: 'destructive', 
+                title: 'Error', 
+                description: 'Passwords do not match!' 
+            });
             return;
         }
-        // Ensure location is not null before registering
+
+        // Warn if location is not available
         if (!formData.location) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide your farm location.' });
-            return;
+            const proceed = window.confirm(
+                "Farm location is not available. Location helps track your animals and connect with vets. Do you want to continue without location?"
+            );
+            if (!proceed) return;
         }
+
         await register(formData);
     };
 
@@ -88,29 +139,99 @@ const FarmerSignUpStep = ({ onBack }) => {
                 </CardHeader>
                 <form onSubmit={handleSignUp}>
                     <CardContent className="space-y-6">
+                        {/* Location Status Display */}
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5 text-green-600" />
+                                <span className="font-medium text-green-900">Farm Location Status:</span>
+                                {locationStatus === 'loading' && (
+                                    <span className="flex items-center gap-2 text-green-700">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Fetching your location...
+                                    </span>
+                                )}
+                                {locationStatus === 'success' && (
+                                    <span className="text-green-600 font-medium">
+                                        ✓ Location captured successfully
+                                    </span>
+                                )}
+                                {locationStatus === 'error' && (
+                                    <span className="text-red-600">{locationError}</span>
+                                )}
+                            </div>
+                            {locationStatus === 'error' && (
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={fetchLocation}
+                                    className="mt-2"
+                                >
+                                    Retry Location Fetch
+                                </Button>
+                            )}
+                            {locationStatus === 'success' && formData.location && (
+                                <p className="text-xs text-gray-600 mt-1">
+                                    Coordinates: {formData.location.latitude.toFixed(6)}, {formData.location.longitude.toFixed(6)}
+                                </p>
+                            )}
+                        </div>
+
                         {/* Personal & Account Details */}
                         <div>
                             <h3 className="text-lg font-medium mb-2">1. Account Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="farmOwner">Full Name</Label>
-                                    <Input id="farmOwner" value={formData.farmOwner} onChange={handleChange} required />
+                                    <Input 
+                                        id="farmOwner" 
+                                        value={formData.farmOwner} 
+                                        onChange={handleChange} 
+                                        placeholder="John Doe"
+                                        required 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="phoneNumber">Phone Number</Label>
-                                    <Input id="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange} required />
+                                    <Input 
+                                        id="phoneNumber" 
+                                        type="tel" 
+                                        value={formData.phoneNumber} 
+                                        onChange={handleChange}
+                                        placeholder="+91 98765 43210" 
+                                        required 
+                                    />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="email">Email</Label>
-                                    <Input id="email" type="email" value={formData.email} onChange={handleChange} required />
+                                    <Input 
+                                        id="email" 
+                                        type="email" 
+                                        value={formData.email} 
+                                        onChange={handleChange}
+                                        placeholder="farmer@example.com" 
+                                        required 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="password">Password</Label>
-                                    <Input id="password" type="password" value={formData.password} onChange={handleChange} required />
+                                    <Input 
+                                        id="password" 
+                                        type="password" 
+                                        value={formData.password} 
+                                        onChange={handleChange} 
+                                        required 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                                    <Input id="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required />
+                                    <Input 
+                                        id="confirmPassword" 
+                                        type="password" 
+                                        value={formData.confirmPassword} 
+                                        onChange={handleChange} 
+                                        required 
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -119,45 +240,42 @@ const FarmerSignUpStep = ({ onBack }) => {
 
                         {/* Farm & Professional Details */}
                         <div>
-                             <h3 className="text-lg font-medium mb-2">2. Farm Details</h3>
-                             <div className="space-y-4">
+                            <h3 className="text-lg font-medium mb-2">2. Farm Details</h3>
+                            <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="farmName">Farm Name</Label>
-                                    <Input id="farmName" value={formData.farmName} onChange={handleChange} required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Farm Location (GPS)</Label>
-                                    <div className="flex items-center gap-2 p-2 border rounded-md bg-slate-50">
-                                        <div className="flex-grow grid grid-cols-2 gap-2">
-                                             <Input 
-                                                id="latitude" 
-                                                value={formData.location ? formData.location.latitude.toFixed(6) : ''} 
-                                                placeholder="Latitude" 
-                                                readOnly 
-                                             />
-                                             <Input 
-                                                id="longitude" 
-                                                value={formData.location ? formData.location.longitude.toFixed(6) : ''} 
-                                                placeholder="Longitude" 
-                                                readOnly 
-                                             />
-                                        </div>
-                                        <Button type="button" variant="outline" onClick={handleGetLocation} disabled={isFetchingLocation}>
-                                            <MapPin className="w-4 h-4 mr-2"/>
-                                            {isFetchingLocation ? 'Fetching...' : 'Get'}
-                                        </Button>
-                                    </div>
-                                    <p className="text-xs text-gray-500 px-1">{locationMessage}</p>
+                                    <Input 
+                                        id="farmName" 
+                                        value={formData.farmName} 
+                                        onChange={handleChange}
+                                        placeholder="Green Valley Farm" 
+                                        required 
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="vetId">Veterinarian ID</Label>
-                                    <Input id="vetId" placeholder="Enter the unique ID provided by your vet" value={formData.vetId} onChange={handleChange} required />
+                                    <Input 
+                                        id="vetId" 
+                                        placeholder="Enter the unique ID provided by your vet" 
+                                        value={formData.vetId} 
+                                        onChange={handleChange} 
+                                        required 
+                                    />
+                                    <p className="text-xs text-gray-500">
+                                        Ask your veterinarian for their unique ID (e.g., x7b2k1j)
+                                    </p>
                                 </div>
-                             </div>
+                            </div>
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">Create Account</Button>
+                        <Button 
+                            type="submit" 
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            disabled={locationStatus === 'loading'}
+                        >
+                            {locationStatus === 'loading' ? 'Fetching Location...' : 'Create Account'}
+                        </Button>
                     </CardFooter>
                 </form>
             </Card>
