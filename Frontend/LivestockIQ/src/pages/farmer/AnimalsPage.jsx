@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PlusCircle, MoreHorizontal, QrCode, Trash2, FileText, Edit, BrainCircuit, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { PlusCircle, MoreHorizontal, QrCode, Trash2, FileText, Edit, BrainCircuit, Loader2, Search, Calendar, Weight, User2 } from "lucide-react";
 import BarcodeScannerDialog from "../../components/animals/BarcodeScannerDialog";
 import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 import { getAnimals, addAnimal, updateAnimal, deleteAnimal } from '../../services/animalService';
@@ -27,25 +27,153 @@ const calculateAge = (dob) => {
     return `${months} month${months > 1 ? "s" : ""}`;
 };
 
+// Species image mapping
+const getSpeciesImage = (species) => {
+    const map = {
+        'Cattle': '/animals/cow.png',
+        'Buffalo': '/animals/buffalo.png',
+        'Sheep': '/animals/sheep.png',
+        'Goat': '/animals/goat.png',
+        'Pig': '/animals/pig.png',
+        'Horse': '/animals/horse.png',
+        'Yak': '/animals/yak.png',
+        'Ox': '/animals/ox.png'
+    };
+    return map[species] || '/animals/cow.png';
+};
+
+// Status badge component
+const StatusBadge = ({ status }) => {
+    const config = {
+        'Active': { color: 'bg-green-100 text-green-800 border-green-300' },
+        'Sold': { color: 'bg-blue-100 text-blue-800 border-blue-300' },
+        'Culled': { color: 'bg-orange-100 text-orange-800 border-orange-300' },
+    };
+    const finalConfig = config[status] || config['Active'];
+    return <Badge className={`border ${finalConfig.color}`}>{status}</Badge>;
+};
+
+// Animal Card Component
+const AnimalCard = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onViewTip }) => {
+    return (
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <img
+                            src={getSpeciesImage(animal.species)}
+                            alt={animal.species}
+                            className="w-12 h-12 object-contain"
+                        />
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg truncate">{animal.tagId}</CardTitle>
+                            {animal.name && (
+                                <CardDescription className="truncate">{animal.name}</CardDescription>
+                            )}
+                        </div>
+                    </div>
+                    <StatusBadge status={animal.status} />
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* Animal Stats Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                            <User2 className="h-3 w-3" />
+                            Species
+                        </div>
+                        <div className="font-semibold text-sm">{animal.species}</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                            <User2 className="h-3 w-3" />
+                            Gender
+                        </div>
+                        <div className="font-semibold text-sm">{animal.gender || 'N/A'}</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                            <Calendar className="h-3 w-3" />
+                            Age
+                        </div>
+                        <div className="font-semibold text-sm">{calculateAge(animal.dob)}</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-slate-500 text-xs mb-1">
+                            <Weight className="h-3 w-3" />
+                            Weight
+                        </div>
+                        <div className="font-semibold text-sm">{animal.weight || 'N/A'}</div>
+                    </div>
+                </div>
+
+                {/* Notes if present */}
+                {animal.notes && (
+                    <div className="text-xs text-slate-600 bg-slate-50 rounded p-2 border border-slate-200">
+                        <span className="font-semibold">Notes: </span>{animal.notes}
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="flex gap-2 pt-4 border-t">
+                <Button onClick={onEdit} variant="outline" size="sm" className="flex-1">
+                    <Edit className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Edit</span>
+                </Button>
+                <Button onClick={onViewHistory} variant="outline" size="sm" className="flex-1">
+                    <FileText className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">History</span>
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="px-2">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={onViewTip} className="text-blue-600 focus:bg-blue-50 focus:text-blue-700">
+                            <BrainCircuit className="mr-2 h-4 w-4" />AI Health Tip
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onSetStatus("Sold")} className="text-green-600 focus:bg-green-50 focus:text-green-700">
+                            Mark as Sold
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onSetStatus("Culled")} className="text-orange-600 focus:bg-orange-50 focus:text-orange-700">
+                            Mark as Culled
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                            <Trash2 className="mr-2 h-4 w-4" />Delete Record
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </CardFooter>
+        </Card>
+    );
+};
+
 const AnimalsPage = () => {
     const [animals, setAnimals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingAnimal, setEditingAnimal] = useState(null);
     const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
-    const [tipAnimal, setTipAnimal] = useState(null); // State for the AI tip dialog
+    const [tipAnimal, setTipAnimal] = useState(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const { toast } = useToast();
-    
+
     const fetchAnimals = useCallback(async () => {
         try {
             setLoading(true);
             const data = await getAnimals();
             setAnimals(data);
         } catch (error) {
-            toast({ 
-                variant: "destructive", 
-                title: "Error", 
-                description: error.response?.data?.message || error.message || "Failed to load animal data." 
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.response?.data?.message || error.message || "Failed to load animal data."
             });
         } finally {
             setLoading(false);
@@ -69,10 +197,10 @@ const AnimalsPage = () => {
             setIsFormOpen(false);
             setEditingAnimal(null);
         } catch (error) {
-            toast({ 
-                variant: "destructive", 
-                title: "Error", 
-                description: error.response?.data?.message || 'Failed to save animal.' 
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.response?.data?.message || 'Failed to save animal.'
             });
         }
     };
@@ -88,10 +216,10 @@ const AnimalsPage = () => {
             toast({ title: "Status Updated", description: `Animal marked as ${status}.` });
             fetchAnimals();
         } catch (error) {
-            toast({ 
-                variant: "destructive", 
-                title: "Error", 
-                description: error.response?.data?.message || "Failed to update status." 
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.response?.data?.message || "Failed to update status."
             });
         }
     };
@@ -103,19 +231,29 @@ const AnimalsPage = () => {
                 toast({ title: "Success", description: "Animal record deleted." });
                 fetchAnimals();
             } catch (error) {
-                toast({ 
-                    variant: "destructive", 
-                    title: "Error", 
-                    description: error.response?.data?.message || "Failed to delete animal." 
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: error.response?.data?.message || "Failed to delete animal."
                 });
             }
         }
     };
 
-    // Handler for the AI Health Tip feature
     const handleViewTipClick = (animal) => {
         setTipAnimal(animal);
     };
+
+    // Filter animals based on search and status
+    const filteredAnimals = animals.filter(animal => {
+        const matchesSearch = searchTerm === "" ||
+            animal.tagId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (animal.name && animal.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+        const matchesStatus = statusFilter === "all" || animal.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
 
     if (loading) {
         return <div className="text-center p-8">Loading animal registry...</div>;
@@ -123,25 +261,25 @@ const AnimalsPage = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold">Animals & Herd Management</h1>
                     <p className="mt-1 text-gray-600">View, add, and manage all animals on your farm.</p>
                 </div>
-                <Dialog open={isFormOpen} onOpenChange={(isOpen) => { 
-                    setIsFormOpen(isOpen); 
-                    if (!isOpen) setEditingAnimal(null); 
+                <Dialog open={isFormOpen} onOpenChange={(isOpen) => {
+                    setIsFormOpen(isOpen);
+                    if (!isOpen) setEditingAnimal(null);
                 }}>
                     <DialogTrigger asChild>
-                        <Button className="mt-4 md:mt-0" onClick={() => setIsFormOpen(true)}>
+                        <Button onClick={() => setIsFormOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Add New Animal
                         </Button>
                     </DialogTrigger>
                     {isFormOpen && (
-                        <AnimalFormDialog 
-                            onSave={handleSaveAnimal} 
-                            animal={editingAnimal} 
-                            onClose={() => setIsFormOpen(false)} 
+                        <AnimalFormDialog
+                            onSave={handleSaveAnimal}
+                            animal={editingAnimal}
+                            onClose={() => setIsFormOpen(false)}
                         />
                     )}
                 </Dialog>
@@ -149,59 +287,81 @@ const AnimalsPage = () => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Animal Registry</CardTitle>
-                    <CardDescription>A complete list of your livestock.</CardDescription>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex-grow">
+                            <CardTitle>Animal Registry</CardTitle>
+                            <CardDescription>A complete list of your livestock.</CardDescription>
+                        </div>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                            <div className="w-full sm:w-40">
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Filter status..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="Active">Active</SelectItem>
+                                        <SelectItem value="Sold">Sold</SelectItem>
+                                        <SelectItem value="Culled">Culled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="relative w-full sm:w-64">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                <Input
+                                    placeholder="Search by Tag ID or Name..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tag ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Species</TableHead>
-                                <TableHead>Age</TableHead>
-                                <TableHead>Weight</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {animals.map((animal) => (
-                                <TableRow key={animal._id}>
-                                    <TableCell className="font-medium">{animal.tagId}</TableCell>
-                                    <TableCell>{animal.name || 'N/A'}</TableCell>
-                                    <TableCell>{animal.species}</TableCell>
-                                    <TableCell>{calculateAge(animal.dob)}</TableCell>
-                                    <TableCell>{animal.weight || 'N/A'}</TableCell>
-                                    <TableCell>{animal.status}</TableCell>
-                                    <TableCell className="text-right">
-                                        <ActionsDropdown
-                                            animal={animal}
-                                            onEdit={() => handleEditClick(animal)}
-                                            onSetStatus={(status) => handleSetStatus(animal._id, status)}
-                                            onDelete={() => handleDeleteAnimal(animal._id)}
-                                            onViewHistory={() => setViewingHistoryOf(animal.tagId)}
-                                            onViewTip={() => handleViewTipClick(animal)}
-                                        />
-                                    </TableCell>
-                                </TableRow>
+                    {filteredAnimals.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {filteredAnimals.map((animal) => (
+                                <AnimalCard
+                                    key={animal._id}
+                                    animal={animal}
+                                    onEdit={() => handleEditClick(animal)}
+                                    onSetStatus={(status) => handleSetStatus(animal._id, status)}
+                                    onDelete={() => handleDeleteAnimal(animal._id)}
+                                    onViewHistory={() => setViewingHistoryOf(animal.tagId)}
+                                    onViewTip={() => handleViewTipClick(animal)}
+                                />
                             ))}
-                        </TableBody>
-                    </Table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-12">
+                            <img
+                                src="/animals/cow.png"
+                                alt="No animals"
+                                className="w-24 h-24 mx-auto mb-4 opacity-50"
+                            />
+                            <p className="text-lg font-medium text-gray-600">No animals found</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                                {searchTerm || statusFilter !== "all"
+                                    ? "Try adjusting your search or filter criteria."
+                                    : "Add your first animal to get started."}
+                            </p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
             {/* Animal History Dialog */}
-            <AnimalHistoryDialog 
+            <AnimalHistoryDialog
                 animalId={viewingHistoryOf}
                 isOpen={!!viewingHistoryOf}
                 onClose={() => setViewingHistoryOf(null)}
             />
-            
+
             {/* AI Health Tip Dialog */}
-            <HealthTipDialog 
-                animal={tipAnimal} 
-                isOpen={!!tipAnimal} 
+            <HealthTipDialog
+                animal={tipAnimal}
+                isOpen={!!tipAnimal}
                 onClose={() => setTipAnimal(null)}
             />
         </div>
@@ -260,20 +420,20 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                         <div className="space-y-2">
                             <Label htmlFor="tagId">Official 12-Digit Tag ID</Label>
                             <div className="flex gap-2">
-                                <Input 
-                                    id="tagId" 
-                                    name="tagId" 
-                                    value={formData.tagId} 
-                                    onChange={handleChange} 
-                                    required 
-                                    disabled={!!animal} 
-                                    placeholder="e.g., 342987123456" 
+                                <Input
+                                    id="tagId"
+                                    name="tagId"
+                                    value={formData.tagId}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={!!animal}
+                                    placeholder="e.g., 342987123456"
                                 />
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    size="icon" 
-                                    onClick={() => setIsScannerOpen(true)} 
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => setIsScannerOpen(true)}
                                     disabled={!!animal}
                                 >
                                     <QrCode className="h-5 w-5" />
@@ -281,23 +441,23 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                                 </Button>
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="name">Animal Name (Optional)</Label>
-                            <Input 
-                                id="name" 
-                                name="name" 
-                                value={formData.name} 
-                                onChange={handleChange} 
-                                placeholder="e.g., Gauri" 
+                            <Input
+                                id="name"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="e.g., Gauri"
                             />
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="species">Species</Label>
-                            <Select 
-                                name="species" 
-                                value={formData.species} 
+                            <Select
+                                name="species"
+                                value={formData.species}
                                 onValueChange={(v) => handleSelectChange("species", v)}
                             >
                                 <SelectTrigger>
@@ -311,16 +471,16 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                                     <SelectItem value="Horse">Horse</SelectItem>
                                     <SelectItem value="Buffalo">Buffalo</SelectItem>
                                     <SelectItem value="Yak">Yak</SelectItem>
-                                    <SelectItem value="Mithun">Mithun</SelectItem>
+                                    <SelectItem value="Ox">Ox</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="gender">Gender</Label>
-                            <Select 
-                                name="gender" 
-                                value={formData.gender} 
+                            <Select
+                                name="gender"
+                                value={formData.gender}
                                 onValueChange={(v) => handleSelectChange("gender", v)}
                             >
                                 <SelectTrigger>
@@ -332,31 +492,31 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                                 </SelectContent>
                             </Select>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="dob">Date of Birth</Label>
-                            <Input 
-                                id="dob" 
-                                name="dob" 
-                                type="date" 
-                                value={formData.dob} 
-                                onChange={handleChange} 
+                            <Input
+                                id="dob"
+                                name="dob"
+                                type="date"
+                                value={formData.dob}
+                                onChange={handleChange}
                             />
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="weight">Weight</Label>
                             <div className="flex gap-2">
-                                <Input 
-                                    id="weight" 
-                                    name="weight" 
-                                    type="number" 
-                                    value={formData.weight} 
-                                    onChange={handleChange} 
+                                <Input
+                                    id="weight"
+                                    name="weight"
+                                    type="number"
+                                    value={formData.weight}
+                                    onChange={handleChange}
                                 />
-                                <Select 
-                                    name="weightUnit" 
-                                    value={formData.weightUnit} 
+                                <Select
+                                    name="weightUnit"
+                                    value={formData.weightUnit}
                                     onValueChange={(v) => handleSelectChange("weightUnit", v)}
                                 >
                                     <SelectTrigger className="w-[80px]">
@@ -369,15 +529,15 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                                 </Select>
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <Label htmlFor="notes">Notes</Label>
-                            <Textarea 
-                                id="notes" 
-                                name="notes" 
-                                value={formData.notes} 
-                                onChange={handleChange} 
-                                placeholder="Any specific details..." 
+                            <Textarea
+                                id="notes"
+                                name="notes"
+                                value={formData.notes}
+                                onChange={handleChange}
+                                placeholder="Any specific details..."
                             />
                         </div>
                     </div>
@@ -388,49 +548,12 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                 </form>
             </DialogContent>
             {isScannerOpen && (
-                <BarcodeScannerDialog 
-                    onClose={() => setIsScannerOpen(false)} 
-                    onScanSuccess={onScanSuccess} 
+                <BarcodeScannerDialog
+                    onClose={() => setIsScannerOpen(false)}
+                    onScanSuccess={onScanSuccess}
                 />
             )}
         </>
-    );
-};
-
-// Complete Actions Dropdown with all features
-const ActionsDropdown = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onViewTip }) => {
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="h-4 w-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={onEdit}>
-                    <Edit className="mr-2 h-4 w-4" />Edit Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onViewHistory}>
-                    <FileText className="mr-2 h-4 w-4" />View History
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onViewTip} className="text-blue-600 focus:bg-blue-50 focus:text-blue-700">
-                    <BrainCircuit className="mr-2 h-4 w-4" />AI Health Tip
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onSetStatus("Sold")} className="text-green-600 focus:bg-green-50 focus:text-green-700">
-                    Mark as Sold
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onSetStatus("Culled")} className="text-orange-600 focus:bg-orange-50 focus:text-orange-700">
-                    Mark as Culled
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={onDelete} className="text-red-600 focus:bg-red-50 focus:text-red-700">
-                    <Trash2 className="mr-2 h-4 w-4" />Delete Record
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
     );
 };
 
@@ -462,7 +585,7 @@ const HealthTipDialog = ({ animal, isOpen, onClose }) => {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <BrainCircuit className="h-5 w-5 text-blue-600" /> 
+                        <BrainCircuit className="h-5 w-5 text-blue-600" />
                         AI Health Tip for {animal?.name || animal?.tagId}
                     </DialogTitle>
                     <DialogDescription>

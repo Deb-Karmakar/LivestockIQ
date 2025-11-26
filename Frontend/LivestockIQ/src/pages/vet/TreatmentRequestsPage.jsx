@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star, Loader2, ArrowUpDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star, Loader2, Stethoscope, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '../../hooks/use-toast';
 import { getTreatmentRequests } from '../../services/vetService';
@@ -15,7 +15,6 @@ import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRequestSorter } from '../../hooks/useRequestSorter';
 
 // --- Helper Functions ---
 const calculateAge = (dob) => {
@@ -31,12 +30,12 @@ const calculateAge = (dob) => {
 
 const StatusBadge = ({ status }) => {
     const config = {
-        'Pending': { text: 'Pending Review', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
-        'Approved': { text: 'Approved', color: 'bg-green-100 text-green-800', icon: <CheckCircle2 className="h-3 w-3" /> },
-        'Rejected': { text: 'Rejected', color: 'bg-red-100 text-red-800', icon: <XCircle className="h-3 w-3" /> },
+        'Pending': { text: 'Pending Review', color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: <Clock className="h-3 w-3" /> },
+        'Approved': { text: 'Approved', color: 'bg-green-100 text-green-800 border-green-300', icon: <CheckCircle2 className="h-3 w-3" /> },
+        'Rejected': { text: 'Rejected', color: 'bg-red-100 text-red-800 border-red-300', icon: <XCircle className="h-3 w-3" /> },
     };
-    const finalConfig = config[status] || { text: 'Unknown', color: 'bg-gray-100 text-gray-800', icon: <Clock className="h-3 w-3" /> };
-    return <Badge className={`flex items-center gap-1.5 w-fit ${finalConfig.color} hover:${finalConfig.color}`}>{finalConfig.icon}{finalConfig.text}</Badge>;
+    const finalConfig = config[status] || { text: 'Unknown', color: 'bg-gray-100 text-gray-800 border-gray-300', icon: <Clock className="h-3 w-3" /> };
+    return <Badge className={`flex items-center gap-1.5 w-fit border ${finalConfig.color} hover:${finalConfig.color}`}>{finalConfig.icon}{finalConfig.text}</Badge>;
 };
 
 const generateVetPdfCopy = (treatment, vet) => {
@@ -73,16 +72,120 @@ const generateVetPdfCopy = (treatment, vet) => {
     doc.save(`Prescription_Copy_${treatment.animalId}.pdf`);
 };
 
+// --- Treatment Request Card Component ---
+const TreatmentRequestCard = ({ request, onReview, onReject, onViewHistory }) => {
+    const age = calculateAge(request.animal?.dob);
+    const isPending = (request.status || 'Pending') === 'Pending';
+
+    return (
+        <Card className="hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                        <Avatar className="h-12 w-12 bg-green-100">
+                            <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+                                {request.farmerId?.farmOwner?.charAt(0) || 'F'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg truncate">{request.farmerId?.farmOwner || 'Unknown Farmer'}</CardTitle>
+                            <CardDescription className="flex items-center gap-1 text-sm">
+                                <MapPin className="h-3 w-3" />
+                                {request.farmerId?.farmName || 'Unknown Farm'}
+                            </CardDescription>
+                        </div>
+                    </div>
+                    <StatusBadge status={request.status || 'Pending'} />
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {/* Animal Details */}
+                <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <Stethoscope className="h-4 w-4" />
+                        Animal Information
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <span className="text-slate-500">ID:</span>
+                            <span className="ml-2 font-medium">{request.animalId}</span>
+                        </div>
+                        {request.animal ? (
+                            <>
+                                <div>
+                                    <span className="text-slate-500">Species:</span>
+                                    <span className="ml-2 font-medium">{request.animal.species}</span>
+                                </div>
+                                <div>
+                                    <span className="text-slate-500">Gender:</span>
+                                    <span className="ml-2 font-medium">{request.animal.gender || 'N/A'}</span>
+                                </div>
+                                <div>
+                                    <span className="text-slate-500">Age:</span>
+                                    <span className="ml-2 font-medium">{age}</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="col-span-2 text-red-600 text-xs">Animal data not found</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Drug Information */}
+                <div className="space-y-1">
+                    <div className="text-xs text-slate-500 uppercase tracking-wide">Drug Used</div>
+                    <div className="text-lg font-semibold text-slate-900">{request.drugName}</div>
+                </div>
+            </CardContent>
+            <CardFooter className="flex gap-2 pt-4 border-t">
+                <Button
+                    onClick={() => onReview(request)}
+                    disabled={!isPending}
+                    className="flex-1"
+                    size="sm"
+                >
+                    <Star className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Review</span>
+                </Button>
+                <Button
+                    onClick={() => onReject(request)}
+                    disabled={!isPending}
+                    variant="destructive"
+                    className="flex-1"
+                    size="sm"
+                >
+                    <XCircle className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Reject</span>
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="px-2">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onViewHistory(request.animalId)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Animal History
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </CardFooter>
+        </Card>
+    );
+};
+
 // --- Main Treatment Requests Page Component ---
 const TreatmentRequestsPage = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [editingRequest, setEditingRequest] = useState(null);
     const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
+    const [activeTab, setActiveTab] = useState('all');
     const { toast } = useToast();
     const { user: vetUser } = useAuth();
-
-    const { sortedRequests, requestSort, sortConfig } = useRequestSorter(requests);
 
     const fetchRequests = useCallback(async () => {
         try {
@@ -124,92 +227,84 @@ const TreatmentRequestsPage = () => {
         setEditingRequest(null);
     };
 
+    const handleReject = async (request) => {
+        if (window.confirm(`Are you sure you want to reject the treatment request for animal ${request.animalId}?`)) {
+            await handleUpdateRequest(request._id, { status: 'Rejected' });
+        }
+    };
+
+    // Filter requests based on active tab
+    const filteredRequests = requests.filter(req => {
+        const status = req.status || 'Pending';
+        if (activeTab === 'all') return true;
+        if (activeTab === 'pending') return status === 'Pending';
+        if (activeTab === 'approved') return status === 'Approved';
+        if (activeTab === 'rejected') return status === 'Rejected';
+        return true;
+    });
+
+    const pendingCount = requests.filter(r => (r.status || 'Pending') === 'Pending').length;
+    const approvedCount = requests.filter(r => r.status === 'Approved').length;
+    const rejectedCount = requests.filter(r => r.status === 'Rejected').length;
+
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Pending Verifications</CardTitle>
-                    <CardDescription>
-                        You have {requests.filter(r => (r.status || 'Pending') === 'Pending').length} treatments to review.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>
-                                    <Button variant="ghost" onClick={() => requestSort('farmer')}>
-                                        Farmer <ArrowUpDown className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </TableHead>
-                                <TableHead>Animal Details</TableHead>
-                                <TableHead>Drug Used</TableHead>
-                                <TableHead>
-                                    <Button variant="ghost" onClick={() => requestSort('status')}>
-                                        Status <ArrowUpDown className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {sortedRequests.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">No requests found.</TableCell>
-                                </TableRow>
-                            ) : (
-                                sortedRequests.map(req => (
-                                    <TableRow key={req._id}>
-                                        <TableCell>
-                                            <div className="font-medium">{req.farmerId?.farmOwner}</div>
-                                            <div className="text-sm text-muted-foreground">{req.farmerId?.farmName}</div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">ID: {req.animalId}</div>
-                                            {req.animal ? (
-                                                <div className="text-sm text-muted-foreground">
-                                                    {req.animal.species} • {req.animal.gender || ''} • {calculateAge(req.animal.dob)}
-                                                </div>
-                                            ) : (
-                                                <div className="text-sm text-destructive">Animal data not found</div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>{req.drugName}</TableCell>
-                                        <TableCell><StatusBadge status={req.status || 'Pending'} /></TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => setEditingRequest(req)} disabled={req.status !== 'Pending'}>
-                                                        <Star className="mr-2 h-4 w-4" />
-                                                        <span>Review & Approve</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => setViewingHistoryOf(req.animalId)}>
-                                                        <FileText className="mr-2 h-4 w-4" />
-                                                        <span>View History</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleUpdateRequest(req._id, { status: 'Rejected' })} className="text-red-600" disabled={req.status !== 'Pending'}>
-                                                        <XCircle className="mr-2 h-4 w-4" />
-                                                        <span>Reject</span>
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <div>
+                <h1 className="text-3xl font-bold">Treatment Verifications</h1>
+                <p className="mt-1 text-gray-600">Review and approve treatment requests from farmers.</p>
+            </div>
+
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+                    <TabsTrigger value="all" className="relative">
+                        All
+                        <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs">{requests.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="pending" className="relative">
+                        Pending
+                        <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs bg-yellow-100 text-yellow-800">{pendingCount}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="approved" className="relative">
+                        Approved
+                        <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs bg-green-100 text-green-800">{approvedCount}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="rejected" className="relative">
+                        Rejected
+                        <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs bg-red-100 text-red-800">{rejectedCount}</Badge>
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value={activeTab} className="mt-6">
+                    {filteredRequests.length === 0 ? (
+                        <Card>
+                            <CardContent className="flex flex-col items-center justify-center py-12">
+                                <FileText className="h-12 w-12 text-gray-400 mb-4" />
+                                <p className="text-lg font-medium text-gray-600">No requests found</p>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    {activeTab === 'pending' && 'No pending treatment requests at the moment.'}
+                                    {activeTab === 'approved' && 'No approved treatments yet.'}
+                                    {activeTab === 'rejected' && 'No rejected treatments.'}
+                                    {activeTab === 'all' && 'No treatment requests available.'}
+                                </p>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredRequests.map(req => (
+                                <TreatmentRequestCard
+                                    key={req._id}
+                                    request={req}
+                                    onReview={() => setEditingRequest(req)}
+                                    onReject={() => handleReject(req)}
+                                    onViewHistory={setViewingHistoryOf}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </TabsContent>
+            </Tabs>
 
             {editingRequest && (
                 <EditRequestDialog
