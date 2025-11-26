@@ -107,7 +107,11 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **MongoDB Database**: Scalable NoSQL database with Mongoose ODM
 - **Real-time Synchronization**: Live data updates across all user interfaces
 - **Data Validation**: Comprehensive server-side and client-side validation
-- **Audit Logging**: Complete audit trail for all data changes
+- **Blockchain Audit System**: Immutable, tamper-proof audit logging with Polygon blockchain integration
+- **Hash Chain Protection**: Cryptographically linked audit logs preventing unauthorized modifications
+- **Digital Signatures**: RSA-based digital signatures for veterinarian treatment approvals
+- **Merkle Tree Verification**: Efficient batch verification of audit logs with Merkle roots
+- **Blockchain Anchoring**: Periodic anchoring of audit snapshots to Polygon Amoy testnet
 - **Data Export**: Export data in multiple formats (PDF, CSV, JSON)
 
 #### Communication & Notifications
@@ -171,6 +175,9 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **Groq AI** - AI-powered chat and health recommendations
 - **node-cron** - Automated background job scheduling
 - **date-fns** - Advanced date manipulation and formatting
+- **Hardhat** - Ethereum development environment for smart contracts
+- **ethers.js** - Blockchain interaction library
+- **Polygon Amoy** - Blockchain network for immutable audit trail anchoring
 
 ### Frontend:
 - **React 19** - UI library with modern hooks
@@ -248,6 +255,12 @@ GROQ_API_KEY=your_groq_api_key_here
 # Admin Configuration
 ADMIN_EMAIL=admin@livestockiq.com
 ADMIN_PASSWORD=secure_admin_password
+
+# Blockchain Configuration (Polygon Amoy Testnet)
+BLOCKCHAIN_RPC_URL=https://rpc-amoy.polygon.technology/
+BLOCKCHAIN_PRIVATE_KEY=your_polygon_wallet_private_key
+BLOCKCHAIN_CONTRACT_ADDRESS=deployed_audit_contract_address
+BLOCKCHAIN_ENABLED=true
 ```
 
 #### Start MongoDB
@@ -345,6 +358,8 @@ LivestockIQ/
 │   │   ├── admin.controller.js          # System administration
 │   │   ├── ai.controller.js             # AI health tips and recommendations
 │   │   ├── animal.controller.js         # Animal management
+│   │   ├── audit.controller.js          # Audit trail management
+│   │   ├── auditEnhancements.controller.js # Enhanced audit features
 │   │   ├── auth.controller.js           # Authentication & authorization
 │   │   ├── farmer.controller.js         # Farmer profile management
 │   │   ├── groq.controller.js           # Groq AI chat integration
@@ -359,6 +374,7 @@ LivestockIQ/
 │   │   └── auth.middleware.js           # JWT authentication middleware
 │   ├── models/
 │   │   ├── animal.model.js              # Animal schema & model
+│   │   ├── auditLog.model.js            # Audit log schema with hash chain
 │   │   ├── complianceAlert.model.js     # Compliance alerts
 │   │   ├── farmer.model.js              # Farmer profile schema
 │   │   ├── inventory.model.js           # Inventory item schema
@@ -366,11 +382,13 @@ LivestockIQ/
 │   │   ├── regulator.model.js           # Regulator profile schema
 │   │   ├── sale.model.js                # Sales record schema
 │   │   ├── treatment.model.js           # Treatment record schema
-│   │   └── vet.model.js                 # Veterinarian profile schema
+│   │   └── vet.model.js                 # Veterinarian profile schema with key pairs
 │   ├── routes/
 │   │   ├── admin.routes.js              # System administration endpoints
 │   │   ├── ai.routes.js                 # AI health recommendations endpoints
 │   │   ├── animal.routes.js             # Animal management endpoints
+│   │   ├── audit.routes.js              # Audit trail endpoints
+│   │   ├── auditEnhancements.routes.js  # Enhanced audit endpoints
 │   │   ├── auth.routes.js               # Authentication endpoints
 │   │   ├── farmer.routes.js             # Farmer-specific endpoints
 │   │   ├── groq.routes.js               # Groq AI chat endpoints
@@ -381,20 +399,33 @@ LivestockIQ/
 │   │   ├── sales.routes.js              # Sales tracking endpoints
 │   │   ├── treatment.routes.js          # Treatment management endpoints
 │   │   └── vet.routes.js                # Veterinarian endpoints
-│   ├── jobs/                            # Background processing jobs
-│   │   ├── amuAnalysis.js               # AMU spike detection and peer analysis
-│   │   └── diseaseAlertJob.js           # Disease prediction and alerting
+│   │   ├── jobs/                            # Background processing jobs
+│   │   │   ├── amuAnalysis.js               # AMU spike detection and peer analysis
+│   │   │   ├── blockchainAnchor.js          # Blockchain audit anchoring
+│   │   │   └── diseaseAlertJob.js           # Disease prediction and alerting
 │   ├── config/
 │   │   ├── db.js                        # Database configuration
 │   │   ├── groq.js                      # Groq AI configuration
 │   │   └── seed.js                      # Database seeding utilities
-│   ├── utils/
-│   │   ├── createPrescriptionPdf.js     # PDF generation for prescriptions
-│   │   ├── createTreatmentPdf.js        # PDF generation for treatments
-│   │   └── sendEmail.js                 # Email notification utility
-│   ├── .env                         # Environment variables
-│   ├── package.json                 # Backend dependencies
-│   └── server.js                    # Main server entry point
+│   │   ├── services/                        # Business logic services
+│   │   │   ├── auditLog.service.js          # Audit log operations
+│   │   │   ├── blockchain.service.js        # Blockchain interaction service
+│   │   │   ├── digitalSignature.service.js  # RSA digital signature service
+│   │   │   └── merkleTree.service.js        # Merkle tree generation
+│   │   ├── utils/
+│   │   │   ├── createPrescriptionPdf.js     # PDF generation for prescriptions
+│   │   │   ├── createTreatmentPdf.js        # PDF generation for treatments
+│   │   │   ├── crypto.utils.js              # Cryptographic utilities
+│   │   │   └── sendEmail.js                 # Email notification utility
+│   │   ├── contracts/                       # Smart contracts
+│   │   │   └── AuditRegistry.sol            # Solidity smart contract for audit anchoring
+│   │   ├── scripts/                         # Deployment scripts
+│   │   │   └── deploy.js                    # Smart contract deployment script
+│   │   ├── AUDIT_SYSTEM_EXPLAINED.md        # Comprehensive audit system documentation
+│   │   ├── hardhat.config.cjs               # Hardhat configuration for blockchain
+│   │   ├── .env                         # Environment variables
+│   │   ├── package.json                 # Backend dependencies
+│   │   └── server.js                    # Main server entry point
 │
 ├── Frontend/LivestockIQ/
 │   ├── public/
@@ -607,6 +638,18 @@ npm run lint
 - `POST /api/groq/chat` - Chat with IQ Buddy AI assistant (Groq-powered)
 - `GET /api/ai/recommendations` - Get personalized recommendations
 - `POST /api/ai/analyze-pattern` - Analyze treatment patterns with AI
+
+### Blockchain Audit System
+- `GET /api/audit/trail/:entityType/:entityId` - Get audit trail for specific entity
+- `GET /api/audit/verify/:entityType/:entityId` - Verify integrity of entity audit trail
+- `GET /api/audit/farm/:farmerId` - Get all audit logs for a farm
+- `GET /api/audit/verify-farm/:farmerId` - Verify integrity of farm's complete audit trail
+- `GET /api/audit/recent` - Get recent audit logs across all farms (Regulator/Admin only)
+- `GET /api/audit/my-logs` - Get audit logs for authenticated farmer
+- `GET /api/audit-enhancements/blockchain-status` - Get blockchain anchoring status
+- `POST /api/audit-enhancements/anchor-now` - Manually trigger blockchain anchoring
+- `GET /api/audit-enhancements/merkle-proof/:farmerId` - Get Merkle proof for farm audit logs
+- `GET /api/audit-enhancements/verify-signature/:auditLogId` - Verify digital signature
 
 ### Administrative (Admin Access)
 - `POST /api/admin/trigger-amu-analysis` - Manually trigger AMU spike analysis job

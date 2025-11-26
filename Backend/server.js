@@ -15,8 +15,11 @@ import seedAdminUser from './config/seed.js';
 import adminRoutes from './routes/admin.routes.js';
 import aiRoutes from './routes/ai.routes.js';
 import groqRoutes from './routes/groq.routes.js';
+import auditRoutes from './routes/audit.routes.js';
+import auditEnhancementRoutes from './routes/auditEnhancements.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
+import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
 
 // ✅ Load .env only in development
 if (process.env.NODE_ENV !== 'production') {
@@ -59,6 +62,8 @@ app.use('/api/regulator', regulatorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/groq', groqRoutes);
+app.use('/api/audit', auditRoutes);
+app.use('/api/audit', auditEnhancementRoutes); // Enhancement routes
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported
@@ -84,4 +89,5 @@ app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   startAmuAnalysisJob();
   startDiseasePredictionJob();
+  startBlockchainAnchorJob(); // Start blockchain anchoring job
 });

@@ -1,12 +1,14 @@
 import Animal from '../models/animal.model.js';
 import Treatment from '../models/treatment.model.js';
 import Sale from '../models/sale.model.js';
+import { createAuditLog } from '../services/auditLog.service.js';
+
 // @desc    Add a new animal
 // @route   POST /api/animals
 // @access  Private
 export const addAnimal = async (req, res) => {
     try {
-        const { tagId, name, species, dob, weight, status, notes, gender  } = req.body;
+        const { tagId, name, species, dob, weight, status, notes, gender } = req.body;
 
         // Check if animal with this tag ID already exists
         const existingAnimal = await Animal.findOne({ tagId });
@@ -25,6 +27,22 @@ export const addAnimal = async (req, res) => {
             status: status || 'Active',
             notes,
             gender,
+        });
+
+        // Create audit log for animal creation
+        await createAuditLog({
+            eventType: 'CREATE',
+            entityType: 'Animal',
+            entityId: animal._id,
+            farmerId: req.user._id,
+            performedBy: req.user._id,
+            performedByRole: 'Farmer',
+            performedByModel: 'Farmer',
+            dataSnapshot: animal.toObject(),
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+            },
         });
 
         res.status(201).json(animal);
@@ -63,12 +81,44 @@ export const updateAnimal = async (req, res) => {
         if (animal.farmerId.toString() !== req.user._id.toString()) {
             return res.status(401).json({ message: 'User not authorized' });
         }
-        
+
+        // Store original state for audit trail
+        const originalState = animal.toObject();
+
         const updatedAnimal = await Animal.findByIdAndUpdate(
-            req.params.id, 
-            req.body, 
+            req.params.id,
+            req.body,
             { new: true }
         );
+
+        // Track what changed
+        const changes = {};
+        Object.keys(req.body).forEach(key => {
+            if (JSON.stringify(originalState[key]) !== JSON.stringify(req.body[key])) {
+                changes[key] = {
+                    from: originalState[key],
+                    to: req.body[key],
+                };
+            }
+        });
+
+        // Create audit log for animal update
+        await createAuditLog({
+            eventType: 'UPDATE',
+            entityType: 'Animal',
+            entityId: updatedAnimal._id,
+            farmerId: req.user._id,
+            performedBy: req.user._id,
+            performedByRole: 'Farmer',
+            performedByModel: 'Farmer',
+            dataSnapshot: updatedAnimal.toObject(),
+            changes,
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+            },
+        });
+
         res.json(updatedAnimal);
 
     } catch (error) {
@@ -92,7 +142,28 @@ export const deleteAnimal = async (req, res) => {
             return res.status(401).json({ message: 'User not authorized' });
         }
 
+        // Store animal data before deletion for audit trail
+        const animalSnapshot = animal.toObject();
+
         await animal.deleteOne();
+
+        // Create audit log for animal deletion
+        await createAuditLog({
+            eventType: 'DELETE',
+            entityType: 'Animal',
+            entityId: animal._id,
+            farmerId: req.user._id,
+            performedBy: req.user._id,
+            performedByRole: 'Farmer',
+            performedByModel: 'Farmer',
+            dataSnapshot: animalSnapshot,
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                notes: 'Animal deleted from system',
+            },
+        });
+
         res.json({ message: 'Animal removed successfully' });
 
     } catch (error) {
@@ -146,7 +217,7 @@ export const getAnimalHistory = async (req, res) => {
                 details: `Sold ${s.quantity} ${s.unit} for ₹${s.price.toLocaleString('en-IN')}.`
             });
         });
-        
+
         // 3. Sort the entire timeline by date
         const sortedTimeline = timelineEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 

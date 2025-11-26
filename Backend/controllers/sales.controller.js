@@ -2,6 +2,7 @@
 
 import Sale from '../models/sale.model.js';
 import Treatment from '../models/treatment.model.js';
+import { createAuditLog } from '../services/auditLog.service.js';
 
 // @desc    Log a new sale
 // @route   POST /api/sales
@@ -13,16 +14,16 @@ export const addSale = async (req, res) => {
     try {
         // --- CRUCIAL SAFETY CHECK ---
         // Find the most recent 'Approved' treatment for this animal
-        const lastTreatment = await Treatment.findOne({ 
+        const lastTreatment = await Treatment.findOne({
             animalId: animalId,
-            status: 'Approved' 
+            status: 'Approved'
         }).sort({ startDate: -1 });
 
         // If a recent treatment exists, check its withdrawal date
         if (lastTreatment && lastTreatment.withdrawalEndDate) {
             if (new Date() < new Date(lastTreatment.withdrawalEndDate)) {
-                return res.status(400).json({ 
-                    message: `Sale not allowed. Animal is still within a withdrawal period until ${lastTreatment.withdrawalEndDate.toLocaleDateString()}.` 
+                return res.status(400).json({
+                    message: `Sale not allowed. Animal is still within a withdrawal period until ${lastTreatment.withdrawalEndDate.toLocaleDateString()}.`
                 });
             }
         }
@@ -38,6 +39,23 @@ export const addSale = async (req, res) => {
             price,
             saleDate,
             notes
+        });
+
+        // Create audit log for sale creation
+        await createAuditLog({
+            eventType: 'CREATE',
+            entityType: 'Sale',
+            entityId: sale._id,
+            farmerId: farmerId,
+            performedBy: req.user._id,
+            performedByRole: 'Farmer',
+            performedByModel: 'Farmer',
+            dataSnapshot: sale.toObject(),
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                notes: `Sale of ${productType} for animal ${animalId}`,
+            },
         });
 
         res.status(201).json(sale);
