@@ -45,7 +45,7 @@ const WithdrawalStatusBadge = ({ status }) => {
         active: { text: 'Active Withdrawal', color: 'bg-red-100 text-red-800', icon: <Shield className="h-3 w-3" /> },
         pending: { text: 'Pending Vet Input', color: 'bg-gray-100 text-gray-800', icon: <Clock className="h-3 w-3" /> },
     };
-     const finalConfig = config[status] || config['pending'];
+    const finalConfig = config[status] || config['pending'];
     return <Badge className={`flex items-center gap-1.5 ${finalConfig.color} hover:${finalConfig.color}`}>{finalConfig.icon}{finalConfig.text}</Badge>;
 };
 const ApprovalStatusBadge = ({ status }) => {
@@ -113,13 +113,13 @@ const TreatmentsPage = () => {
         filterBy,
         setFilterBy
     } = useTreatmentFilter(treatments);
-    
+
     // Your working fetchData and handleSaveTreatment functions are untouched.
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
             const [treatmentsData, animalsData, farmerData] = await Promise.all([
-                getTreatments(), 
+                getTreatments(),
                 getAnimals(),
                 getMyProfile()
             ]);
@@ -147,20 +147,20 @@ const TreatmentsPage = () => {
         try {
             await addTreatment(dataToSave);
             toast({ title: "Success", description: "New treatment record has been submitted for vet review." });
-            
+
             if (currentFarmer && supervisingVet) {
                 generateTreatmentPDF(dataToSave, currentFarmer, supervisingVet);
             }
 
             fetchData();
             setIsFormOpen(false);
-        } catch(error) {
+        } catch (error) {
             toast({ variant: "destructive", title: "Error", description: error.response?.data?.message || "Failed to save treatment." });
         }
     };
-    
+
     // REMOVED: The old useMemo for filtering by search term is no longer needed.
-    
+
     if (loading) return <div className="p-8 text-center">Loading treatment records...</div>;
 
     return (
@@ -178,182 +178,182 @@ const TreatmentsPage = () => {
                         </DialogTrigger>
                         <TreatmentFormDialog onSave={handleSaveTreatment} onClose={() => setIsFormOpen(false)} animals={animals} supervisingVet={supervisingVet} />
                     </Dialog>
-                </div>
-            </div>
-            <Card>
-                <CardHeader>
-                    {/* 3. ADD the new filter/search controls */}
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div className="flex-grow">
-                            <CardTitle>Treatment History</CardTitle>
-                            <CardDescription>All recorded treatments are listed below, including their approval status.</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2 w-full md:w-auto">
-                            <div className="w-full md:w-48">
-                                <Select value={filterBy} onValueChange={setFilterBy}>
-                                    <SelectTrigger>
-                                        <Filter className="h-4 w-4 mr-2" />
-                                        <SelectValue placeholder="Filter by status..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Show All</SelectItem>
-                                        <SelectItem value="active">Active Withdrawals</SelectItem>
-                                        <SelectItem value="ending_soon">Ending Soon</SelectItem>
-                                        <SelectItem value="safe">Safe for Sale</SelectItem>
-                                        <SelectItem value="pending">Pending Vet Input</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="relative w-full md:w-64">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                                <Input 
-                                    placeholder="Search..." 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
-                                    className="pl-10" 
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Animal ID</TableHead>
-                                <TableHead>Drug</TableHead>
-                                <TableHead>Withdrawal End</TableHead>
-                                <TableHead>Days Left</TableHead>
-                                <TableHead>Withdrawal Status</TableHead>
-                                <TableHead>Approval Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {/* The table now correctly maps over 'filteredTreatments' from the hook */}
-                            {filteredTreatments.length > 0 ? filteredTreatments.map(treatment => {
-                                const { endDate, daysLeft, status: withdrawalStatus } = getWithdrawalInfo(treatment);
-                                return (
-                                    <React.Fragment key={treatment._id}>
-                                        <TableRow>
-                                            <TableCell className="font-medium">{treatment.animalId}</TableCell>
-                                            <TableCell>{treatment.drugName}</TableCell>
-                                            <TableCell>{endDate ? format(endDate, 'MMM d, yyyy') : 'Pending Vet'}</TableCell>
-                                            <TableCell className="font-semibold text-center">{daysLeft}</TableCell>
-                                            <TableCell><WithdrawalStatusBadge status={withdrawalStatus} /></TableCell>
-                                            <TableCell><ApprovalStatusBadge status={treatment.status} /></TableCell>
-                                        </TableRow>
-                                        {treatment.vetNotes && (
-                                            <TableRow className="bg-slate-50 hover:bg-slate-100">
-                                                <TableCell colSpan={6} className="py-2 px-6">
-                                                    <div className="flex items-start gap-3">
-                                                        <MessageSquareQuote className="h-5 w-5 mt-1 text-blue-600 flex-shrink-0" />
-                                                        <div>
-                                                            <p className="font-semibold text-blue-800">Veterinarian's Notes:</p>
-                                                            <p className="text-sm text-gray-700">{treatment.vetNotes}</p>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </React.Fragment>
-                                );
-                            }) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="h-24 text-center">No treatments match your filters.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-    );
-};
-
-// The TreatmentFormDialog component is completely unchanged.
-const TreatmentFormDialog = ({ onSave, onClose, animals, supervisingVet }) => {
-    const [startDate, setStartDate] = useState(new Date());
-    const handleSave = (e) => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
-        const data = {
-            animalId: formData.get('animalId'),
-            drugName: formData.get('drugName'),
-            startDate: startDate,
-            dose: formData.get('dose'),
-            route: formData.get('route'),
-            notes: formData.get('notes'),
-        };
-        onSave(data);
-    };
-    return (
-        <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-                <DialogTitle>Add New Treatment Record</DialogTitle>
-                <DialogDescription>Fill in the details below. This record will be sent to your supervising vet for review and approval.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSave}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="animalId">Animal / Herd ID</Label>
-                            <Select name="animalId" required>
-                                <SelectTrigger><SelectValue placeholder="Select Animal/Herd" /></SelectTrigger>
-                                <SelectContent>{(animals || []).map(a => <SelectItem key={a._id} value={a.tagId}>{a.tagId} ({a.name || a.species})</SelectItem>)}</SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="drugName">Drug Name</Label>
-                            <Input id="drugName" name="drugName" placeholder="e.g., Amoxicillin" required />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="dose">Dose (e.g., 10ml)</Label>
-                                <Input id="dose" name="dose" placeholder="e.g., 10ml" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="route">Route</Label>
-                                <Select name="route"><SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger><SelectContent><SelectItem value="Oral">Oral</SelectItem><SelectItem value="Injection">Injection</SelectItem><SelectItem value="Subcutaneous">Subcutaneous</SelectItem></SelectContent></Select>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="notes">Reason / Notes (Optional)</Label>
-                            <Textarea id="notes" name="notes" placeholder="e.g., Respiratory infection" />
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="startDate">Start Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{format(startDate, 'PPP')}</Button></PopoverTrigger>
-                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} /></PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Supervising Veterinarian</Label>
-                            {supervisingVet ? (
-                                <div className="flex items-center gap-3 border rounded-lg p-3 bg-gray-50">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarFallback>{supervisingVet.fullName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-semibold">{supervisingVet.fullName}</p>
-                                        <p className="text-xs text-muted-foreground">ID: {supervisingVet.vetId}</p>
+                    < /div>
+                    < /div>
+                    <Card>
+                        <CardHeader>
+                            {/* 3. ADD the new filter/search controls */}
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="flex-grow">
+                                    <CardTitle>Treatment History</CardTitle>
+                                    <CardDescription>All recorded treatments are listed below, including their approval status.</CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <div className="w-full md:w-48">
+                                        <Select value={filterBy} onValueChange={setFilterBy}>
+                                            <SelectTrigger>
+                                                <Filter className="h-4 w-4 mr-2" />
+                                                <SelectValue placeholder="Filter by status..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Show All</SelectItem>
+                                                <SelectItem value="active">Active Withdrawals</SelectItem>
+                                                <SelectItem value="ending_soon">Ending Soon</SelectItem>
+                                                <SelectItem value="safe">Safe for Sale</SelectItem>
+                                                <SelectItem value="pending">Pending Vet Input</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="relative w-full md:w-64">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                        <Input
+                                            placeholder="Search..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-10"
+                                        />
                                     </div>
                                 </div>
-                            ) : (
-                                <Input value="No supervising vet assigned to your profile." disabled />
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button type="submit">Save & Submit for Review</Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-    );
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Animal ID</TableHead>
+                                        <TableHead>Drug</TableHead>
+                                        <TableHead>Withdrawal End</TableHead>
+                                        <TableHead>Days Left</TableHead>
+                                        <TableHead>Withdrawal Status</TableHead>
+                                        <TableHead>Approval Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {/* The table now correctly maps over 'filteredTreatments' from the hook */}
+                                    {filteredTreatments.length > 0 ? filteredTreatments.map(treatment => {
+                                        const { endDate, daysLeft, status: withdrawalStatus } = getWithdrawalInfo(treatment);
+                                        return (
+                                            <React.Fragment key={treatment._id}>
+                                                <TableRow>
+                                                    <TableCell className="font-medium">{treatment.animalId}</TableCell>
+                                                    <TableCell>{treatment.drugName}</TableCell>
+                                                    <TableCell>{endDate ? format(endDate, 'MMM d, yyyy') : 'Pending Vet'}</TableCell>
+                                                    <TableCell className="font-semibold text-center">{daysLeft}</TableCell>
+                                                    <TableCell><WithdrawalStatusBadge status={withdrawalStatus} /></TableCell>
+                                                    <TableCell><ApprovalStatusBadge status={treatment.status} /></TableCell>
+                                                </TableRow>
+                                                {treatment.vetNotes && (
+                                                    <TableRow className="bg-slate-50 hover:bg-slate-100">
+                                                        <TableCell colSpan={6} className="py-2 px-6">
+                                                            <div className="flex items-start gap-3">
+                                                                <MessageSquareQuote className="h-5 w-5 mt-1 text-blue-600 flex-shrink-0" />
+                                                                <div>
+                                                                    <p className="font-semibold text-blue-800">Veterinarian's Notes:</p>
+                                                                    <p className="text-sm text-gray-700">{treatment.vetNotes}</p>
+                                                                </div>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    }) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="h-24 text-center">No treatments match your filters.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    < /div>
+                    );
+    };
+
+                    // The TreatmentFormDialog component is completely unchanged.
+                    const TreatmentFormDialog = ({onSave, onClose, animals, supervisingVet}) => {
+    const [startDate, setStartDate] = useState(new Date());
+    const handleSave = (e) => {
+                        e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const data = {
+                        animalId: formData.get('animalId'),
+                    drugName: formData.get('drugName'),
+                    startDate: startDate,
+                    dose: formData.get('dose'),
+                    route: formData.get('route'),
+                    notes: formData.get('notes'),
+        };
+                    onSave(data);
+    };
+                    return (
+                    <DialogContent className="sm:max-w-2xl">
+                        <DialogHeader>
+                            <DialogTitle>Add New Treatment Record</DialogTitle>
+                            <DialogDescription>Fill in the details below. This record will be sent to your supervising vet for review and approval.</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSave}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="animalId">Animal / Herd ID</Label>
+                                        <Select name="animalId" required>
+                                            <SelectTrigger><SelectValue placeholder="Select Animal/Herd" /></SelectTrigger>
+                                            <SelectContent>{(animals || []).map(a => <SelectItem key={a._id} value={a.tagId}>{a.tagId} ({a.name || a.species})</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="drugName">Drug Name</Label>
+                                        <Input id="drugName" name="drugName" placeholder="e.g., Amoxicillin" required />
+                                    </div >
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="dose">Dose (e.g., 10ml)</Label>
+                                            <Input id="dose" name="dose" placeholder="e.g., 10ml" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="route">Route</Label>
+                                            <Select name="route"><SelectTrigger><SelectValue placeholder="Select Route" /></SelectTrigger><SelectContent><SelectItem value="Oral">Oral</SelectItem><SelectItem value="Injection">Injection</SelectItem><SelectItem value="Subcutaneous">Subcutaneous</SelectItem></SelectContent></Select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="notes">Reason / Notes (Optional)</Label>
+                                        <Textarea id="notes" name="notes" placeholder="e.g., Respiratory infection" />
+                                    </div>
+                                </div >
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="startDate">Start Date</Label>
+                                        <Popover>
+                                            <PopoverTrigger asChild><Button variant="outline" className="w-full justify-start font-normal"><CalendarIcon className="mr-2 h-4 w-4" />{format(startDate, 'PPP')}</Button></PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={startDate} onSelect={setStartDate} /></PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Supervising Veterinarian</Label>
+                                        {supervisingVet ? (
+                                            <div className="flex items-center gap-3 border rounded-lg p-3 bg-gray-50">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarFallback>{supervisingVet.fullName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    < p className="font-semibold" > {supervisingVet.fullName}</p >
+                                                    <p className="text-xs text-muted-foreground">ID: {supervisingVet.vetId}</p>
+                                                </div >
+                                            </div >
+                                        ) : (
+                                            <Input value="No supervising vet assigned to your profile." disabled />
+                                        )}
+                                    </div >
+                                </div >
+                            </div >
+                            <DialogFooter>
+                                <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                                <Button type="submit">Save & Submit for Review</Button>
+                            </DialogFooter>
+                        </form >
+                    </DialogContent >
+                    );
 };
 
-export default TreatmentsPage;
+                    export default TreatmentsPage;

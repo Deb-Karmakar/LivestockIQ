@@ -1,4 +1,19 @@
 import { axiosInstance } from '../contexts/AuthContext';
+import {
+    saveOfflineVet,
+    getOfflineVets,
+    updateOfflineVet,
+    getOfflineVetDashboard,
+    cacheVetDashboard,
+    getOfflineTreatmentRequests,
+    cacheTreatmentRequests,
+    cacheVetProfile,
+    getOfflineMyFarmers,
+    cacheMyFarmers,
+    getOfflineFarmerAnimals,
+    cacheFarmerAnimals,
+    saveOfflineReport
+} from './offlineService';
 
 // Fetches a vet's public details by their unique code
 export const getVetDetailsByCode = async (vetId) => {
@@ -12,36 +27,102 @@ export const getVetDetailsByCode = async (vetId) => {
 };
 
 export const getTreatmentRequests = async () => {
+    if (!navigator.onLine) {
+        return await getOfflineTreatmentRequests();
+    }
     try {
         const { data } = await axiosInstance.get('/vets/treatment-requests');
+        await cacheTreatmentRequests(data);
         return data;
     } catch (error) {
         console.error("Error fetching treatment requests:", error);
-        throw error;
+        return await getOfflineTreatmentRequests();
     }
 };
 
 export const getAnimalsForFarmer = async (farmerId) => {
-    const { data } = await axiosInstance.get(`/vets/farmers/${farmerId}/animals`);
-    return data;
+    if (!navigator.onLine) {
+        return await getOfflineFarmerAnimals(farmerId);
+    }
+    try {
+        const { data } = await axiosInstance.get(`/vets/farmers/${farmerId}/animals`);
+        await cacheFarmerAnimals(farmerId, data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching farmer animals:", error);
+        return await getOfflineFarmerAnimals(farmerId);
+    }
 };
 
 export const getVetProfile = async () => {
-    const { data } = await axiosInstance.get('/vets/profile');
-    return data;
+    if (!navigator.onLine) {
+        const vets = await getOfflineVets();
+        return vets[0] || null;
+    }
+    try {
+        const { data } = await axiosInstance.get('/vets/profile');
+        await cacheVetProfile(data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching vet profile:", error);
+        const vets = await getOfflineVets();
+        return vets[0] || null;
+    }
 };
 
 export const updateVetProfile = async (profileData) => {
+    if (!navigator.onLine) {
+        const vets = await getOfflineVets();
+        const vet = vets[0];
+        if (vet) {
+            await updateOfflineVet(vet.id, profileData);
+            return { ...vet, ...profileData };
+        } else {
+            console.warn("No local vet profile found to update");
+            return profileData;
+        }
+    }
     const { data } = await axiosInstance.put('/vets/profile', profileData);
     return data;
 };
 
 export const reportFarmer = async (reportData) => {
-    const { data } = await axiosInstance.post('/vets/report-farmer', reportData);
-    return data;
+    if (!navigator.onLine) {
+        return await saveOfflineReport(reportData);
+    }
+    try {
+        const { data } = await axiosInstance.post('/vets/report-farmer', reportData);
+        return data;
+    } catch (error) {
+        console.error("Error reporting farmer:", error);
+        throw error;
+    }
+};
+
+export const getMyFarmers = async () => {
+    if (!navigator.onLine) {
+        return await getOfflineMyFarmers();
+    }
+    try {
+        const { data } = await axiosInstance.get('vets/my-farmers');
+        await cacheMyFarmers(data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching my farmers:", error);
+        return await getOfflineMyFarmers();
+    }
 };
 
 export const getVetDashboardData = async () => {
-    const { data } = await axiosInstance.get('/vets/dashboard');
-    return data;
+    if (!navigator.onLine) {
+        return await getOfflineVetDashboard();
+    }
+    try {
+        const { data } = await axiosInstance.get('/vets/dashboard');
+        await cacheVetDashboard(data);
+        return data;
+    } catch (error) {
+        console.error("Error fetching vet dashboard data:", error);
+        return await getOfflineVetDashboard();
+    }
 };

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Search, Phone, Mail, Loader2, MoreVertical, ShieldAlert } from 'lucide-react';
 import { axiosInstance } from '../../contexts/AuthContext';
-import { getAnimalsForFarmer, reportFarmer } from '../../services/vetService';
+import { getAnimalsForFarmer, reportFarmer, getMyFarmers } from '../../services/vetService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,7 +41,7 @@ const FarmerDirectoryPage = () => {
         const fetchFarmers = async () => {
             try {
                 setLoading(true);
-                const { data } = await axiosInstance.get('vets/my-farmers');
+                const data = await getMyFarmers();
                 setFarmers(data);
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Error', description: 'Failed to load your farmers.' });
@@ -69,7 +69,7 @@ const FarmerDirectoryPage = () => {
             setAnimalsLoading(false);
         }
     };
-    
+
     const handleReportClick = (farmer) => {
         setSelectedFarmer(farmer);
         setIsReportDialogOpen(true);
@@ -84,7 +84,7 @@ const FarmerDirectoryPage = () => {
             toast({ variant: 'destructive', title: 'Error', description: error.response?.data?.message || 'Failed to submit report.' });
         }
     };
-    
+
     const closeDialogs = () => {
         setSelectedFarmer(null);
         setFarmerAnimals([]);
@@ -102,7 +102,7 @@ const FarmerDirectoryPage = () => {
                 </div>
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                    <Input placeholder="Search by farmer or farm name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10"/>
+                    <Input placeholder="Search by farmer or farm name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
                 </div>
             </div>
 
@@ -132,7 +132,7 @@ const FarmerDirectoryPage = () => {
                             </DropdownMenu>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                             <div className="flex justify-start gap-2 border-t pt-4">
+                            <div className="flex justify-start gap-2 border-t pt-4">
                                 <Button asChild variant="outline" size="sm"><a href={`tel:${farmer.phoneNumber}`}><Phone className="mr-2 h-4 w-4" /> Call</a></Button>
                                 <Button asChild variant="outline" size="sm"><a href={`mailto:${farmer.email}`}><Mail className="mr-2 h-4 w-4" /> Email</a></Button>
                             </div>
@@ -140,7 +140,7 @@ const FarmerDirectoryPage = () => {
                     </Card>
                 ))}
             </div>
-            
+
             {/* CORRECTED: This is the proper way to render the empty state message */}
             {filteredFarmers.length === 0 && !loading && (
                 <div className="text-center py-12 text-gray-500 col-span-full">
@@ -148,8 +148,8 @@ const FarmerDirectoryPage = () => {
                     <p className="text-sm">Farmers will appear here after they sign up using your Vet ID.</p>
                 </div>
             )}
-            
-            <FarmerAnimalsDialog isOpen={!!selectedFarmer && !isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} animals={farmerAnimals} loading={animalsLoading}/>
+
+            <FarmerAnimalsDialog isOpen={!!selectedFarmer && !isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} animals={farmerAnimals} loading={animalsLoading} />
             <ReportFarmerDialog isOpen={isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} onSubmit={handleReportSubmit} />
         </div>
     );
@@ -213,7 +213,7 @@ const ReportFarmerDialog = ({ isOpen, onClose, farmer, onSubmit }) => {
         }
         onSubmit({ farmerId: farmer._id, reason, details });
     };
-    
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>

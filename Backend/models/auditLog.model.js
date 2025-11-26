@@ -116,7 +116,7 @@ const auditLogSchema = new mongoose.Schema({
 auditLogSchema.index({ entityType: 1, entityId: 1, timestamp: -1 });
 auditLogSchema.index({ farmerId: 1, timestamp: -1 });
 auditLogSchema.index({ performedBy: 1, timestamp: -1 });
-auditLogSchema.index({ currentHash: 1 }, { unique: true });
+
 auditLogSchema.index({ eventType: 1, timestamp: -1 });
 
 // Prevent updates to audit logs (immutability)

@@ -15,7 +15,7 @@ import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRequestSorter } from '../../hooks/useRequestSorter'; // 1. Import the custom hook
+import { useRequestSorter } from '../../hooks/useRequestSorter';
 
 // --- Helper Functions ---
 const calculateAge = (dob) => {
@@ -28,6 +28,7 @@ const calculateAge = (dob) => {
     if (years > 0) return `${years} year${years > 1 ? 's' : ''}, ${months} mo`;
     return `${months} month${months > 1 ? 's' : ''}`;
 };
+
 const StatusBadge = ({ status }) => {
     const config = {
         'Pending': { text: 'Pending Review', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-3 w-3" /> },
@@ -40,7 +41,7 @@ const StatusBadge = ({ status }) => {
 
 const generateVetPdfCopy = (treatment, vet) => {
     const doc = new jsPDF();
-    
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(24);
     doc.setTextColor(34, 139, 34);
@@ -53,7 +54,7 @@ const generateVetPdfCopy = (treatment, vet) => {
     doc.text(`Prescription for Animal ${treatment.animalId}`, 14, 40);
     doc.setFontSize(12);
     doc.text(`Issued by: ${vet.fullName}`, 14, 48);
-    
+
     autoTable(doc, {
         startY: 60,
         head: [['Field', 'Details']],
@@ -81,7 +82,6 @@ const TreatmentRequestsPage = () => {
     const { toast } = useToast();
     const { user: vetUser } = useAuth();
 
-    // 2. Call the hook to get sorting logic and the sorted data
     const { sortedRequests, requestSort, sortConfig } = useRequestSorter(requests);
 
     const fetchRequests = useCallback(async () => {
@@ -96,21 +96,26 @@ const TreatmentRequestsPage = () => {
     }, [toast]);
 
     useEffect(() => {
-        setLoading(true);
-        fetchRequests().finally(() => setLoading(false));
+        const load = async () => {
+            setLoading(true);
+            await fetchRequests();
+            setLoading(false);
+        };
+        load();
     }, [fetchRequests]);
 
     const handleUpdateRequest = async (requestId, updateData) => {
         try {
             await updateTreatmentByVet(requestId, updateData);
             toast({ title: "Success", description: `Treatment record has been updated.` });
-            
+
             const updatedRequests = await fetchRequests();
 
             if (updateData.status === 'Approved') {
-                const fullRecordForPdf = updatedRequests.find(r => r._id === requestId);
-                if (fullRecordForPdf) {
-                    generateVetPdfCopy(fullRecordForPdf, vetUser);
+                const originalRequest = requests.find(r => r._id === requestId);
+                if (originalRequest) {
+                    const mergedRequest = { ...originalRequest, ...updateData };
+                    generateVetPdfCopy(mergedRequest, vetUser);
                 }
             }
         } catch (error) {
@@ -118,16 +123,11 @@ const TreatmentRequestsPage = () => {
         }
         setEditingRequest(null);
     };
-    
+
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">Treatment Requests</h1>
-                <p className="mt-1 text-gray-600">Review and verify treatment records submitted by farmers.</p>
-            </div>
-
             <Card>
                 <CardHeader>
                     <CardTitle>Pending Verifications</CardTitle>
@@ -155,57 +155,57 @@ const TreatmentRequestsPage = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {/* 3. Map over the 'sortedRequests' array from the hook */}
-                            {sortedRequests.map(req => (
-                                <TableRow key={req._id}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-8 w-8"><AvatarFallback>{req.farmerId?.farmOwner?.charAt(0) || 'F'}</AvatarFallback></Avatar>
-                                            <div>
-                                                <p className="font-semibold">{req.farmerId?.farmOwner || 'Unknown Farmer'}</p>
-                                                <p className="text-xs text-gray-500">{req.farmerId?.farmName || 'Unknown Farm'}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">ID: {req.animalId}</div>
-                                        {req.animal ? (
-                                            <div className="text-sm text-muted-foreground">
-                                                {req.animal.species} • {req.animal.gender || ''} • {calculateAge(req.animal.dob)}
-                                            </div>
-                                        ) : (
-                                            <div className="text-sm text-destructive">Animal data not found</div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{req.drugName}</TableCell>
-                                    <TableCell><StatusBadge status={req.status || 'Pending'} /></TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => setEditingRequest(req)} disabled={req.status !== 'Pending'}>
-                                                    <Star className="mr-2 h-4 w-4" />
-                                                    <span>Review & Approve</span>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setViewingHistoryOf(req.animalId)}>
-                                                    <FileText className="mr-2 h-4 w-4" />
-                                                    <span>View History</span>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => handleUpdateRequest(req._id, { status: 'Rejected' })} className="text-red-600" disabled={req.status !== 'Pending'}>
-                                                    <XCircle className="mr-2 h-4 w-4" />
-                                                    <span>Reject</span>
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                            {sortedRequests.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">No requests found.</TableCell>
                                 </TableRow>
-                            ))}
+                            ) : (
+                                sortedRequests.map(req => (
+                                    <TableRow key={req._id}>
+                                        <TableCell>
+                                            <div className="font-medium">{req.farmerId?.farmOwner}</div>
+                                            <div className="text-sm text-muted-foreground">{req.farmerId?.farmName}</div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="font-medium">ID: {req.animalId}</div>
+                                            {req.animal ? (
+                                                <div className="text-sm text-muted-foreground">
+                                                    {req.animal.species} • {req.animal.gender || ''} • {calculateAge(req.animal.dob)}
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-destructive">Animal data not found</div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>{req.drugName}</TableCell>
+                                        <TableCell><StatusBadge status={req.status || 'Pending'} /></TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onClick={() => setEditingRequest(req)} disabled={req.status !== 'Pending'}>
+                                                        <Star className="mr-2 h-4 w-4" />
+                                                        <span>Review & Approve</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => setViewingHistoryOf(req.animalId)}>
+                                                        <FileText className="mr-2 h-4 w-4" />
+                                                        <span>View History</span>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => handleUpdateRequest(req._id, { status: 'Rejected' })} className="text-red-600" disabled={req.status !== 'Pending'}>
+                                                        <XCircle className="mr-2 h-4 w-4" />
+                                                        <span>Reject</span>
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -219,7 +219,7 @@ const TreatmentRequestsPage = () => {
                 />
             )}
 
-            <AnimalHistoryDialog 
+            <AnimalHistoryDialog
                 animalId={viewingHistoryOf}
                 isOpen={!!viewingHistoryOf}
                 onClose={() => setViewingHistoryOf(null)}

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext'; // Corrected import path
 import { Button } from "@/components/ui/button"; // Added missing Button import
+import { useSync } from '../../contexts/SyncContext';
 import {
     LayoutDashboard,
-    PawPrint ,
+    PawPrint,
     HeartPulse,
     ShoppingCart,
     Bell,
@@ -22,7 +23,7 @@ import {
 // Links for the main sidebar (Desktop) and primary mobile nav
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/farmer/dashboard', icon: LayoutDashboard },
-    { name: 'Animals', path: '/farmer/animals', icon: PawPrint  },
+    { name: 'Animals', path: '/farmer/animals', icon: PawPrint },
     { name: 'Treatments', path: '/farmer/treatments', icon: HeartPulse },
     { name: 'Sell', path: '/farmer/sell', icon: ShoppingCart },
     { name: 'Alerts', path: '/farmer/alerts', icon: Bell },
@@ -42,21 +43,35 @@ const allNavLinks = [...primaryNavLinks, ...secondaryNavLinks];
 // --- Main Layout Component ---
 
 const AppLayout = () => {
+    const { isOnline, isSyncing } = useSync();
+
     return (
         <div className="flex h-screen bg-gray-50">
             {/* Desktop Sidebar */}
             <Sidebar />
 
             <div className="flex-1 flex flex-col overflow-hidden">
+                {/* Offline/Sync Banner */}
+                {!isOnline && (
+                    <div className="bg-yellow-500 text-white text-center py-1 px-4 text-sm font-medium">
+                        You are currently offline. Changes will be saved locally and synced when you reconnect.
+                    </div>
+                )}
+                {isSyncing && (
+                    <div className="bg-blue-500 text-white text-center py-1 px-4 text-sm font-medium">
+                        Syncing data...
+                    </div>
+                )}
+
                 {/* Mobile Header */}
                 <MobileHeader />
-                
+
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
                     <Outlet />
                 </main>
             </div>
-            
+
             {/* Mobile Bottom Navigation */}
             <BottomNav />
         </div>
@@ -80,8 +95,7 @@ const Sidebar = () => {
                         key={link.name}
                         to={link.path}
                         className={({ isActive }) =>
-                            `flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 ${
-                                isActive ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
+                            `flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 ${isActive ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
                             }`
                         }
                     >
@@ -91,7 +105,7 @@ const Sidebar = () => {
                 ))}
             </nav>
             <div className="px-4 py-4 border-t">
-                
+
             </div>
         </aside>
     );
@@ -125,12 +139,11 @@ const MobileHeader = () => {
                 </div>
                 <nav className="p-4 space-y-2">
                     {secondaryNavLinks.map(link => (
-                         <NavLink
+                        <NavLink
                             key={link.name}
                             to={link.path}
                             className={({ isActive }) =>
-                                `flex items-center px-4 py-2 text-gray-700 rounded-lg ${
-                                    isActive ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
+                                `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-green-100 text-green-700 font-semibold' : 'hover:bg-gray-100'
                                 }`
                             }
                         >
@@ -140,7 +153,7 @@ const MobileHeader = () => {
                     ))}
                 </nav>
                 <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-                    
+
                 </div>
             </div>
         </header>
@@ -152,12 +165,11 @@ const BottomNav = () => {
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-30">
             <div className="flex justify-around">
                 {primaryNavLinks.map(link => (
-                     <NavLink
+                    <NavLink
                         key={link.name}
                         to={link.path}
                         className={({ isActive }) =>
-                            `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${
-                                isActive ? 'text-green-600' : 'text-gray-500'
+                            `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${isActive ? 'text-green-600' : 'text-gray-500'
                             }`
                         }
                     >
