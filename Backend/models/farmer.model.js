@@ -14,7 +14,7 @@ const farmerSchema = new mongoose.Schema({
     speciesReared: { type: String },
     herdSize: { type: Number },
     vetId: { type: String, required: true }, // Links to a Veterinarian
-    // Timestamps are essential for tracking when data was last changed.
+    status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
 }, { timestamps: true });
 
 // Hash password before saving

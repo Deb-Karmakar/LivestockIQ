@@ -8,6 +8,7 @@ const adminSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true, lowercase: true },
     password: { type: String, required: true },
     role: { type: String, default: 'admin' },
+    status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
 }, { timestamps: true });
 
 // Hash password before saving

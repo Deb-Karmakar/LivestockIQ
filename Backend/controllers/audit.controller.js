@@ -118,7 +118,8 @@ export const verifyFarmAuditIntegrity = async (req, res) => {
 export const getRecentAudits = async (req, res) => {
     try {
         // Only regulators and admins can access recent audits across all farms
-        if (req.user.role !== 'Regulator' && req.user.role !== 'Admin') {
+        const userRole = req.user.role.toLowerCase();
+        if (userRole !== 'regulator' && userRole !== 'admin') {
             return res.status(403).json({ message: 'Not authorized to access recent audit logs' });
         }
 

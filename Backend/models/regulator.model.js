@@ -16,6 +16,7 @@ const regulatorSchema = new mongoose.Schema({
         vetComplianceReports: { type: Boolean, default: true },
         monthlySummary: { type: Boolean, default: false },
     },
+    status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
 }, { timestamps: true });
 
 // Hash password before saving

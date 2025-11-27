@@ -41,6 +41,7 @@ const vetSchema = new mongoose.Schema({
         latitude: { type: Number },
         longitude: { type: Number },
     },
+    status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
 }, { timestamps: true });
 
 // Hash password before saving

@@ -94,7 +94,6 @@ const getSpeciesConfig = (species) => {
         'Pig': { image: '/animals/pig.png', color: 'from-pink-400 to-pink-600', bg: 'bg-pink-50' },
         'Horse': { image: '/animals/horse.png', color: 'from-amber-700 to-amber-900', bg: 'bg-amber-50' },
         'Yak': { image: '/animals/yak.png', color: 'from-zinc-600 to-zinc-800', bg: 'bg-zinc-50' },
-        'Ox': { image: '/animals/ox.png', color: 'from-yellow-600 to-yellow-800', bg: 'bg-yellow-50' }
     };
     return map[species] || map['Cattle'];
 };
@@ -845,7 +844,6 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
                                         <SelectItem value="Horse">Horse</SelectItem>
                                         <SelectItem value="Buffalo">Buffalo</SelectItem>
                                         <SelectItem value="Yak">Yak</SelectItem>
-                                        <SelectItem value="Ox">Ox</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>

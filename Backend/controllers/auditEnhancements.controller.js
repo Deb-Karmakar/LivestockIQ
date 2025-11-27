@@ -83,9 +83,10 @@ export const getFarmMerkleSnapshot = async (req, res) => {
         const { farmerId } = req.params;
 
         // Authorization check
+        const userRole = req.user.role.toLowerCase();
         const isAuthorized =
-            req.user.role === 'Regulator' ||
-            req.user.role === 'Admin' ||
+            userRole === 'regulator' ||
+            userRole === 'admin' ||
             req.user._id.toString() === farmerId;
 
         if (!isAuthorized) {
@@ -109,7 +110,8 @@ export const getFarmMerkleSnapshot = async (req, res) => {
 // @access  Private (Regulator, Admin)
 export const batchVerify = async (req, res) => {
     try {
-        if (req.user.role !== 'Regulator' && req.user.role !== 'Admin') {
+        const userRole = req.user.role.toLowerCase();
+        if (userRole !== 'regulator' && userRole !== 'admin') {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
@@ -139,9 +141,10 @@ export const verifyFarmMerkle = async (req, res) => {
         const { farmerId } = req.params;
 
         // Authorization check
+        const userRole = req.user.role.toLowerCase();
         const isAuthorized =
-            req.user.role === 'Regulator' ||
-            req.user.role === 'Admin' ||
+            userRole === 'regulator' ||
+            userRole === 'admin' ||
             req.user._id.toString() === farmerId;
 
         if (!isAuthorized) {
@@ -168,8 +171,9 @@ export const anchorFarmToBlockchain = async (req, res) => {
         const { farmerId } = req.params;
 
         // Authorization check
+        const userRole = req.user.role.toLowerCase();
         const isAuthorized =
-            req.user.role === 'Admin' ||
+            userRole === 'admin' ||
             req.user._id.toString() === farmerId;
 
         if (!isAuthorized) {
