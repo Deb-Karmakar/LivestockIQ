@@ -21,8 +21,8 @@ export const startBlockchainAnchorJob = () => {
         console.log('🔗 ========================================\n');
 
         try {
-            // Get all active farmers
-            const farmers = await Farmer.find({ isActive: true }).select('_id name email');
+            // Get all farmers (isActive defaults to true if not set)
+            const farmers = await Farmer.find({ isActive: { $ne: false } }).select('_id farmOwner email');
 
             if (farmers.length === 0) {
                 console.log('⚠️  No active farmers found. Skipping anchoring.');
@@ -38,7 +38,7 @@ export const startBlockchainAnchorJob = () => {
             // Anchor each farm's data
             for (const farmer of farmers) {
                 try {
-                    console.log(`📍 Processing farm: ${farmer.name} (${farmer._id})`);
+                    console.log(`📍 Processing farm: ${farmer.farmOwner || farmer.email} (${farmer._id})`);
 
                     const result = await generateAndAnchorFarmSnapshot(farmer._id);
 
@@ -58,7 +58,7 @@ export const startBlockchainAnchorJob = () => {
                     console.log(''); // Empty line for readability
 
                 } catch (error) {
-                    console.error(`   ❌ Error anchoring farm ${farmer.name}:`, error.message);
+                    console.error(`   ❌ Error anchoring farm ${farmer.farmOwner || farmer.email}:`, error.message);
                     errorCount++;
                 }
             }
@@ -88,7 +88,7 @@ export const triggerManualAnchoring = async () => {
     console.log('🔗 Manual blockchain anchoring triggered...');
 
     try {
-        const farmers = await Farmer.find({ isActive: true }).select('_id name');
+        const farmers = await Farmer.find({ isActive: { $ne: false } }).select('_id farmOwner');
 
         const results = [];
         for (const farmer of farmers) {
@@ -96,7 +96,7 @@ export const triggerManualAnchoring = async () => {
                 const result = await generateAndAnchorFarmSnapshot(farmer._id);
                 results.push({
                     farmerId: farmer._id,
-                    farmerName: farmer.name,
+                    farmerName: farmer.farmOwner,
                     success: !!result.blockchain,
                     merkleRoot: result.merkleRoot,
                     totalLogs: result.totalLogs,
@@ -105,7 +105,7 @@ export const triggerManualAnchoring = async () => {
             } catch (error) {
                 results.push({
                     farmerId: farmer._id,
-                    farmerName: farmer.name,
+                    farmerName: farmer.farmOwner,
                     success: false,
                     error: error.message
                 });
