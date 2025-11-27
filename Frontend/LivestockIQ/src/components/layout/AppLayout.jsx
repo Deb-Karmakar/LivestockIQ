@@ -25,7 +25,7 @@ const primaryNavLinks = [
     { name: 'Dashboard', path: '/farmer/dashboard', icon: LayoutDashboard },
     { name: 'Animals', path: '/farmer/animals', icon: PawPrint },
     { name: 'Treatments', path: '/farmer/treatments', icon: HeartPulse },
-    { name: 'Sell', path: '/farmer/sell', icon: ShoppingCart },
+    { name: 'Sales', path: '/farmer/sales', icon: ShoppingCart },
     { name: 'Alerts', path: '/farmer/alerts', icon: Bell },
 ];
 

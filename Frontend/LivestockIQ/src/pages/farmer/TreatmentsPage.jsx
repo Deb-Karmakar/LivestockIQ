@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { PlusCircle, CalendarIcon, Search, FileDown, ShieldCheck, ShieldAlert, Shield, CheckCircle2, XCircle, Clock, MessageSquareQuote, Filter, Pill, Syringe } from 'lucide-react';
+import { PlusCircle, CalendarIcon, Search, FileDown, ShieldCheck, ShieldAlert, Shield, CheckCircle2, XCircle, Clock, MessageSquareQuote, Filter, Pill, Syringe, Sparkles } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { useToast } from '../../hooks/use-toast';
 import { getAnimals } from '../../services/animalService';
@@ -97,6 +97,122 @@ const generateTreatmentPDF = (treatment, farmer, vet) => {
     doc.save(`TreatmentRecord_${treatment.animalId}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 };
 
+const exportAllTreatmentsPDF = (treatments, farmer, vet) => {
+    const doc = new jsPDF();
+
+    // Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(24);
+    doc.setTextColor(34, 139, 34);
+    doc.text("LivestockIQ", 14, 22);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(20);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Treatment History Report", 14, 35);
+
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${format(new Date(), 'MMM d, yyyy, h:mm a')}`, 14, 43);
+
+    // Farm and Vet Info
+    if (farmer || vet) {
+        const farmInfo = farmer ? `${farmer.farmOwner} - ${farmer.farmName}` : 'N/A';
+        const vetInfo = vet ? `${vet.fullName} (${vet.vetId})` : 'No vet assigned';
+
+        autoTable(doc, {
+            startY: 53,
+            head: [['Farm Information', 'Supervising Veterinarian']],
+            body: [[farmInfo, vetInfo]],
+            theme: 'striped',
+            headStyles: { fillColor: [34, 139, 34] }
+        });
+    }
+
+    // Summary Statistics
+    const stats = {
+        total: treatments.length,
+        pending: treatments.filter(t => t.status === 'Pending').length,
+        approved: treatments.filter(t => t.status === 'Approved').length,
+        rejected: treatments.filter(t => t.status === 'Rejected').length,
+        safeForSale: treatments.filter(t => {
+            const info = getWithdrawalInfo(t);
+            return info.status === 'safe';
+        }).length,
+        activeWithdrawals: treatments.filter(t => {
+            const info = getWithdrawalInfo(t);
+            return info.status === 'active';
+        }).length
+    };
+
+    autoTable(doc, {
+        startY: doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : 70,
+        head: [['Summary Statistics']],
+        body: [
+            [`Total Treatments: ${stats.total}`],
+            [`Pending Approval: ${stats.pending}`],
+            [`Approved: ${stats.approved}`],
+            [`Rejected: ${stats.rejected}`],
+            [`Animals Safe for Sale: ${stats.safeForSale}`],
+            [`Active Withdrawals: ${stats.activeWithdrawals}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [34, 139, 34] }
+    });
+
+    // Treatment Details Table
+    if (treatments.length > 0) {
+        const treatmentTableData = treatments.map((treatment) => {
+            const withdrawalInfo = getWithdrawalInfo(treatment);
+            const withdrawalStatus = withdrawalInfo.status === 'safe' ? 'Safe' :
+                withdrawalInfo.status === 'active' ? `${withdrawalInfo.daysLeft} days left` :
+                    withdrawalInfo.status === 'ending_soon' ? `${withdrawalInfo.daysLeft} days (ending soon)` :
+                        'Pending Vet';
+
+            return [
+                treatment.animalId,
+                treatment.drugName,
+                treatment.dose || 'N/A',
+                treatment.route || 'N/A',
+                treatment.startDate ? format(new Date(treatment.startDate), 'MM/dd/yyyy') : 'N/A',
+                withdrawalInfo.endDate ? format(withdrawalInfo.endDate, 'MM/dd/yyyy') : 'Pending',
+                withdrawalStatus,
+                treatment.status
+            ];
+        });
+
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [['Animal ID', 'Drug', 'Dose', 'Route', 'Start Date', 'End Date', 'Withdrawal Status', 'Approval']],
+            body: treatmentTableData,
+            theme: 'striped',
+            headStyles: { fillColor: [34, 139, 34] },
+            styles: { fontSize: 8, cellPadding: 2 },
+            columnStyles: {
+                0: { cellWidth: 25 },
+                1: { cellWidth: 30 },
+                2: { cellWidth: 20 },
+                3: { cellWidth: 20 },
+                4: { cellWidth: 22 },
+                5: { cellWidth: 22 },
+                6: { cellWidth: 28 },
+                7: { cellWidth: 20 }
+            }
+        });
+    }
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' });
+    }
+
+    // Save the PDF
+    doc.save(`Treatment_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+};
+
 // --- Treatment Card Component ---
 const TreatmentCard = ({ treatment }) => {
     const { endDate, daysLeft, status: withdrawalStatus } = getWithdrawalInfo(treatment);
@@ -104,23 +220,27 @@ const TreatmentCard = ({ treatment }) => {
     return (
         <Card className="hover:shadow-lg transition-shadow duration-200">
             <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Pill className="h-5 w-5 text-blue-600" />
-                            <span className="truncate">{treatment.drugName}</span>
-                        </CardTitle>
-                        <CardDescription className="mt-1">Animal ID: {treatment.animalId}</CardDescription>
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-start gap-2">
+                        <Pill className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-lg leading-tight break-words">
+                                {treatment.drugName}
+                            </CardTitle>
+                            <CardDescription className="mt-1">Animal ID: {treatment.animalId}</CardDescription>
+                        </div>
                     </div>
-                    <WithdrawalStatusBadge status={withdrawalStatus} />
+                    <div className="flex justify-end">
+                        <WithdrawalStatusBadge status={withdrawalStatus} />
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
                 {/* Withdrawal Countdown */}
                 {withdrawalStatus !== 'pending' && (
                     <div className={`rounded-lg p-4 text-center ${withdrawalStatus === 'safe' ? 'bg-green-50 border border-green-200' :
-                            withdrawalStatus === 'ending_soon' ? 'bg-yellow-50 border border-yellow-200' :
-                                'bg-red-50 border border-red-200'
+                        withdrawalStatus === 'ending_soon' ? 'bg-yellow-50 border border-yellow-200' :
+                            'bg-red-50 border border-red-200'
                         }`}>
                         <div className="text-3xl font-bold mb-1">
                             {daysLeft === 0 ? '✓' : daysLeft}
@@ -245,32 +365,105 @@ const TreatmentsPage = () => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center">Loading treatment records...</div>;
+    // Handler for the export button
+    const handleExportPDF = () => {
+        if (treatments.length === 0) {
+            toast({
+                variant: "destructive",
+                title: "No data to export",
+                description: "You need at least one treatment record to export."
+            });
+            return;
+        }
+
+        exportAllTreatmentsPDF(treatments, currentFarmer, supervisingVet);
+        toast({
+            title: "PDF Exported",
+            description: `Successfully exported ${treatments.length} treatment record(s).`
+        });
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-gray-200 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin absolute inset-0" />
+                </div>
+                <p className="text-gray-500 font-medium">Loading treatment records...</p>
+            </div>
+        );
+    }
+
+    // Calculate stats
+    const stats = {
+        total: treatments.length,
+        active: treatments.filter(t => getWithdrawalInfo(t).status === 'active').length,
+        safe: treatments.filter(t => getWithdrawalInfo(t).status === 'safe').length,
+        pending: treatments.filter(t => t.status === 'Pending').length
+    };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Treatment Records</h1>
-                    <p className="mt-1 text-gray-600">Log, track, and manage all antimicrobial treatments.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4" /> Export PDF</Button>
-                    <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                        <DialogTrigger asChild>
-                            <Button><PlusCircle className="mr-2 h-4 w-4" /> Add Treatment</Button>
-                        </DialogTrigger>
-                        <TreatmentFormDialog onSave={handleSaveTreatment} onClose={() => setIsFormOpen(false)} animals={animals} supervisingVet={supervisingVet} />
-                    </Dialog>
+        <div className="space-y-8 pb-8">
+            {/* Header Section */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Treatment Management</span>
+                        </div>
+                        <h1 className="text-3xl lg:text-4xl font-bold">
+                            Treatment Records
+                        </h1>
+                        <p className="text-slate-400 max-w-md">
+                            Log, track, and manage all antimicrobial treatments. You have{' '}
+                            <span className="text-blue-400 font-semibold">{stats.total} treatments</span> with{' '}
+                            <span className="text-amber-400 font-semibold">{stats.active} active withdrawals</span>.
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <Button
+                            variant="outline"
+                            className="w-full sm:w-auto border-slate-600 text-white hover:bg-slate-700 bg-slate-800/50"
+                            onClick={handleExportPDF}
+                        >
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Export
+                        </Button>
+                        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                            <DialogTrigger asChild>
+                                <Button
+                                    size="lg"
+                                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30"
+                                >
+                                    <PlusCircle className="mr-2 h-5 w-5" />
+                                    Add Treatment
+                                </Button>
+                            </DialogTrigger>
+                            <TreatmentFormDialog onSave={handleSaveTreatment} onClose={() => setIsFormOpen(false)} animals={animals} supervisingVet={supervisingVet} />
+                        </Dialog>
+                    </div>
                 </div>
             </div>
 
-            <Card>
-                <CardHeader>
+            {/* Main Content */}
+            <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div className="flex-grow">
-                            <CardTitle>Treatment History</CardTitle>
-                            <CardDescription>All recorded treatments with their withdrawal and approval status.</CardDescription>
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-purple-100 rounded-xl">
+                                <Syringe className="w-5 h-5 text-purple-600" />
+                            </div>
+                            <div>
+                                <CardTitle>Treatment History</CardTitle>
+                                <CardDescription>All recorded treatments with their withdrawal and approval status.</CardDescription>
+                            </div>
                         </div>
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
                             <div className="w-full sm:w-48">
@@ -300,7 +493,7 @@ const TreatmentsPage = () => {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     {filteredTreatments.length > 0 ? (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                             {filteredTreatments.map(treatment => (
@@ -320,7 +513,7 @@ const TreatmentsPage = () => {
     );
 };
 
-// The TreatmentFormDialog component is unchanged.
+// The TreatmentFormDialog component
 const TreatmentFormDialog = ({ onSave, onClose, animals, supervisingVet }) => {
     const [startDate, setStartDate] = useState(new Date());
     const handleSave = (e) => {
