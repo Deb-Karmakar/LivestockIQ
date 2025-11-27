@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star, Loader2, Stethoscope, MapPin } from 'lucide-react';
+import { MoreHorizontal, CheckCircle2, XCircle, Clock, FileText, Star, Stethoscope, MapPin, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '../../hooks/use-toast';
 import { getTreatmentRequests } from '../../services/vetService';
@@ -247,13 +247,42 @@ const TreatmentRequestsPage = () => {
     const approvedCount = requests.filter(r => r.status === 'Approved').length;
     const rejectedCount = requests.filter(r => r.status === 'Rejected').length;
 
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-gray-200 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin absolute inset-0" />
+                </div>
+                <p className="text-gray-500 font-medium">Loading treatment requests...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">Treatment Verifications</h1>
-                <p className="mt-1 text-gray-600">Review and approve treatment requests from farmers.</p>
+        <div className="space-y-8 pb-8">
+            {/* Header Section */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Treatment Verification</span>
+                        </div>
+                        <h1 className="text-3xl lg:text-4xl font-bold">
+                            Treatment Verifications
+                        </h1>
+                        <p className="text-slate-400 max-w-md">
+                            Review and approve treatment requests from farmers. You have{' '}
+                            <span className="text-yellow-400 font-semibold">{pendingCount} pending requests</span> and{' '}
+                            <span className="text-green-400 font-semibold">{approvedCount} approved</span>.
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

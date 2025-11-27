@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Phone, Mail, Loader2, MoreVertical, ShieldAlert } from 'lucide-react';
+import { Search, Phone, Mail, MoreVertical, ShieldAlert, Sparkles, Users as UsersIcon } from 'lucide-react';
 import { axiosInstance } from '../../contexts/AuthContext';
 import { getAnimalsForFarmer, reportFarmer, getMyFarmers } from '../../services/vetService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from '../../hooks/use-toast';
 
-// Helper function (unchanged)
 const calculateAge = (dob) => {
     if (!dob) return "N/A";
     const ageDifMs = Date.now() - new Date(dob).getTime();
@@ -91,62 +90,100 @@ const FarmerDirectoryPage = () => {
         setIsReportDialogOpen(false);
     };
 
-    if (loading) return <div>Loading farmers...</div>;
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-gray-200 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin absolute inset-0" />
+                </div>
+                <p className="text-gray-500 font-medium">Loading farmers...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold">Farmer Directory</h1>
-                    <p className="mt-1 text-gray-600">A directory of all farmers under your supervision.</p>
-                </div>
-                <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
-                    <Input placeholder="Search by farmer or farm name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+        <div className="space-y-8 pb-8">
+            {/* Header Section */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Farmer Management</span>
+                        </div>
+                        <h1 className="text-3xl lg:text-4xl font-bold">
+                            Farmer Directory
+                        </h1>
+                        <p className="text-slate-400 max-w-md">
+                            A directory of all farmers under your supervision. You have{' '}
+                            <span className="text-blue-400 font-semibold">{farmers.length} assigned farmers</span>.
+                        </p>
+                    </div>
+                    <div className="relative w-full lg:w-96">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                        <Input
+                            placeholder="Search by farmer or farm name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredFarmers.map(farmer => (
-                    <Card key={farmer._id} className="flex flex-col">
-                        <CardHeader className="flex flex-row items-start justify-between">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-12 w-12">
-                                    <AvatarFallback>{farmer.farmOwner.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <CardTitle>{farmer.farmOwner}</CardTitle>
-                                    <CardDescription>{farmer.farmName}</CardDescription>
+            {/* Farmers Grid */}
+            {filteredFarmers.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredFarmers.map(farmer => (
+                        <Card key={farmer._id} className="flex flex-col border-0 shadow-lg hover:shadow-xl transition-shadow">
+                            <CardHeader className="flex flex-row items-start justify-between pb-3">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12">
+                                        <AvatarFallback className="bg-blue-100 text-blue-600">
+                                            {farmer.farmOwner.split(' ').map(n => n[0]).join('')}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <CardTitle className="text-base">{farmer.farmOwner}</CardTitle>
+                                        <CardDescription>{farmer.farmName}</CardDescription>
+                                    </div>
                                 </div>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2"><MoreVertical className="h-4 w-4" /></Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleViewAnimalsClick(farmer)}>View Animals</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleReportClick(farmer)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
-                                        <ShieldAlert className="mr-2 h-4 w-4" /> Report Non-Compliance
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <div className="flex justify-start gap-2 border-t pt-4">
-                                <Button asChild variant="outline" size="sm"><a href={`tel:${farmer.phoneNumber}`}><Phone className="mr-2 h-4 w-4" /> Call</a></Button>
-                                <Button asChild variant="outline" size="sm"><a href={`mailto:${farmer.email}`}><Mail className="mr-2 h-4 w-4" /> Email</a></Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            {/* CORRECTED: This is the proper way to render the empty state message */}
-            {filteredFarmers.length === 0 && !loading && (
-                <div className="text-center py-12 text-gray-500 col-span-full">
-                    <p>No farmers found.</p>
-                    <p className="text-sm">Farmers will appear here after they sign up using your Vet ID.</p>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2"><MoreVertical className="h-4 w-4" /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => handleViewAnimalsClick(farmer)}>View Animals</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleReportClick(farmer)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                                            <ShieldAlert className="mr-2 h-4 w-4" /> Report Non-Compliance
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </CardHeader>
+                            <CardContent className="flex-grow pt-0">
+                                <div className="flex justify-start gap-2 border-t pt-4">
+                                    <Button asChild variant="outline" size="sm" className="flex-1"><a href={`tel:${farmer.phoneNumber}`}><Phone className="mr-2 h-4 w-4" /> Call</a></Button>
+                                    <Button asChild variant="outline" size="sm" className="flex-1"><a href={`mailto:${farmer.email}`}><Mail className="mr-2 h-4 w-4" /> Email</a></Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
+            ) : (
+                <Card className="border-0 shadow-lg">
+                    <CardContent className="p-12">
+                        <div className="text-center">
+                            <UsersIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                            <p className="text-lg font-medium text-gray-600">No farmers found</p>
+                            <p className="text-sm text-gray-500 mt-2">Farmers will appear here after they sign up using your Vet ID.</p>
+                        </div>
+                    </CardContent>
+                </Card>
             )}
 
             <FarmerAnimalsDialog isOpen={!!selectedFarmer && !isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} animals={farmerAnimals} loading={animalsLoading} />
@@ -155,7 +192,6 @@ const FarmerDirectoryPage = () => {
     );
 };
 
-// This component remains unchanged
 const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
     if (!isOpen) return null;
     return (
@@ -167,7 +203,9 @@ const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto">
                     {loading ? (
-                        <div className="flex justify-center items-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                        <div className="flex justify-center items-center p-8">
+                            <div className="w-8 h-8 border-4 border-gray-200 rounded-full border-t-blue-600 animate-spin" />
+                        </div>
                     ) : (
                         <Table>
                             <TableHeader>
@@ -200,7 +238,6 @@ const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
     );
 };
 
-// This component remains unchanged
 const ReportFarmerDialog = ({ isOpen, onClose, farmer, onSubmit }) => {
     const [reason, setReason] = useState('');
     const [details, setDetails] = useState('');

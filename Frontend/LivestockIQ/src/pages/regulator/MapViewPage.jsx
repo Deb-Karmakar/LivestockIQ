@@ -5,27 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from '@/components/ui/button';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { Tractor, Stethoscope, Loader2 } from 'lucide-react';
+import { Tractor, Stethoscope, Sparkles } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
 import { getMapData } from '../../services/regulatorService';
-
-// 1. Import your custom pin image
 import customPinIcon from '../../assets/generated_images/pin.png';
 
-// 2. Custom Icon Definitions - Using L.Icon with your image
 const farmIcon = new L.Icon({
-    iconUrl: customPinIcon, // Use your custom pin image
-    iconSize: [20, 20],      // Size of the icon
-    iconAnchor: [16, 32],    // Point of the icon which will correspond to marker's location (bottom center)
-    popupAnchor: [0, -32]    // Point from which the popup should open relative to the iconAnchor
+    iconUrl: customPinIcon,
+    iconSize: [20, 20],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
 });
 
-// Using the same pin for vets, but slightly larger to differentiate
 const vetIcon = new L.Icon({
-    iconUrl: customPinIcon, // Using the same custom pin
-    iconSize: [25, 25],     // Slightly larger for vets
-    iconAnchor: [12, 25],   // Adjusted anchor point
-    popupAnchor: [0, -25]   // Adjusted popup anchor
+    iconUrl: customPinIcon,
+    iconSize: [25, 25],
+    iconAnchor: [12, 25],
+    popupAnchor: [0, -25]
 });
 
 const MapViewPage = () => {
@@ -50,37 +46,62 @@ const MapViewPage = () => {
         fetchData();
     }, [fetchData]);
 
-    // Default map center (India) and zoom level
-    const mapCenter = [20.5937, 78.9629]; 
+    const mapCenter = [20.5937, 78.9629];
     const zoomLevel = 5;
 
-    // Filter vets that have location data
-    const vetsWithLocation = mapData.vets.filter(vet => 
-        vet.location && 
-        vet.location.latitude && 
+    const vetsWithLocation = mapData.vets.filter(vet =>
+        vet.location &&
+        vet.location.latitude &&
         vet.location.longitude
     );
 
     if (loading) {
-        return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-gray-200 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin absolute inset-0" />
+                </div>
+                <p className="text-gray-500 font-medium">Loading map data...</p>
+            </div>
+        );
     }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold">Geospatial Analysis</h1>
-                <p className="mt-1 text-gray-600">Visualize farm and vet locations on an interactive map.</p>
+        <div className="space-y-8 pb-8">
+            {/* Header Section */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-blue-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Geospatial Analysis</span>
+                        </div>
+                        <h1 className="text-3xl lg:text-4xl font-bold">
+                            Geospatial Analysis
+                        </h1>
+                        <p className="text-slate-400 max-w-md">
+                            Visualize farm and vet locations on an interactive map. Currently showing{' '}
+                            <span className="text-blue-400 font-semibold">{view === 'farms' ? mapData.farms.length : vetsWithLocation.length} locations</span>.
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
+            {/* Map Card */}
+            <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                         <div>
                             <CardTitle>Regional Map</CardTitle>
                             <CardDescription>
-                                Showing {view === 'farms' 
-                                    ? `${mapData.farms.length} Farm` 
-                                    : `${vetsWithLocation.length} Veterinarian`} locations.
+                                Showing {view === 'farms'
+                                    ? `${mapData.farms.length} Farm`
+                                    : `${vetsWithLocation.length} Veterinarian`} locations
                             </CardDescription>
                         </div>
                         <div className="flex gap-2 p-1 bg-gray-100 rounded-lg">
@@ -93,14 +114,14 @@ const MapViewPage = () => {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="h-[600px] w-full rounded-lg overflow-hidden border">
                         <MapContainer center={mapCenter} zoom={zoomLevel} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
                             <TileLayer
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
-                            
+
                             {view === 'farms' && mapData.farms.map(farm => (
                                 <Marker key={farm._id} position={[farm.location.latitude, farm.location.longitude]} icon={farmIcon}>
                                     <Popup>
@@ -122,7 +143,6 @@ const MapViewPage = () => {
                         </MapContainer>
                     </div>
 
-                    {/* Show info message when no vets have location data */}
                     {view === 'vets' && vetsWithLocation.length === 0 && (
                         <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <div className="text-blue-800 text-sm">
