@@ -17,7 +17,8 @@ import {
     ChevronDown,
     Search,
     Zap,
-    FileText
+    FileText,
+    Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,6 +38,57 @@ import {
     exportViolationReport
 } from '@/services/regulatorAlertService';
 import { formatDistanceToNow } from 'date-fns';
+
+// Animated counter component
+const AnimatedCounter = ({ value, duration = 1000 }) => {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        let startTime;
+        let animationFrame;
+        const animate = (currentTime) => {
+            if (!startTime) startTime = currentTime;
+            const progress = Math.min((currentTime - startTime) / duration, 1);
+            setCount(Math.floor(progress * value));
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(animate);
+            }
+        };
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+    }, [value, duration]);
+
+    return <span>{count}</span>;
+};
+
+// Stat Card Component
+const StatCard = ({ title, value, color, icon: Icon }) => {
+    const colorClasses = {
+        blue: 'from-blue-500 to-blue-600 shadow-blue-500/25',
+        red: 'from-red-500 to-red-600 shadow-red-500/25',
+        orange: 'from-orange-500 to-orange-600 shadow-orange-500/25',
+        purple: 'from-purple-500 to-purple-600 shadow-purple-500/25',
+    };
+
+    return (
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]} opacity-[0.03]`} />
+            <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-2 flex-1">
+                        <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide truncate">{title}</p>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                            <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                                <AnimatedCounter value={value} />
+                            </span>
+                        </div>
+                    </div>
+                    <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 opacity-50" />
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
 const RegulatorAlertsPage = () => {
     const [alerts, setAlerts] = useState([]);
@@ -229,38 +281,46 @@ const RegulatorAlertsPage = () => {
 
     if (loading && alerts.length === 0) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading alerts...</p>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-gray-200 rounded-full" />
+                    <div className="w-16 h-16 border-4 border-red-500 rounded-full border-t-transparent animate-spin absolute inset-0" />
                 </div>
+                <p className="text-gray-500 font-medium">Loading alerts...</p>
             </div>
         );
     }
 
     return (
-        <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+        <div className="space-y-8 pb-8">
             {/* Header */}
-            <div className="bg-gradient-to-r from-red-500 to-orange-600 rounded-lg p-6 text-white">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <Bell className="w-8 h-8" />
-                            <h1 className="text-3xl font-bold">Regulator Alerts Dashboard</h1>
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-red-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>Alert Management</span>
                         </div>
-                        <p className="text-red-50">
-                            Real-time monitoring of MRL violations, compliance issues, and safety alerts across all farms
+                        <h1 className="text-3xl lg:text-4xl font-bold">
+                            Regulator Alerts Dashboard
+                        </h1>
+                        <p className="text-slate-400 max-w-md">
+                            Real-time monitoring of MRL violations, compliance issues, and safety alerts. You have{' '}
+                            <span className="text-red-400 font-semibold">{stats?.summary?.criticalAlerts || 0} critical alerts</span> requiring attention.
                         </p>
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
                         {/* WebSocket Status */}
-                        <div className="flex items-center gap-2 bg-white/20 px-3 py-2 rounded-lg">
-                            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                            <span className="text-sm">Live</span>
-                        </div>
+
                         <Button
                             onClick={handleExport}
-                            className="bg-white text-red-600 hover:bg-red-50"
+                            size="lg"
+                            className="w-full sm:w-auto bg-white text-red-600 hover:bg-red-50 shadow-lg shadow-white/25"
                         >
                             <Download className="w-4 h-4 mr-2" />
                             Export Report
@@ -270,68 +330,43 @@ const RegulatorAlertsPage = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Total Alerts</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats?.summary?.totalAlerts || 0}</p>
-                            </div>
-                            <Bell className="w-8 h-8 text-blue-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Critical Alerts</p>
-                                <p className="text-2xl font-bold text-red-600">{stats?.summary?.criticalAlerts || 0}</p>
-                            </div>
-                            <AlertTriangle className="w-8 h-8 text-red-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">Pending Review</p>
-                                <p className="text-2xl font-bold text-orange-600">{stats?.summary?.newAlerts || 0}</p>
-                            </div>
-                            <Clock className="w-8 h-8 text-orange-500" />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-600">MRL Violations (30d)</p>
-                                <p className="text-2xl font-bold text-purple-600">{stats?.summary?.recentViolations || 0}</p>
-                            </div>
-                            <TrendingUp className="w-8 h-8 text-purple-500" />
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+                <StatCard
+                    title="Total Alerts"
+                    value={stats?.summary?.totalAlerts || 0}
+                    color="blue"
+                    icon={Bell}
+                />
+                <StatCard
+                    title="Critical Alerts"
+                    value={stats?.summary?.criticalAlerts || 0}
+                    color="red"
+                    icon={AlertTriangle}
+                />
+                <StatCard
+                    title="Pending Review"
+                    value={stats?.summary?.newAlerts || 0}
+                    color="orange"
+                    icon={Clock}
+                />
+                <StatCard
+                    title="MRL Violations (30d)"
+                    value={stats?.summary?.recentViolations || 0}
+                    color="purple"
+                    icon={TrendingUp}
+                />
             </div>
 
             {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Filter className="w-5 h-5" />
-                            <CardTitle>Filter Alerts</CardTitle>
-                        </div>
+            <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
+                    <div className="flex items-center gap-2">
+                        <Filter className="w-5 h-5" />
+                        <CardTitle>Filter Alerts</CardTitle>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <CardContent className="p-4 sm:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <Label>Alert Type</Label>
                             <Select
@@ -408,23 +443,22 @@ const RegulatorAlertsPage = () => {
             </Card>
 
             {/* Alert Feed */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center justify-between">
+            <Card className="border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div>
                             <CardTitle>Active Alerts ({alerts.length})</CardTitle>
                             <CardDescription>Real-time feed of compliance violations and safety alerts</CardDescription>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Zap className="w-5 h-5 text-yellow-500" />
-                            <span className="text-sm text-gray-600">Live Updates Enabled</span>
-                        </div>
+
                     </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 sm:p-6">
                     {alerts.length === 0 ? (
                         <div className="text-center py-12">
-                            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CheckCircle className="w-8 h-8 text-emerald-600" />
+                            </div>
                             <p className="text-lg font-medium text-gray-900">No Alerts Found</p>
                             <p className="text-gray-600">All farms are compliant with current filters</p>
                         </div>
@@ -435,11 +469,11 @@ const RegulatorAlertsPage = () => {
                                 return (
                                     <div
                                         key={alert._id}
-                                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                                        className="border rounded-xl p-4 hover:shadow-md transition-all bg-gradient-to-r from-white to-gray-50"
                                     >
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-start gap-3 flex-1">
-                                                <div className={`p-2 rounded-lg ${alert.severity === 'CRITICAL' ? 'bg-red-100' :
+                                        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                <div className={`p-2 rounded-lg flex-shrink-0 ${alert.severity === 'CRITICAL' ? 'bg-red-100' :
                                                     alert.severity === 'HIGH' ? 'bg-orange-100' :
                                                         alert.severity === 'MEDIUM' ? 'bg-yellow-100' : 'bg-blue-100'
                                                     }`}>
@@ -449,27 +483,27 @@ const RegulatorAlertsPage = () => {
                                                         }`} />
                                                 </div>
 
-                                                <div className="flex-1">
-                                                    <div className="flex items-center gap-2 mb-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                                                         {getSeverityBadge(alert.severity)}
                                                         {getStatusBadge(alert.status)}
-                                                        <Badge variant="outline">
+                                                        <Badge variant="outline" className="truncate">
                                                             {alert.alertType.replace(/_/g, ' ')}
                                                         </Badge>
                                                     </div>
 
-                                                    <h3 className="font-semibold text-gray-900 mb-1">
+                                                    <h3 className="font-semibold text-gray-900 mb-1 break-words">
                                                         {alert.message}
                                                     </h3>
 
                                                     <div className="text-sm text-gray-600 space-y-1">
-                                                        <p>
+                                                        <p className="truncate">
                                                             <span className="font-medium">Farm:</span>{' '}
                                                             {alert.farmName || alert.farmerId?.farmName || 'Unknown Farm'}
                                                             {alert.farmLocation && ` • ${alert.farmLocation}`}
                                                         </p>
                                                         {alert.violationDetails && (
-                                                            <p className="text-xs">
+                                                            <p className="text-xs truncate">
                                                                 {alert.violationDetails.animalId && `Animal: ${alert.violationDetails.animalId} • `}
                                                                 {alert.violationDetails.drugName && `Drug: ${alert.violationDetails.drugName}`}
                                                             </p>
@@ -481,33 +515,35 @@ const RegulatorAlertsPage = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center gap-2 ml-4">
+                                            <div className="flex flex-row lg:flex-col items-center gap-2 w-full lg:w-auto">
                                                 {alert.status === 'NEW' && (
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
                                                         onClick={() => handleAcknowledge(alert._id)}
+                                                        className="flex-1 lg:flex-none lg:w-full"
                                                     >
-                                                        <CheckCircle className="w-4 h-4 mr-1" />
-                                                        Acknowledge
+                                                        <CheckCircle className="w-4 h-4 sm:mr-1" />
+                                                        <span className="hidden sm:inline">Acknowledge</span>
                                                     </Button>
                                                 )}
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
                                                     onClick={() => handleViewDetails(alert)}
+                                                    className="flex-1 lg:flex-none lg:w-full"
                                                 >
-                                                    <Eye className="w-4 h-4 mr-1" />
-                                                    Details
+                                                    <Eye className="w-4 h-4 sm:mr-1" />
+                                                    <span className="hidden sm:inline">Details</span>
                                                 </Button>
                                                 {alert.status !== 'RESOLVED' && (
                                                     <Button
                                                         size="sm"
-                                                        className="bg-blue-600 hover:bg-blue-700"
+                                                        className="flex-1 lg:flex-none lg:w-full bg-blue-600 hover:bg-blue-700"
                                                         onClick={() => handleOpenStatusModal(alert)}
                                                     >
-                                                        <MessageSquare className="w-4 h-4 mr-1" />
-                                                        Update
+                                                        <MessageSquare className="w-4 h-4 sm:mr-1" />
+                                                        <span className="hidden sm:inline">Update</span>
                                                     </Button>
                                                 )}
                                             </div>
@@ -515,34 +551,34 @@ const RegulatorAlertsPage = () => {
                                     </div>
                                 );
                             })}
-                        </div>
-                    )}
 
-                    {/* Pagination */}
-                    {pagination.pages > 1 && (
-                        <div className="flex items-center justify-between mt-6 pt-6 border-t">
-                            <div className="text-sm text-gray-600">
-                                Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-                                {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} alerts
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={pagination.page === 1}
-                                    onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={pagination.page === pagination.pages}
-                                    onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
-                                >
-                                    Next
-                                </Button>
-                            </div>
+                            {/* Pagination */}
+                            {pagination.pages > 1 && (
+                                <div className="flex items-center justify-between mt-6 pt-6 border-t">
+                                    <div className="text-sm text-gray-600">
+                                        Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
+                                        {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} alerts
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={pagination.page === 1}
+                                            onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+                                        >
+                                            Previous
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={pagination.page === pagination.pages}
+                                            onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+                                        >
+                                            Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </CardContent>

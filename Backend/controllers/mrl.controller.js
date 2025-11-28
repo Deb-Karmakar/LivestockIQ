@@ -249,11 +249,16 @@ export const getAnimalMRLStatus = async (req, res) => {
         let requiresTest = false;
         let canSellProducts = true;
 
-        // Check if there are treatments without MRL tests
+        // Check if there are treatments without MRL tests AFTER their withdrawal period
         const treatmentsNeedingTest = recentTreatments.filter(t => {
             const withinWithdrawal = t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate);
-            const hasRecentTest = t.mrlTestResults && t.mrlTestResults.length > 0;
-            return !withinWithdrawal && !hasRecentTest && t.requiresMrlTest;
+
+            // Check if there's a lab test AFTER this treatment's withdrawal period
+            const hasTestAfterWithdrawal = labTests.some(test =>
+                new Date(test.testDate) > new Date(t.withdrawalEndDate || t.startDate)
+            );
+
+            return !withinWithdrawal && !hasTestAfterWithdrawal && t.requiresMrlTest;
         });
 
         if (treatmentsNeedingTest.length > 0) {
@@ -263,8 +268,8 @@ export const getAnimalMRLStatus = async (req, res) => {
             canSellProducts = false;
         }
 
-        // Check MRL test results - LATEST test takes priority
-        if (labTests.length > 0) {
+        // Check MRL test results - LATEST test takes priority, but only if it's after all treatments
+        if (labTests.length > 0 && treatmentsNeedingTest.length === 0) {
             const latestTest = labTests[0]; // Already sorted by testDate descending
 
             if (!latestTest.isPassed) {
