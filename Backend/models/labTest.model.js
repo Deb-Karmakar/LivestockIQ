@@ -72,6 +72,7 @@ const labTestSchema = new mongoose.Schema({
     },
     certificateUrl: {
         type: String,
+        required: true,
         // URL to uploaded lab certificate/report
     },
     isPassed: {
@@ -109,6 +110,10 @@ const labTestSchema = new mongoose.Schema({
         type: String,
         enum: ['Pending Verification', 'Verified', 'Approved', 'Rejected'],
         default: 'Pending Verification'
+    },
+    violationResolved: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

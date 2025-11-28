@@ -152,17 +152,22 @@ const MRLCompliancePage = () => {
     const getMRLStatusBadge = (status) => {
         switch (status?.mrlStatus) {
             case 'SAFE':
-                // Check if regulator approved or still pending
-                const isPendingVerification = status?.statusMessage?.includes('pending');
                 return (
                     <div className="flex flex-col items-start gap-1">
                         <Badge className="bg-green-500 hover:bg-green-600 text-white">
                             <CheckCircle2 className="w-3 h-3 mr-1" />
                             Safe for Sale
                         </Badge>
-                        {isPendingVerification && (
-                            <span className="text-xs text-gray-500 italic">Pending Verification</span>
-                        )}
+                    </div>
+                );
+            case 'PENDING_VERIFICATION':
+                return (
+                    <div className="flex flex-col items-start gap-1">
+                        <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Verification
+                        </Badge>
+                        <span className="text-xs text-gray-500 italic">Passed system check</span>
                     </div>
                 );
             case 'TEST_REQUIRED':
@@ -336,6 +341,20 @@ const MRLCompliancePage = () => {
                                                             size="sm"
                                                             variant="outline"
                                                             onClick={() => handleOpenUploadDialog(animal)}
+                                                            disabled={
+                                                                status?.mrlStatus === 'WITHDRAWAL_ACTIVE' ||
+                                                                status?.mrlStatus === 'SAFE' ||
+                                                                (status?.details?.labTests?.[0]?.status === 'Pending Verification' && !status?.details?.labTests?.[0]?.violationResolved)
+                                                            }
+                                                            title={
+                                                                status?.mrlStatus === 'WITHDRAWAL_ACTIVE'
+                                                                    ? "Cannot upload test during active withdrawal period"
+                                                                    : status?.mrlStatus === 'SAFE'
+                                                                        ? "Animal is already safe for sale. No further testing needed."
+                                                                        : (status?.details?.labTests?.[0]?.status === 'Pending Verification' && !status?.details?.labTests?.[0]?.violationResolved)
+                                                                            ? "Cannot upload new test while previous test is pending verification"
+                                                                            : "Upload new lab test result"
+                                                            }
                                                         >
                                                             Upload Test
                                                         </Button>
@@ -645,12 +664,13 @@ const MRLCompliancePage = () => {
                             </div>
 
                             <div>
-                                <Label htmlFor="certificateUrl">Certificate URL (optional)</Label>
+                                <Label htmlFor="certificateUrl">Certificate URL *</Label>
                                 <Input
                                     id="certificateUrl"
                                     value={testForm.certificateUrl}
                                     onChange={(e) => setTestForm({ ...testForm, certificateUrl: e.target.value })}
                                     placeholder="https://drive.google.com/..."
+                                    required
                                 />
                             </div>
 

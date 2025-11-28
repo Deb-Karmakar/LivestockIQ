@@ -268,26 +268,39 @@ export const getAnimalMRLStatus = async (req, res) => {
             const latestTest = labTests[0]; // Already sorted by testDate descending
 
             if (!latestTest.isPassed) {
-                // Latest test failed - MRL violation
-                mrlStatus = 'VIOLATION';
-                statusMessage = 'MRL violation detected - products cannot be sold';
-                canSellProducts = false;
+                if (latestTest.violationResolved) {
+                    // Violation resolved by regulator - allow re-test
+                    mrlStatus = 'TEST_REQUIRED';
+                    statusMessage = 'Previous violation resolved - new MRL test required';
+                    requiresTest = true;
+                    canSellProducts = false;
+                } else {
+                    // Latest test failed - MRL violation
+                    mrlStatus = 'VIOLATION';
+                    statusMessage = 'MRL violation detected - products cannot be sold';
+                    canSellProducts = false;
+                }
             } else if (latestTest.isPassed) {
-                // Latest test passed - safe for sale (even if awaiting regulator approval)
-                mrlStatus = 'SAFE';
-                statusMessage = latestTest.regulatorApproved
-                    ? 'MRL compliant - regulator verified'
-                    : 'Latest MRL test passed - safe for sale (pending regulator verification)';
-                canSellProducts = true;
+                if (latestTest.regulatorApproved) {
+                    // Regulator verified - safe for sale
+                    mrlStatus = 'SAFE';
+                    statusMessage = 'MRL compliant - regulator verified';
+                    canSellProducts = true;
+                } else {
+                    // Passed system check but pending regulator verification - NOT safe for sale yet
+                    mrlStatus = 'PENDING_VERIFICATION';
+                    statusMessage = 'Latest MRL test passed system check - awaiting regulator verification';
+                    canSellProducts = false;
+                }
             }
         }
 
-        // Check active withdrawal periods (overrides test results)
+        // Check active withdrawal periods (overrides test results UNLESS there is a violation)
         const activeWithdrawal = recentTreatments.find(t =>
             t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate)
         );
 
-        if (activeWithdrawal) {
+        if (activeWithdrawal && mrlStatus !== 'VIOLATION') {
             mrlStatus = 'WITHDRAWAL_ACTIVE';
             statusMessage = `Withdrawal period active until ${new Date(activeWithdrawal.withdrawalEndDate).toLocaleDateString()}`;
             canSellProducts = false;
@@ -318,7 +331,8 @@ export const getAnimalMRLStatus = async (req, res) => {
                     drugName: t.drugName,
                     testDate: t.testDate,
                     isPassed: t.isPassed,
-                    status: t.status
+                    status: t.status,
+                    violationResolved: t.violationResolved
                 }))
             }
         });
@@ -404,6 +418,128 @@ export const getAnimalsPendingMRLTest = async (req, res) => {
             data: pendingTests
         });
 
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+// ==================== REGULATOR FUNCTIONS ====================
+
+// @desc    Get pending MRL verifications for regulators
+// @route   GET /api/mrl/regulator/pending-verifications
+// @access  Private (Regulator)
+export const getPendingMRLVerifications = async (req, res) => {
+    try {
+        // Check if user is regulator
+        if (req.user.role !== 'regulator') {
+            return res.status(403).json({ message: 'Access denied. Regulators only.' });
+        }
+
+        const { limit = 50, status = 'Pending Verification' } = req.query;
+
+        // Only show tests that PASSED the MRL check (failed tests go to alerts page)
+        const tests = await LabTest.find({ status, isPassed: true })
+            .populate('farmerId', 'farmName email phone')
+            .populate('animalId', 'name tagId species')
+            .sort({ testDate: -1 })
+            .limit(parseInt(limit));
+
+        res.json({
+            count: tests.length,
+            tests
+        });
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+// @desc    Get verification statistics for regulators
+// @route   GET /api/mrl/regulator/verification-stats
+// @access  Private (Regulator)
+export const getVerificationStats = async (req, res) => {
+    try {
+        // Check if user is regulator
+        if (req.user.role !== 'regulator') {
+            return res.status(403).json({ message: 'Access denied. Regulators only.' });
+        }
+
+        // Only count passed tests in pending (failed tests are for alerts page)
+        const [pending, approved, rejected] = await Promise.all([
+            LabTest.countDocuments({ status: 'Pending Verification', isPassed: true }),
+            LabTest.countDocuments({ status: 'Approved', regulatorApproved: true }),
+            LabTest.countDocuments({ status: 'Rejected', regulatorApproved: false })
+        ]);
+
+        // All pending tests are passed (since we filter by isPassed: true)
+        res.json({
+            pending: {
+                total: pending,
+                passed: pending,
+                failed: 0
+            },
+            approved,
+            rejected
+        });
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+// @desc    Get lab test details for verification
+// @route   GET /api/mrl/regulator/test/:id
+// @access  Private (Regulator)
+export const getLabTestForVerification = async (req, res) => {
+    try {
+        // Check if user is regulator
+        if (req.user.role !== 'regulator') {
+            return res.status(403).json({ message: 'Access denied. Regulators only.' });
+        }
+
+        const test = await LabTest.findById(req.params.id)
+            .populate('farmerId', 'farmName email phone address')
+            .populate('animalId', 'name tagId species breed')
+            .populate('treatmentId');
+
+        if (!test) {
+            return res.status(404).json({ message: 'Lab test not found' });
+        }
+
+        res.json({ test });
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+// @desc    Verify/Approve or Reject lab test
+// @route   PUT /api/mrl/regulator/verify/:id
+// @access  Private (Regulator)
+export const verifyLabTest = async (req, res) => {
+    try {
+        // Check if user is regulator
+        if (req.user.role !== 'regulator') {
+            return res.status(403).json({ message: 'Access denied. Regulators only.' });
+        }
+
+        const { approved, notes } = req.body;
+
+        const test = await LabTest.findById(req.params.id);
+        if (!test) {
+            return res.status(404).json({ message: 'Lab test not found' });
+        }
+
+        // Update test status
+        test.regulatorApproved = approved;
+        test.regulatorId = req.user._id;
+        test.regulatorNotes = notes || '';
+        test.verifiedAt = new Date();
+        test.status = approved ? 'Approved' : 'Rejected';
+
+        await test.save();
+
+        res.json({
+            message: approved ? 'Test approved successfully' : 'Test rejected',
+            test
+        });
     } catch (error) {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }

@@ -134,6 +134,68 @@ export const bulkVerifyCompliance = async (animalIds, productType) => {
     }
 };
 
+/**
+ * Get pending lab tests for regulator verification
+ */
+export const getPendingVerifications = async (filters = {}) => {
+    try {
+        const params = new URLSearchParams(filters).toString();
+        const response = await axiosInstance.get(
+            `/mrl/regulator/pending-verifications${params ? `?${params}` : ''}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error getting pending verifications:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get verification statistics for regulator dashboard
+ */
+export const getVerificationStats = async () => {
+    try {
+        const response = await axiosInstance.get(
+            `/mrl/regulator/verification-stats`
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error getting verification stats:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get detailed information for a specific lab test
+ */
+export const getLabTestDetails = async (testId) => {
+    try {
+        const response = await axiosInstance.get(
+            `/mrl/regulator/test/${testId}`
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error getting lab test details:', error);
+        throw error;
+    }
+};
+
+/**
+ * Verify (approve or reject) a lab test
+ */
+export const verifyLabTest = async (testId, approved, notes = '') => {
+    try {
+        const response = await axiosInstance.put(
+            `/mrl/regulator/verify/${testId}`,
+            { approved, notes }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error verifying lab test:', error);
+        throw error;
+    }
+};
+
 export default {
     getMRLLimits,
     lookupMRLLimit,
@@ -142,5 +204,9 @@ export default {
     getPendingMRLTests,
     getLabTestHistory,
     verifyPreSaleCompliance,
-    bulkVerifyCompliance
+    bulkVerifyCompliance,
+    getPendingVerifications,
+    getVerificationStats,
+    getLabTestDetails,
+    verifyLabTest
 };

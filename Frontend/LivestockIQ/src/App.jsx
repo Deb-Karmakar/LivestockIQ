@@ -16,7 +16,6 @@ import LearnMore from './components/LearnMore';
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./contexts/AuthContext";
 import { ChatWidget } from "./components/ChatWidget";
-import MRLCompliancePage from "./pages/farmer/MRLCompliancePage";
 
 
 // Farmer Page Imports
@@ -29,9 +28,19 @@ import InventoryPage from "./pages/farmer/InventoryPage";
 import AlertsPage from "./pages/farmer/AlertsPage";
 import ReportsPage from "./pages/farmer/ReportsPage";
 import SettingsPage from "./pages/farmer/SettingsPage";
+import MRLCompliancePage from "./pages/farmer/MRLCompliancePage";
+
 
 // Vet Page Imports
 import VetAppLayout from "./components/layout/VetAppLayout";
+import UserManagementPage from "./pages/admin/UserManagementPage";
+import AuditsPage from "./pages/admin/AuditsPage";
+import SupportPage from "./pages/admin/SupportPage";
+import AdminSettingsPage from "./pages/admin/SettingsPage";
+
+// Admin Page Imports
+import AdminAppLayout from "./components/layout/AdminAppLayout";
+import AdminDashboardPage from "./pages/admin/DashboardPage";
 import VetDashboardPage from "./pages/vet/VetDashboardPage";
 import TreatmentRequestsPage from "./pages/vet/TreatmentRequestsPage";
 import FarmerDirectoryPage from "./pages/vet/FarmerDirectoryPage";
@@ -47,14 +56,8 @@ import RegulatorReportsPage from "./pages/regulator/ReportsPage";
 import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
-
-// Admin Page Imports
-import AdminAppLayout from "./components/layout/AdminAppLayout";
-import AdminDashboardPage from "./pages/admin/DashboardPage";
-import UserManagementPage from "./pages/admin/UserManagementPage";
-import AuditsPage from "./pages/admin/AuditsPage";
-import SupportPage from "./pages/admin/SupportPage";
-import AdminSettingsPage from "./pages/admin/SettingsPage";
+import RegulatorAlertsPage from "./pages/regulator/RegulatorAlertsPage";
+import MRLVerificationsPage from "./pages/regulator/MRLVerificationsPage";
 
 // --- Google Analytics Integration ---
 
@@ -221,7 +224,9 @@ function App() {
               >
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<RegulatorDashboardPage />} />
+                <Route path="alerts" element={<RegulatorAlertsPage />} />
                 <Route path="compliance" element={<CompliancePage />} />
+                <Route path="verifications" element={<MRLVerificationsPage />} />
                 <Route path="trends" element={<TrendsPage />} />
                 <Route path="demographics" element={<DemographicsPage />} />
                 <Route path="map" element={<MapViewPage />} />

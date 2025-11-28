@@ -8,7 +8,11 @@ import {
     submitLabTest,
     getAnimalMRLStatus,
     getMyLabTests,
-    getAnimalsPendingMRLTest
+    getAnimalsPendingMRLTest,
+    getPendingMRLVerifications,
+    getLabTestForVerification,
+    verifyLabTest,
+    getVerificationStats
 } from '../controllers/mrl.controller.js';
 
 const router = express.Router();
@@ -22,5 +26,11 @@ router.post('/test-result', protect, submitLabTest);
 router.get('/animal/:animalId/status', protect, getAnimalMRLStatus);
 router.get('/my-tests', protect, getMyLabTests);
 router.get('/pending-tests', protect, getAnimalsPendingMRLTest);
+
+// Regulator routes (for MRL verifications)
+router.get('/regulator/pending-verifications', protect, getPendingMRLVerifications);
+router.get('/regulator/verification-stats', protect, getVerificationStats);
+router.get('/regulator/test/:id', protect, getLabTestForVerification);
+router.put('/regulator/verify/:id', protect, verifyLabTest);
 
 export default router;

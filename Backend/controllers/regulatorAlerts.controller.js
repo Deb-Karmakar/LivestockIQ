@@ -226,6 +226,13 @@ export const updateAlertStatus = async (req, res) => {
             alert.resolvedBy = req.user._id;
             alert.resolvedAt = new Date();
             alert.resolutionNotes = notes;
+
+            // If this is an MRL violation, mark the lab test as resolved so farmer can re-test
+            if (alert.alertType === 'MRL_VIOLATION' && alert.violationDetails?.labTestId) {
+                await LabTest.findByIdAndUpdate(alert.violationDetails.labTestId, {
+                    violationResolved: true
+                });
+            }
         }
 
         await alert.save();

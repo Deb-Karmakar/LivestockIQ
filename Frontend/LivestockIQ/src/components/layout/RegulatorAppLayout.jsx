@@ -13,6 +13,8 @@ import {
     X,
     TrendingUp,
     Users2,
+    AlertCircle,
+    FileCheck
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -27,6 +29,8 @@ const primaryNavLinks = [
 
 const secondaryNavLinks = [
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
+    { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
+    { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
     { name: 'Settings', path: '/regulator/settings', icon: Settings },
 ];
 
@@ -55,12 +59,11 @@ const Sidebar = () => {
             <div className="px-6 py-4"><h1 className="text-2xl font-bold text-green-700">LivestockIQ</h1></div>
             <nav className="flex-1 px-4 py-2 space-y-2">
                 {allNavLinks.map(link => (
-                    <NavLink 
-                        key={link.name} 
-                        to={link.path} 
-                        className={({ isActive }) => 
-                            `flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 ${
-                                isActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-gray-100'
+                    <NavLink
+                        key={link.name}
+                        to={link.path}
+                        className={({ isActive }) =>
+                            `flex items-center px-4 py-2 text-gray-700 rounded-lg transition-colors duration-200 ${isActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-gray-100'
                             }`
                         }
                     >
@@ -83,10 +86,10 @@ const MobileHeader = () => {
         <header className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b sticky top-0 z-40">
             <h1 className="text-xl font-bold text-green-700">LivestockIQ</h1>
             <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(true)}><Menu className="w-6 h-6" /></Button>
-            
+
             {/* Drawer Overlay */}
-            <div 
-                className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+            <div
+                className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity ${isDrawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setIsDrawerOpen(false)}
             ></div>
 
@@ -98,7 +101,7 @@ const MobileHeader = () => {
                 </div>
                 <nav className="p-4 space-y-2">
                     {secondaryNavLinks.map(link => (
-                         <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-gray-100'}`}>
+                        <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-gray-100'}`}>
                             <link.icon className="w-5 h-5 mr-3" />{link.name}
                         </NavLink>
                     ))}
@@ -117,12 +120,11 @@ const BottomNav = () => (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-30">
         <div className="flex justify-around">
             {primaryNavLinks.map(link => (
-                <NavLink 
-                    key={link.name} 
-                    to={link.path} 
-                    className={({ isActive }) => 
-                        `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${
-                            isActive ? 'text-slate-800' : 'text-gray-500'
+                <NavLink
+                    key={link.name}
+                    to={link.path}
+                    className={({ isActive }) =>
+                        `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${isActive ? 'text-slate-800' : 'text-gray-500'
                         }`
                     }
                 >
