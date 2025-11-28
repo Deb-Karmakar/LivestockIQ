@@ -22,6 +22,8 @@ import mrlRoutes from './routes/mrl.routes.js';
 import emailRoutes from './routes/email.routes.js';
 import jobsRoutes from './routes/jobs.routes.js';
 import regulatorAlertsRoutes from './routes/regulatorAlerts.routes.js';
+import feedRoutes from './routes/feed.routes.js';
+import feedAdministrationRoutes from './routes/feedAdministration.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -78,6 +80,8 @@ app.use('/api/mrl', mrlRoutes); // MRL compliance routes
 app.use('/api/email', emailRoutes); // Email notification testing routes
 app.use('/api/jobs', jobsRoutes); // Scheduled job management routes
 app.use('/api/regulator', regulatorAlertsRoutes); // Regulator alert system routes
+app.use('/api/feed', feedRoutes); // Feed inventory management routes
+app.use('/api/feed-admin', feedAdministrationRoutes); // Feed administration tracking routes
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported

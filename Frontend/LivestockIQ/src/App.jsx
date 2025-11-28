@@ -29,6 +29,8 @@ import AlertsPage from "./pages/farmer/AlertsPage";
 import ReportsPage from "./pages/farmer/ReportsPage";
 import SettingsPage from "./pages/farmer/SettingsPage";
 import MRLCompliancePage from "./pages/farmer/MRLCompliancePage";
+import FeedInventoryPage from "./pages/farmer/FeedInventoryPage";
+import FeedAdministrationPage from "./pages/farmer/FeedAdministrationPage";
 
 
 // Vet Page Imports
@@ -186,6 +188,8 @@ function App() {
                 <Route path="treatments" element={<TreatmentsPage />} />
                 <Route path="sales" element={<SellPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
+                <Route path="feed-inventory" element={<FeedInventoryPage />} />
+                <Route path="feed-administration" element={<FeedAdministrationPage />} />
                 <Route path="alerts" element={<AlertsPage />} />
                 <Route path="mrl-compliance" element={<MRLCompliancePage />} />
                 <Route path="reports" element={<ReportsPage />} />

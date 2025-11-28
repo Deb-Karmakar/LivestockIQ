@@ -34,6 +34,8 @@ const primaryNavLinks = [
 const secondaryNavLinks = [
     { name: 'MRL Compliance', path: '/farmer/mrl-compliance', icon: ShieldCheck },
     { name: 'Inventory', path: '/farmer/inventory', icon: Package },
+    { name: 'Feed Inventory', path: '/farmer/feed-inventory', icon: Package },
+    { name: 'Feed Admin', path: '/farmer/feed-administration', icon: ClipboardCheck },
     { name: 'Reports', path: '/farmer/reports', icon: FileText },
     { name: 'Settings', path: '/farmer/settings', icon: Settings },
 ];

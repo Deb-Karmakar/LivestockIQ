@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from 'react-hot-toast';
 import { getAnimalMRLStatus, getPendingMRLTests, submitLabTest, getLabTestHistory } from '@/services/mrlService';
 import { getAnimals } from '@/services/animalService';
+import { getWithdrawalStatus } from '@/services/feedAdministrationService';
 import { format } from 'date-fns';
 
 // Animated counter component (matching Dashboard and AnimalsPage)
@@ -85,6 +86,7 @@ const MRLCompliancePage = () => {
     const [mrlStatuses, setMRLStatuses] = useState({});
     const [pendingTests, setPendingTests] = useState([]);
     const [testHistory, setTestHistory] = useState([]);
+    const [feedWithdrawals, setFeedWithdrawals] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const [selectedAnimal, setSelectedAnimal] = useState(null);
@@ -128,6 +130,15 @@ const MRLCompliancePage = () => {
             // Fetch test history
             const historyData = await getLabTestHistory();
             setTestHistory(historyData.data || []);
+
+            // Fetch feed withdrawals
+            try {
+                const feedWithdrawalData = await getWithdrawalStatus();
+                setFeedWithdrawals(feedWithdrawalData || []);
+            } catch (feedError) {
+                console.error('Error fetching feed withdrawals:', feedError);
+                setFeedWithdrawals([]);
+            }
 
             // Fetch MRL status for each animal
             const animalsList = animalsData.data || animalsData || [];
@@ -333,6 +344,48 @@ const MRLCompliancePage = () => {
                     icon={FileText}
                 />
             </div>
+
+            {/* Feed Withdrawals Alert */}
+            {feedWithdrawals.length > 0 && (
+                <Card className="border-orange-200 bg-orange-50/50">
+                    <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-5 h-5 text-orange-600" />
+                            <CardTitle className="text-orange-900">Animals Under Feed-Based Withdrawal</CardTitle>
+                        </div>
+                        <CardDescription className="text-orange-700">
+                            {feedWithdrawals.length} animal(s) currently in withdrawal period from medicated feed
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            {feedWithdrawals.map((withdrawal) => (
+                                <div key={withdrawal._id} className="bg-white border border-orange-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <div className="flex-1">
+                                        <p className="font-medium text-gray-900">
+                                            {withdrawal.groupName || `${withdrawal.numberOfAnimals} animal(s)`}
+                                        </p>
+                                        <p className="text-sm text-gray-600">
+                                            Feed: {withdrawal.feedId?.feedName} ({withdrawal.feedId?.antimicrobialName})
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <Badge className="bg-orange-500 text-white">
+                                            <Clock className="w-3 h-3 mr-1" />
+                                            {withdrawal.daysUntilWithdrawalEnd > 0
+                                                ? `${withdrawal.daysUntilWithdrawalEnd} days left`
+                                                : 'Ending today'}
+                                        </Badge>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Until: {format(new Date(withdrawal.withdrawalEndDate), 'MMM dd, yyyy')}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Tabs */}
             <Tabs value={activeTab} onValueChange={setActiveTab}>
