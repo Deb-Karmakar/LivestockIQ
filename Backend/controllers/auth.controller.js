@@ -1,12 +1,12 @@
 import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
-import Regulator from '../models/regulator.model.js'; 
+import Regulator from '../models/regulator.model.js';
 import Admin from '../models/admin.model.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
+const generateToken = (id, role) => {
+    return jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
 export const registerFarmer = async (req, res) => {
@@ -22,17 +22,17 @@ export const registerFarmer = async (req, res) => {
         if (farmerExists) {
             return res.status(400).json({ message: 'Farmer with this email already exists' });
         }
-        
+
         const farmer = await Farmer.create({
-            farmOwner, 
-            email, 
-            password, 
-            farmName, 
-            vetId, 
-            phoneNumber, 
+            farmOwner,
+            email,
+            password,
+            farmName,
+            vetId,
+            phoneNumber,
             location // UPDATED: Pass the location object to be saved
         });
-        
+
         if (farmer) {
             res.status(201).json({
                 _id: farmer._id,
@@ -40,8 +40,7 @@ export const registerFarmer = async (req, res) => {
                 farmName: farmer.farmName,
                 email: farmer.email,
                 role: 'farmer',
-                token: generateToken(farmer._id),
-                vetId: farmer.vetId,
+                token: generateToken(farmer._id, 'farmer'),
             });
         } else {
             res.status(400).json({ message: 'Invalid farmer data' });
@@ -59,17 +58,17 @@ export const registerVet = async (req, res) => {
         if (vetExists) {
             return res.status(400).json({ message: 'Veterinarian already exists' });
         }
-        
+
         // Create vet with all data including location
         const vet = await Veterinarian.create({
-            fullName, 
-            email, 
-            password, 
+            fullName,
+            email,
+            password,
             licenseNumber,
             location, // Explicitly include location
             ...req.body // This will capture all other fields
         });
-        
+
         if (vet) {
             res.status(201).json({
                 _id: vet._id,
@@ -78,7 +77,7 @@ export const registerVet = async (req, res) => {
                 role: 'veterinarian',
                 vetId: vet.vetId,
                 location: vet.location, // Include location in response
-                token: generateToken(vet._id),
+                token: generateToken(vet._id, 'veterinarian'),
             });
         } else {
             res.status(400).json({ message: 'Invalid veterinarian data' });
@@ -109,7 +108,7 @@ export const registerRegulator = async (req, res) => {
                 email: regulator.email,
                 agencyName: regulator.agencyName,
                 role: 'regulator',
-                token: generateToken(regulator._id),
+                token: generateToken(regulator._id, 'regulator'),
             });
         } else {
             res.status(400).json({ message: 'Invalid regulator data' });
@@ -134,7 +133,7 @@ export const loginUser = async (req, res) => {
             user = await Veterinarian.findOne({ email });
             if (user) { role = 'veterinarian'; }
         }
-        
+
         if (!user) {
             user = await Regulator.findOne({ email });
             if (user) { role = 'regulator'; }
@@ -151,9 +150,9 @@ export const loginUser = async (req, res) => {
                 _id: user._id,
                 email: user.email,
                 role: role,
-                token: generateToken(user._id),
+                token: generateToken(user._id, role),
             };
-            
+
             // Add role-specific details to the payload
             if (role === 'veterinarian') {
                 responsePayload.fullName = user.fullName;

@@ -6,6 +6,8 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SyncProvider } from "./contexts/SyncContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { Toaster as HotToaster } from 'react-hot-toast';
 
 // Core Component & Page Imports
 import Navigation from "@/components/Navigation";
@@ -145,110 +147,113 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SyncProvider>
-        <TooltipProvider>
-          <Toaster />
+        <NotificationProvider>
+          <TooltipProvider>
+            <Toaster />
+            <HotToaster />
 
-          <AnalyticsTracker />
-          <Routes>
-            {/* Public Routes with Shared Navigation */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/learn-more" element={<LearnMore />} />
-            </Route>
+            <AnalyticsTracker />
+            <Routes>
+              {/* Public Routes with Shared Navigation */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/learn-more" element={<LearnMore />} />
+              </Route>
 
-            {/* Standalone Auth Routes */}
-            <Route path="/login" element={getHomeRedirect()} />
-            <Route path="/register" element={getHomeRedirect()} />
+              {/* Standalone Auth Routes */}
+              <Route path="/login" element={getHomeRedirect()} />
+              <Route path="/register" element={getHomeRedirect()} />
 
-            {/* Protected Farmer Routes */}
-            <Route
-              path="/farmer"
-              element={
-                <ProtectedRoute>
-                  <FarmerRoute>
-                    <AppLayout />
-                  </FarmerRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="animals" element={<AnimalsPage />} />
-              <Route path="treatments" element={<TreatmentsPage />} />
-              <Route path="sales" element={<SellPage />} />
-              <Route path="inventory" element={<InventoryPage />} />
-              <Route path="alerts" element={<AlertsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
+              {/* Protected Farmer Routes */}
+              <Route
+                path="/farmer"
+                element={
+                  <ProtectedRoute>
+                    <FarmerRoute>
+                      <AppLayout />
+                    </FarmerRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<DashboardPage />} />
+                <Route path="animals" element={<AnimalsPage />} />
+                <Route path="treatments" element={<TreatmentsPage />} />
+                <Route path="sales" element={<SellPage />} />
+                <Route path="inventory" element={<InventoryPage />} />
+                <Route path="alerts" element={<AlertsPage />} />
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
 
-            {/* Protected Vet Routes */}
-            <Route
-              path="/vet"
-              element={
-                <ProtectedRoute>
-                  <VetRoute>
-                    <VetAppLayout />
-                  </VetRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<VetDashboardPage />} />
-              <Route path="requests" element={<TreatmentRequestsPage />} />
-              <Route path="farmers" element={<FarmerDirectoryPage />} />
-              <Route path="reports" element={<VetReportsPage />} />
-              <Route path="settings" element={<VetSettingsPage />} />
-            </Route>
+              {/* Protected Vet Routes */}
+              <Route
+                path="/vet"
+                element={
+                  <ProtectedRoute>
+                    <VetRoute>
+                      <VetAppLayout />
+                    </VetRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<VetDashboardPage />} />
+                <Route path="requests" element={<TreatmentRequestsPage />} />
+                <Route path="farmers" element={<FarmerDirectoryPage />} />
+                <Route path="reports" element={<VetReportsPage />} />
+                <Route path="settings" element={<VetSettingsPage />} />
+              </Route>
 
-            {/* Protected Regulator Routes */}
-            <Route
-              path="/regulator"
-              element={
-                <ProtectedRoute>
-                  <RegulatorRoute>
-                    <RegulatorAppLayout />
-                  </RegulatorRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<RegulatorDashboardPage />} />
-              <Route path="compliance" element={<CompliancePage />} />
-              <Route path="trends" element={<TrendsPage />} />
-              <Route path="demographics" element={<DemographicsPage />} />
-              <Route path="map" element={<MapViewPage />} />
-              <Route path="reports" element={<RegulatorReportsPage />} />
-              <Route path="settings" element={<RegulatorSettingsPage />} />
-            </Route>
+              {/* Protected Regulator Routes */}
+              <Route
+                path="/regulator"
+                element={
+                  <ProtectedRoute>
+                    <RegulatorRoute>
+                      <RegulatorAppLayout />
+                    </RegulatorRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<RegulatorDashboardPage />} />
+                <Route path="compliance" element={<CompliancePage />} />
+                <Route path="trends" element={<TrendsPage />} />
+                <Route path="demographics" element={<DemographicsPage />} />
+                <Route path="map" element={<MapViewPage />} />
+                <Route path="reports" element={<RegulatorReportsPage />} />
+                <Route path="settings" element={<RegulatorSettingsPage />} />
+              </Route>
 
-            {/* Protected Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute>
-                  <AdminRoute>
-                    <AdminAppLayout />
-                  </AdminRoute>
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="dashboard" replace />} />
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="users" element={<UserManagementPage />} />
-              <Route path="audits" element={<AuditsPage />} />
-              <Route path="support" element={<SupportPage />} />
-              <Route path="settings" element={<AdminSettingsPage />} />
-            </Route>
+              {/* Protected Admin Routes */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AdminAppLayout />
+                    </AdminRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="users" element={<UserManagementPage />} />
+                <Route path="audits" element={<AuditsPage />} />
+                <Route path="support" element={<SupportPage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
 
-            {/* 404 Fallback */}
-            <Route path="*" element={<div><h1>404</h1><p>Page not found</p></div>} />
-          </Routes>
+              {/* 404 Fallback */}
+              <Route path="*" element={<div><h1>404</h1><p>Page not found</p></div>} />
+            </Routes>
 
-          {/* Conditionally render the ChatWidget for any authenticated user */}
-          {isAuth && <ChatWidget />}
+            {/* Conditionally render the ChatWidget for any authenticated user */}
+            {isAuth && <ChatWidget />}
 
-        </TooltipProvider>
+          </TooltipProvider>
+        </NotificationProvider>
       </SyncProvider>
     </QueryClientProvider>
   );

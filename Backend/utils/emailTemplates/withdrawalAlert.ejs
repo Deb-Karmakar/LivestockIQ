@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdrawal Period Alert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .alert-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .alert-warning {
+            background: #fbbf24;
+            color: #78350f;
+        }
+        .alert-critical {
+            background: #ef4444;
+            color: white;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .animal-info {
+            background: #f9fafb;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .animal-info h3 {
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .info-value {
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .countdown {
+            text-align: center;
+            padding: 20px;
+            background: #fef3c7;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .countdown-number {
+            font-size: 48px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        .countdown-label {
+            font-size: 16px;
+            color: #78350f;
+            margin-top: 5px;
+        }
+        .action-section {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .action-section h3 {
+            color: #065f46;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .action-list {
+            list-style: none;
+        }
+        .action-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #047857;
+            font-size: 14px;
+        }
+        .action-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .footer {
+            background: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🐄 Withdrawal Period Alert</h1>
+            <p>LivestockIQ - Smart Farm Management</p>
+            <span class="alert-badge <%= daysRemaining <= 2 ? 'alert-critical' : 'alert-warning' %>">
+                <%= daysRemaining <= 2 ? 'URGENT ACTION REQUIRED' : 'NOTICE' %>
+            </span>
+        </div>
+
+        <div class="content">
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Dear <%= farmerName %>,
+            </p>
+
+            <p style="font-size: 15px; color: #4b5563; line-height: 1.6;">
+                This is a reminder that the withdrawal period for one of your animals is ending soon. 
+                <strong>Please ensure you do not sell any products from this animal until the withdrawal period is complete and MRL testing is done.</strong>
+            </p>
+
+            <div class="countdown">
+                <div class="countdown-number"><%= daysRemaining %></div>
+                <div class="countdown-label">Day<%= daysRemaining !== 1 ? 's' : '' %> Remaining</div>
+            </div>
+
+            <div class="animal-info">
+                <h3>📋 Animal & Treatment Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Animal ID:</span>
+                    <span class="info-value"><%= animalId %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Animal Name:</span>
+                    <span class="info-value"><%= animalName %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Drug Name:</span>
+                    <span class="info-value"><%= drugName %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Treatment Start:</span>
+                    <span class="info-value"><%= treatmentStartDate %></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Withdrawal Ends:</span>
+                    <span class="info-value"><%= withdrawalEndDate %></span>
+                </div>
+            </div>
+
+            <% if (daysRemaining <= 0) { %>
+            <div class="action-section">
+                <h3>✅ Next Steps - Withdrawal Period Complete!</h3>
+                <ul class="action-list">
+                    <li>Schedule MRL testing with a certified laboratory</li>
+                    <li>Collect milk/meat sample from <%= animalName %></li>
+                    <li>Upload lab test results to LivestockIQ portal</li>
+                    <li>Wait for veterinarian verification</li>
+                    <li>Only sell products after MRL test passes</li>
+                </ul>
+            </div>
+            <% } else { %>
+            <div class="action-section">
+                <h3>⚠️ Important Reminders</h3>
+                <ul class="action-list">
+                    <li>Do NOT sell milk, meat, or eggs from <%= animalName %></li>
+                    <li>Do NOT mix products with other animals</li>
+                    <li>Keep <%= animalName %> separated from production animals</li>
+                    <li>Mark products as "Under Withdrawal" in your records</li>
+                    <li>Prepare for MRL testing after withdrawal ends</li>
+                </ul>
+            </div>
+            <% } %>
+
+            <div style="text-align: center;">
+                <a href="<%= portalLink %>" class="button">View in LivestockIQ Portal</a>
+            </div>
+
+            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                <p style="color: #991b1b; font-size: 14px; margin: 0;">
+                    <strong>⚠️ Legal Reminder:</strong> Selling animal products during withdrawal period is a violation of FSSAI regulations 
+                    and may result in penalties up to ₹50,000 and product recalls. Ensure full compliance.
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>LivestockIQ</strong> - Digital Farm Management System</p>
+            <p style="margin-top: 10px;">
+                Need help? Contact: <a href="mailto:support@livestockiq.com">support@livestockiq.com</a><br>
+                Visit: <a href="<%= portalLink %>"><%= portalLink %></a>
+            </p>
+            <p style="margin-top: 15px; font-size: 11px; color: #9ca3af;">
+                This is an automated notification from LivestockIQ. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

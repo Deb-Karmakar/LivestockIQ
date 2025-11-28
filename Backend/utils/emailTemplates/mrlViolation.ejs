@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRL Violation Alert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .danger-box {
+            background: #fef2f2;
+            border: 3px solid #dc2626;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .danger-box h2 {
+            color: #991b1b;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .danger-box p {
+            color: #7f1d1d;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .test-results {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .test-results h3 {
+            color: #1f2937;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .result-row:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .result-value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .value-fail {
+            color: #dc2626;
+        }
+
+        .value-limit {
+            color: #059669;
+        }
+
+        .exceeded-badge {
+            background: #dc2626;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .action-list {
+            background: #fff7ed;
+            border-left: 4px solid #ea580c;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .action-list h3 {
+            color: #9a3412;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .action-list ol {
+            padding-left: 20px;
+        }
+
+        .action-list li {
+            color: #7c2d12;
+            padding: 8px 0;
+            line-height: 1.5;
+        }
+
+        .consequences {
+            background: #fef2f2;
+            border: 2px dashed #dc2626;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .consequences h3 {
+            color: #991b1b;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .consequences ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .consequences li {
+            padding: 6px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #7f1d1d;
+            font-size: 14px;
+        }
+
+        .consequences li:before {
+            content: "⚠️";
+            position: absolute;
+            left: 0;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #dc2626;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .footer {
+            background: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="alert-icon">⛔</div>
+            <h1>MRL VIOLATION DETECTED</h1>
+            <p>Immediate Action Required</p>
+        </div>
+
+        <div class="content">
+            <p style="font-size: 16px; color: #374151; margin-bottom: 20px;">
+                Dear <%= farmerName %>,
+            </p>
+
+            <div class="danger-box">
+                <h2>🚨 CRITICAL ALERT</h2>
+                <p>
+                    Lab test results show that residue levels in your animal <strong>
+                        <%= animalName %> (<%= animalId %>)
+                    </strong>
+                    EXCEED the Maximum Residue Limit (MRL) set by <%= regulatoryAuthority %>.
+                </p>
+                <p style="margin-top: 10px; font-size: 18px; font-weight: bold;">
+                    ❌ PRODUCTS CANNOT BE SOLD
+                </p>
+            </div>
+
+            <div class="test-results">
+                <h3>🧪 Lab Test Results</h3>
+                <div class="result-row">
+                    <span class="result-label">Drug Tested:</span>
+                    <span class="result-value">
+                        <%= drugName %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Sample Type:</span>
+                    <span class="result-value">
+                        <%= sampleType %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Product Type:</span>
+                    <span class="result-value">
+                        <%= productType %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Test Date:</span>
+                    <span class="result-value">
+                        <%= testDate %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Laboratory:</span>
+                    <span class="result-value">
+                        <%= labName %>
+                    </span>
+                </div>
+            </div>
+
+            <div class="test-results">
+                <h3>📊 Residue Level Comparison</h3>
+                <div class="result-row">
+                    <span class="result-label">Detected Level:</span>
+                    <span class="result-value value-fail">
+                        <%= residueLevel %>
+                            <%= unit %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">MRL Limit:</span>
+                    <span class="result-value value-limit">
+                        <%= mrlLimit %>
+                            <%= unit %>
+                    </span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Exceeded By:</span>
+                    <span class="result-value value-fail">
+                        <%= exceededBy %>
+                            <%= unit %>
+                                <span class="exceeded-badge">
+                                    <%= percentageOver %>% OVER LIMIT
+                                </span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="action-list">
+                <h3>🔴 IMMEDIATE ACTIONS REQUIRED</h3>
+                <ol>
+                    <li>❌ <strong>STOP ALL SALES</strong> from animal <%= animalName %> immediately</li>
+                    <li>🔒 <strong>QUARANTINE</strong> the animal and its products</li>
+                    <li>📞 <strong>CONTACT</strong> your veterinarian: <%= vetName %> (<%= vetPhone %>)</li>
+                    <li>⏰ <strong>EXTEND WITHDRAWAL PERIOD</strong> by at least <%= recommendedExtension %> days</li>
+                    <li>🧪 <strong>RE-TEST</strong> after extended withdrawal period</li>
+                    <li>📝 <strong>DOCUMENT</strong> all actions taken in LivestockIQ portal</li>
+                    <li>🚫 <strong>DO NOT MIX</strong> products from this animal with others</li>
+                </ol>
+            </div>
+
+            <div class="consequences">
+                <h3>⚖️ Legal Consequences of Non-Compliance</h3>
+                <ul>
+                    <li>Fines up to <strong>₹50,000</strong> under FSSAI regulations</li>
+                    <li>Mandatory product recall at your expense</li>
+                    <li>Suspension of farm certification/license</li>
+                    <li>Criminal prosecution for repeat offenses</li>
+                    <li>Permanent damage to farm reputation</li>
+                    <li>Loss of export permissions</li>
+                </ul>
+            </div>
+
+            <div
+                style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                <p style="color: #065f46; font-size: 14px; margin: 0;">
+                    <strong>✅ Good News:</strong> This violation was caught BEFORE sale thanks to LivestockIQ's MRL
+                    monitoring system.
+                    Follow the above steps and you can resolve this issue without penalties.
+                </p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="<%= portalLink %>" class="button">View Full Report in Portal</a>
+            </div>
+
+            <div style="margin-top: 30px; padding: 15px; background: #f9fafb; border-radius: 5px;">
+                <p style="font-size: 13px; color: #6b7280; margin-bottom: 10px;">
+                    <strong>Regulatory Authority:</strong>
+                    <%= regulatoryAuthority %><br>
+                        <strong>Report Number:</strong>
+                        <%= testReportNumber %><br>
+                            <strong>Alert Generated:</strong>
+                            <%= alertDate %>
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>LivestockIQ</strong> - Protecting Public Health & Your Business</p>
+            <p style="margin-top: 10px;">
+                Urgent assistance: <a href="mailto:urgent@livestockiq.com">urgent@livestockiq.com</a><br>
+                Call: 1800-XXX-XXXX (24/7 Helpline)
+            </p>
+            <p style="margin-top: 15px; font-size: 11px; color: #9ca3af;">
+                This is a critical alert from LivestockIQ MRL Monitoring System.<br>
+                A copy has been sent to your supervising veterinarian and regulatory authorities.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

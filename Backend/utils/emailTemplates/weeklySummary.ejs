@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Farm Summary</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .content {
+            padding: 30px 20px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #e5e7eb;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .section {
+            margin: 25px 0;
+        }
+
+        .section-title {
+            color: #1f2937;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        li {
+            padding: 8px 0;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .trend-up {
+            color: #10b981;
+        }
+
+        .trend-down {
+            color: #dc2626;
+        }
+
+        .footer {
+            background: #f9fafb;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            border-top: 1px solid #e5e7eb;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>📊 Weekly Farm Summary</h1>
+            <p>
+                <%= weekRange %>
+            </p>
+        </div>
+        <div class="content">
+            <p>Dear <%= farmerName %>,</p>
+            <p style="margin: 15px 0; color: #4b5563;">Here's your weekly farm health summary from LivestockIQ.</p>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-number">
+                        <%= totalAnimals %>
+                    </div>
+                    <div class="stat-label">Total Animals</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">
+                        <%= treatmentsThisWeek %>
+                    </div>
+                    <div class="stat-label">Treatments This Week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">
+                        <%= animalsUnderWithdrawal %>
+                    </div>
+                    <div class="stat-label">Under Withdrawal</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">
+                        <%= safeToSell %>
+                    </div>
+                    <div class="stat-label">Safe to Sell</div>
+                </div>
+            </div>
+
+            <% if (upcomingWithdrawals.length> 0) { %>
+                <div class="section">
+                    <div class="section-title">⏰ Upcoming Withdrawal Completions</div>
+                    <ul>
+                        <% upcomingWithdrawals.forEach(item=> { %>
+                            <li>
+                                <%= item.animalName %> - Withdrawal ends in <%= item.daysRemaining %> days
+                            </li>
+                            <% }); %>
+                    </ul>
+                </div>
+                <% } %>
+
+                    <% if (amuTrend) { %>
+                        <div class="section">
+                            <div class="section-title">📈 AMU Trend</div>
+                            <p style="color: #4b5563;">
+                                Weekly treatments: <%= amuTrend.thisWeek %> (vs <%= amuTrend.lastWeek %> last week)
+                                        <span class="<%= amuTrend.change >= 0 ? 'trend-up' : 'trend-down' %>">
+                                            <%= amuTrend.change>= 0 ? '↑' : '↓' %> <%= Math.abs(amuTrend.change) %>%
+                                        </span>
+                            </p>
+                        </div>
+                        <% } %>
+
+                            <% if (actionItems.length> 0) { %>
+                                <div class="section">
+                                    <div class="section-title">✅ Action Items</div>
+                                    <ul>
+                                        <% actionItems.forEach(item=> { %>
+                                            <li>
+                                                <%= item %>
+                                            </li>
+                                            <% }); %>
+                                    </ul>
+                                </div>
+                                <% } %>
+        </div>
+        <div class="footer">
+            <p><strong>LivestockIQ</strong> - Smart Farm Management</p>
+        </div>
+    </div>
+</body>
+
+</html>

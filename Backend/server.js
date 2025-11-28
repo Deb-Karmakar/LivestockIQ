@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.routes.js';
@@ -17,9 +18,18 @@ import aiRoutes from './routes/ai.routes.js';
 import groqRoutes from './routes/groq.routes.js';
 import auditRoutes from './routes/audit.routes.js';
 import auditEnhancementRoutes from './routes/auditEnhancements.routes.js';
+import mrlRoutes from './routes/mrl.routes.js';
+import emailRoutes from './routes/email.routes.js';
+import jobsRoutes from './routes/jobs.routes.js';
+import regulatorAlertsRoutes from './routes/regulatorAlerts.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
+import { startWithdrawalAlertJob } from './jobs/withdrawalAlerts.js';
+import { startWeeklySummaryJob } from './jobs/weeklySummary.js';
+import { startMRLTestReminderJob } from './jobs/mrlTestReminders.js';
+import { initializeSocketIO } from './config/socket.js';
+import { initializeWebSocket } from './services/websocket.service.js';
 
 // ✅ Load .env only in development
 if (process.env.NODE_ENV !== 'production') {
@@ -64,6 +74,10 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/groq', groqRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/audit', auditEnhancementRoutes); // Enhancement routes
+app.use('/api/mrl', mrlRoutes); // MRL compliance routes
+app.use('/api/email', emailRoutes); // Email notification testing routes
+app.use('/api/jobs', jobsRoutes); // Scheduled job management routes
+app.use('/api/regulator', regulatorAlertsRoutes); // Regulator alert system routes
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported
@@ -85,9 +99,27 @@ app.get('/debug/farmers', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+
+// Create HTTP server for Socket.io
+const httpServer = createServer(app);
+
+// Initialize Socket.io
+const io = initializeSocketIO(httpServer);
+initializeWebSocket(io);  // Pass io instance to websocket service
+
+// Start server
+httpServer.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+
+  // Start existing jobs
   startAmuAnalysisJob();
   startDiseasePredictionJob();
-  startBlockchainAnchorJob(); // Start blockchain anchoring job
+  startBlockchainAnchorJob();
+
+  // Start MRL & Alert jobs (Phase 3)
+  startWithdrawalAlertJob();
+  startWeeklySummaryJob();
+  startMRLTestReminderJob();
+
+  console.log('\n📅 All scheduled jobs initialized');
 });
