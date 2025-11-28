@@ -249,27 +249,8 @@ export const getAnimalMRLStatus = async (req, res) => {
         let requiresTest = false;
         let canSellProducts = true;
 
-        // Check if there are treatments without MRL tests AFTER their withdrawal period
-        const treatmentsNeedingTest = recentTreatments.filter(t => {
-            const withinWithdrawal = t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate);
-
-            // Check if there's a lab test AFTER this treatment's withdrawal period
-            const hasTestAfterWithdrawal = labTests.some(test =>
-                new Date(test.testDate) > new Date(t.withdrawalEndDate || t.startDate)
-            );
-
-            return !withinWithdrawal && !hasTestAfterWithdrawal && t.requiresMrlTest;
-        });
-
-        if (treatmentsNeedingTest.length > 0) {
-            mrlStatus = 'TEST_REQUIRED';
-            statusMessage = 'MRL testing required before product sale';
-            requiresTest = true;
-            canSellProducts = false;
-        }
-
-        // Check MRL test results - LATEST test takes priority, but only if it's after all treatments
-        if (labTests.length > 0 && treatmentsNeedingTest.length === 0) {
+        // First, check MRL test results - LATEST test determines base status
+        if (labTests.length > 0) {
             const latestTest = labTests[0]; // Already sorted by testDate descending
 
             if (!latestTest.isPassed) {
@@ -286,7 +267,14 @@ export const getAnimalMRLStatus = async (req, res) => {
                     canSellProducts = false;
                 }
             } else if (latestTest.isPassed) {
-                if (latestTest.regulatorApproved) {
+                // Check if regulator rejected the test (even though it passed system check)
+                if (latestTest.status === 'Rejected' && latestTest.regulatorApproved === false) {
+                    // Regulator rejected the passed test - farmer needs to upload a new test
+                    mrlStatus = 'TEST_REQUIRED';
+                    statusMessage = 'Previous test rejected by regulator - new MRL test required';
+                    requiresTest = true;
+                    canSellProducts = false;
+                } else if (latestTest.regulatorApproved) {
                     // Regulator verified - safe for sale
                     mrlStatus = 'SAFE';
                     statusMessage = 'MRL compliant - regulator verified';
@@ -298,6 +286,27 @@ export const getAnimalMRLStatus = async (req, res) => {
                     canSellProducts = false;
                 }
             }
+        }
+
+        // Then check if there are treatments without MRL tests AFTER their withdrawal period
+        // This will OVERRIDE the test status if treatments need testing
+        const treatmentsNeedingTest = recentTreatments.filter(t => {
+            const withinWithdrawal = t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate);
+
+            // Check if there's a lab test AFTER this treatment's withdrawal period
+            const hasTestAfterWithdrawal = labTests.some(test =>
+                new Date(test.testDate) > new Date(t.withdrawalEndDate || t.startDate)
+            );
+
+            return !withinWithdrawal && !hasTestAfterWithdrawal && t.requiresMrlTest;
+        });
+
+        // Override status if treatments need testing
+        if (treatmentsNeedingTest.length > 0) {
+            mrlStatus = 'TEST_REQUIRED';
+            statusMessage = 'MRL testing required before product sale';
+            requiresTest = true;
+            canSellProducts = false;
         }
 
         // Check active withdrawal periods (overrides test results UNLESS there is a violation)
