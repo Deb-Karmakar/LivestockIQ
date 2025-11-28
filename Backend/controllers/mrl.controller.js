@@ -263,15 +263,26 @@ export const getAnimalMRLStatus = async (req, res) => {
             canSellProducts = false;
         }
 
-        // Check for failed MRL tests
-        const failedTests = labTests.filter(t => !t.isPassed && t.isRecent);
-        if (failedTests.length > 0) {
-            mrlStatus = 'VIOLATION';
-            statusMessage = 'MRL violation detected - products cannot be sold';
-            canSellProducts = false;
+        // Check MRL test results - LATEST test takes priority
+        if (labTests.length > 0) {
+            const latestTest = labTests[0]; // Already sorted by testDate descending
+
+            if (!latestTest.isPassed) {
+                // Latest test failed - MRL violation
+                mrlStatus = 'VIOLATION';
+                statusMessage = 'MRL violation detected - products cannot be sold';
+                canSellProducts = false;
+            } else if (latestTest.isPassed) {
+                // Latest test passed - safe for sale (even if awaiting regulator approval)
+                mrlStatus = 'SAFE';
+                statusMessage = latestTest.regulatorApproved
+                    ? 'MRL compliant - regulator verified'
+                    : 'Latest MRL test passed - safe for sale (pending regulator verification)';
+                canSellProducts = true;
+            }
         }
 
-        // Check active withdrawal periods
+        // Check active withdrawal periods (overrides test results)
         const activeWithdrawal = recentTreatments.find(t =>
             t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate)
         );

@@ -16,6 +16,8 @@ import LearnMore from './components/LearnMore';
 import AuthPage from "./pages/AuthPage";
 import { useAuth } from "./contexts/AuthContext";
 import { ChatWidget } from "./components/ChatWidget";
+import MRLCompliancePage from "./pages/farmer/MRLCompliancePage";
+
 
 // Farmer Page Imports
 import AppLayout from "./components/layout/AppLayout";
@@ -182,6 +184,7 @@ function App() {
                 <Route path="sales" element={<SellPage />} />
                 <Route path="inventory" element={<InventoryPage />} />
                 <Route path="alerts" element={<AlertsPage />} />
+                <Route path="mrl-compliance" element={<MRLCompliancePage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>

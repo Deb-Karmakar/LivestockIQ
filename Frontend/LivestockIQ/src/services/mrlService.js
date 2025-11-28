@@ -1,6 +1,6 @@
 // Frontend/LivestockIQ/src/services/mrlService.js
 
-import axios from 'axios';
+import { axiosInstance } from '../contexts/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -9,28 +9,14 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
  * Handles all MRL-related API calls
  */
 
-// Get auth token from localStorage
-const getAuthToken = () => {
-    return localStorage.getItem('token');
-};
-
-// Create axios instance with auth
-const createAuthConfig = () => ({
-    headers: {
-        'Authorization': `Bearer ${getAuthToken()}`,
-        'Content-Type': 'application/json'
-    }
-});
-
 /**
  * Get all MRL limits with optional filtering
  */
 export const getMRLLimits = async (filters = {}) => {
     try {
         const params = new URLSearchParams(filters).toString();
-        const response = await axios.get(
-            `${API_URL}/api/mrl/limits${params ? `?${params}` : ''}`,
-            createAuthConfig()
+        const response = await axiosInstance.get(
+            `/mrl/limits${params ? `?${params}` : ''}`
         );
         return response.data;
     } catch (error) {
@@ -44,10 +30,9 @@ export const getMRLLimits = async (filters = {}) => {
  */
 export const lookupMRLLimit = async (drugName, species, productType) => {
     try {
-        const response = await axios.post(
-            `${API_URL}/api/mrl/lookup`,
-            { drugName, species, productType },
-            createAuthConfig()
+        const response = await axiosInstance.post(
+            `/mrl/lookup`,
+            { drugName, species, productType }
         );
         return response.data;
     } catch (error) {
@@ -61,10 +46,9 @@ export const lookupMRLLimit = async (drugName, species, productType) => {
  */
 export const submitLabTest = async (testData) => {
     try {
-        const response = await axios.post(
-            `${API_URL}/api/mrl/test-result`,
-            testData,
-            createAuthConfig()
+        const response = await axiosInstance.post(
+            `/mrl/test-result`,
+            testData
         );
         return response.data;
     } catch (error) {
@@ -78,9 +62,8 @@ export const submitLabTest = async (testData) => {
  */
 export const getAnimalMRLStatus = async (animalId) => {
     try {
-        const response = await axios.get(
-            `${API_URL}/api/mrl/animal-status/${animalId}`,
-            createAuthConfig()
+        const response = await axiosInstance.get(
+            `/mrl/animal/${animalId}/status`
         );
         return response.data;
     } catch (error) {
@@ -94,9 +77,8 @@ export const getAnimalMRLStatus = async (animalId) => {
  */
 export const getPendingMRLTests = async () => {
     try {
-        const response = await axios.get(
-            `${API_URL}/api/mrl/pending-tests`,
-            createAuthConfig()
+        const response = await axiosInstance.get(
+            `/mrl/pending-tests`
         );
         return response.data;
     } catch (error) {
@@ -110,9 +92,8 @@ export const getPendingMRLTests = async () => {
  */
 export const getLabTestHistory = async () => {
     try {
-        const response = await axios.get(
-            `${API_URL}/api/mrl/test-history`,
-            createAuthConfig()
+        const response = await axiosInstance.get(
+            `/mrl/my-tests`
         );
         return response.data;
     } catch (error) {
@@ -126,10 +107,9 @@ export const getLabTestHistory = async () => {
  */
 export const verifyPreSaleCompliance = async (animalId, productType) => {
     try {
-        const response = await axios.post(
-            `${API_URL}/api/sales/verify-compliance`,
-            { animalId, productType },
-            createAuthConfig()
+        const response = await axiosInstance.post(
+            `/sales/verify-compliance`,
+            { animalId, productType }
         );
         return response.data;
     } catch (error) {
@@ -143,10 +123,9 @@ export const verifyPreSaleCompliance = async (animalId, productType) => {
  */
 export const bulkVerifyCompliance = async (animalIds, productType) => {
     try {
-        const response = await axios.post(
-            `${API_URL}/api/sales/bulk-verify`,
-            { animalIds, productType },
-            createAuthConfig()
+        const response = await axiosInstance.post(
+            `/sales/bulk-verify`,
+            { animalIds, productType }
         );
         return response.data;
     } catch (error) {
