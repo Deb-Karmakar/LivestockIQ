@@ -516,6 +516,13 @@ const TreatmentsPage = () => {
 // The TreatmentFormDialog component
 const TreatmentFormDialog = ({ onSave, onClose, animals, supervisingVet }) => {
     const [startDate, setStartDate] = useState(new Date());
+    // Filter animals - only show those eligible for treatment (SAFE or NEW status)
+    const eligibleAnimals = (animals || []).filter(animal =>
+        animal.mrlStatus === 'SAFE' ||
+        animal.mrlStatus === 'NEW' ||
+        !animal.mrlStatus // Handle cases where mrlStatus might not be set
+    );
+    const ineligibleCount = (animals || []).length - eligibleAnimals.length;
     const handleSave = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -535,6 +542,14 @@ const TreatmentFormDialog = ({ onSave, onClose, animals, supervisingVet }) => {
                 <DialogTitle>Add New Treatment Record</DialogTitle>
                 <DialogDescription>Fill in the details below. This record will be sent to your supervising vet for review and approval.</DialogDescription>
             </DialogHeader>
+            {/* Warning about ineligible animals */}
+            {ineligibleCount > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-amber-800">
+                        <strong>{ineligibleCount} animal(s)</strong> are currently not eligible for new treatments due to active withdrawal periods, pending tests, or verification.
+                    </p>
+                </div>
+            )}
             <form onSubmit={handleSave}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                     <div className="space-y-4">
@@ -542,7 +557,13 @@ const TreatmentFormDialog = ({ onSave, onClose, animals, supervisingVet }) => {
                             <Label htmlFor="animalId">Animal / Herd ID</Label>
                             <Select name="animalId" required>
                                 <SelectTrigger><SelectValue placeholder="Select Animal/Herd" /></SelectTrigger>
-                                <SelectContent>{(animals || []).map(a => <SelectItem key={a._id} value={a.tagId}>{a.tagId} ({a.name || a.species})</SelectItem>)}</SelectContent>
+                                <SelectContent>
+                                    {eligibleAnimals.map(a => (
+                                        <SelectItem key={a._id} value={a.tagId}>
+                                            {a.tagId} ({a.name || a.species})
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">

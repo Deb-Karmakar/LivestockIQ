@@ -94,6 +94,31 @@ export const recordFeedAdministration = async (req, res) => {
         if (animals.length !== animalIds.length) {
             return res.status(400).json({ message: 'One or more animals not found or not owned by you' });
         }
+
+        // Check MRL status for each animal - only SAFE and NEW animals can receive feed
+        const { calculateAnimalMRLStatus } = await import('../utils/mrlStatusCalculator.js');
+        const ineligibleAnimals = [];
+        for (const animal of animals) {
+            const mrlStatus = await calculateAnimalMRLStatus(animal, req.user._id);
+            // Only SAFE and NEW animals can receive feed medications
+            if (mrlStatus.mrlStatus && !['SAFE', 'NEW'].includes(mrlStatus.mrlStatus)) {
+                ineligibleAnimals.push({
+                    tagId: animal.tagId,
+                    name: animal.name || animal.tagId,
+                    mrlStatus: mrlStatus.mrlStatus,
+                    reason: mrlStatus.statusMessage
+                });
+            }
+        }
+        // If any animals are ineligible, reject the entire operation
+        if (ineligibleAnimals.length > 0) {
+            return res.status(400).json({
+                message: `Cannot administer feed: ${ineligibleAnimals.length} animal(s) are not eligible`,
+                ineligibleAnimals,
+                details: 'Only animals with "Safe for Sale" or "New Animal" status can receive feed medications.'
+            });
+        }
+
         // Create feed administration record
         const administration = new FeedAdministration({
             farmerId: req.user._id,

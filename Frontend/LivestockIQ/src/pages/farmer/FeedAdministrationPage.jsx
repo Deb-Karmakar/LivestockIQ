@@ -302,6 +302,13 @@ const FeedAdminFormDialog = ({ onSave, onClose, animals, activeFeed }) => {
     const [startDate, setStartDate] = useState(new Date());
     const [selectedAnimals, setSelectedAnimals] = useState([]);
     const [isGroupFeeding, setIsGroupFeeding] = useState(false);
+    // Filter animals - only show those eligible for feed (SAFE or NEW status)
+    const eligibleAnimals = (animals || []).filter(animal =>
+        animal.mrlStatus === 'SAFE' ||
+        animal.mrlStatus === 'NEW' ||
+        !animal.mrlStatus // Handle cases where mrlStatus might not be set
+    );
+    const ineligibleCount = (animals || []).length - eligibleAnimals.length;
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -330,6 +337,14 @@ const FeedAdminFormDialog = ({ onSave, onClose, animals, activeFeed }) => {
             <DialogHeader>
                 <DialogTitle>Record Feed Administration</DialogTitle>
             </DialogHeader>
+            {/* Warning about ineligible animals */}
+            {ineligibleCount > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-amber-800">
+                        <strong>{ineligibleCount} animal(s)</strong> are currently not eligible for new feed administrations due to active withdrawal periods, pending tests, or verification.
+                    </p>
+                </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="feedId">Select Feed *</Label>
@@ -377,7 +392,7 @@ const FeedAdminFormDialog = ({ onSave, onClose, animals, activeFeed }) => {
                                 <SelectValue placeholder="Select animal" />
                             </SelectTrigger>
                             <SelectContent>
-                                {animals.map(animal => (
+                                {eligibleAnimals.map(animal => (
                                     <SelectItem key={animal._id} value={animal.tagId}>
                                         {animal.tagId} - {animal.name || animal.species}
                                     </SelectItem>
@@ -394,7 +409,7 @@ const FeedAdminFormDialog = ({ onSave, onClose, animals, activeFeed }) => {
                         <div className="space-y-2">
                             <Label>Select Animals ({selectedAnimals.length} selected)</Label>
                             <div className="border rounded-lg p-4 max-h-40 overflow-y-auto">
-                                {animals.map(animal => (
+                                {eligibleAnimals.map(animal => (
                                     <label key={animal._id} className="flex items-center gap-2 py-1">
                                         <input
                                             type="checkbox"

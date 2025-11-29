@@ -17,6 +17,25 @@ export const addTreatment = async (req, res) => {
     try {
         const farmerId = req.user._id;
         const treatmentData = { ...req.body, farmerId };
+
+        // First, validate that the animal exists and check its MRL status
+        const animal = await Animal.findOne({ tagId: req.body.animalId, farmerId });
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found or does not belong to you' });
+        }
+
+        // Import and check MRL status
+        const { calculateAnimalMRLStatus } = await import('../utils/mrlStatusCalculator.js');
+        const mrlStatus = await calculateAnimalMRLStatus(animal, farmerId);
+
+        // Only SAFE and NEW animals can receive treatments
+        if (mrlStatus.mrlStatus && !['SAFE', 'NEW'].includes(mrlStatus.mrlStatus)) {
+            return res.status(400).json({
+                message: `Cannot add treatment: Animal has MRL status "${mrlStatus.mrlStatus}"`,
+                reason: mrlStatus.statusMessage
+            });
+        }
+
         const treatment = await Treatment.create(treatmentData);
 
         // Create audit log for treatment creation
