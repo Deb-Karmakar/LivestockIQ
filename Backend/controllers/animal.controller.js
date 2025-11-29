@@ -2,6 +2,8 @@ import Animal from '../models/animal.model.js';
 import Treatment from '../models/treatment.model.js';
 import Sale from '../models/sale.model.js';
 import { createAuditLog } from '../services/auditLog.service.js';
+import { calculateAnimalMRLStatus } from '../utils/mrlStatusCalculator.js';
+
 
 // @desc    Add a new animal
 // @route   POST /api/animals
@@ -59,7 +61,20 @@ export const getMyAnimals = async (req, res) => {
     try {
         // Find all animals that belong to the logged-in farmer
         const animals = await Animal.find({ farmerId: req.user._id }).sort({ createdAt: -1 });
-        res.json(animals);
+
+        // Calculate MRL status for each animal
+        const animalsWithMRLStatus = await Promise.all(
+            animals.map(async (animal) => {
+                const mrlStatus = await calculateAnimalMRLStatus(animal, req.user._id);
+                return {
+                    ...animal.toObject(),
+                    mrlStatus: mrlStatus.mrlStatus,
+                    mrlStatusMessage: mrlStatus.statusMessage,
+                    canSellProducts: mrlStatus.canSellProducts
+                };
+            })
+        );
+        res.json(animalsWithMRLStatus);
     } catch (error) {
         console.error('Get animals error:', error);
         res.status(500).json({ message: `Server Error: ${error.message}` });

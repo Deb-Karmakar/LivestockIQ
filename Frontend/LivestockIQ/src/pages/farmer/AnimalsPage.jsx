@@ -15,7 +15,7 @@ import {
     BrainCircuit, Loader2, Search, Calendar, Weight, User2,
     Sparkles, RefreshCw, Users, Filter, Grid3X3, List,
     ChevronRight, Heart, Activity, TrendingUp, CheckCircle2,
-    AlertTriangle, Clock, Eye, ArrowUpRight, Package
+    AlertTriangle, Clock, Eye, ArrowUpRight, Package, XCircle
 } from "lucide-react";
 import BarcodeScannerDialog from "../../components/animals/BarcodeScannerDialog";
 import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
@@ -98,38 +98,66 @@ const getSpeciesConfig = (species) => {
     return map[species] || map['Cattle'];
 };
 
-// Status badge component with enhanced styling
-const StatusBadge = ({ status }) => {
-    const config = {
-        'Active': {
-            color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-            icon: CheckCircle2,
-            dot: 'bg-emerald-500'
-        },
-        'Sold': {
-            color: 'bg-blue-100 text-blue-700 border-blue-200',
-            icon: Package,
-            dot: 'bg-blue-500'
-        },
-        'Culled': {
-            color: 'bg-orange-100 text-orange-700 border-orange-200',
-            icon: AlertTriangle,
-            dot: 'bg-orange-500'
-        },
-    };
-    const finalConfig = config[status] || config['Active'];
-    const Icon = finalConfig.icon;
-
-    return (
-        <Badge className={`border ${finalConfig.color} flex items-center gap-1.5 px-2.5 py-1`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${finalConfig.dot}`} />
-            {status}
-        </Badge>
-    );
+// MRL status badge component
+const getMRLStatusBadge = (animal) => {
+    if (!animal.mrlStatus) return null;
+    switch (animal.mrlStatus) {
+        case 'NEW':
+            return (
+                <Badge className="bg-purple-500 hover:bg-purple-600 text-white">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    New Animal
+                </Badge>
+            );
+        case 'SAFE':
+            return (
+                <Badge className="bg-green-500 hover:bg-green-600 text-white">
+                    <CheckCircle2 className="w-3 h-3 mr-1" />
+                    Safe for Sale
+                </Badge>
+            );
+        case 'PENDING_VERIFICATION':
+            return (
+                <div className="flex flex-col items-start gap-1">
+                    <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Pending Verification
+                    </Badge>
+                    <span className="text-xs text-gray-500 italic">Passed system check</span>
+                </div>
+            );
+        case 'TEST_REQUIRED':
+            return (
+                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Test Required
+                </Badge>
+            );
+        case 'VIOLATION':
+            return (
+                <Badge className="bg-red-500 hover:bg-red-600 text-white">
+                    <XCircle className="w-3 h-3 mr-1" />
+                    MRL Violation
+                </Badge>
+            );
+        case 'WITHDRAWAL_ACTIVE':
+            return (
+                <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Under Withdrawal
+                </Badge>
+            );
+        default:
+            return (
+                <Badge variant="secondary">
+                    No Recent Treatments
+                </Badge>
+            );
+    }
 };
 
 // Enhanced Animal Card Component
-const AnimalCard = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onViewTip }) => {
+const AnimalCard = ({ animal, onEdit, onDelete, onViewHistory, onViewTip }) => {
     const speciesConfig = getSpeciesConfig(animal.species);
 
     return (
@@ -138,27 +166,24 @@ const AnimalCard = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onVi
             <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${speciesConfig.color}`} />
 
             <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className={`p-2 rounded-xl ${speciesConfig.bg} transition-transform group-hover:scale-110`}>
-                            <img
-                                src={speciesConfig.image}
-                                alt={animal.species}
-                                className="w-10 h-10 object-contain"
-                            />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <CardTitle className="text-lg truncate group-hover:text-blue-600 transition-colors">
-                                {animal.tagId}
-                            </CardTitle>
-                            {animal.name && (
-                                <CardDescription className="truncate font-medium">
-                                    {animal.name}
-                                </CardDescription>
-                            )}
-                        </div>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`p-2 rounded-xl ${speciesConfig.bg} transition-transform group-hover:scale-110`}>
+                        <img
+                            src={speciesConfig.image}
+                            alt={animal.species}
+                            className="w-10 h-10 object-contain"
+                        />
                     </div>
-                    <StatusBadge status={animal.status} />
+                    <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate group-hover:text-blue-600 transition-colors">
+                            {animal.tagId}
+                        </CardTitle>
+                        {animal.name && (
+                            <CardDescription className="truncate font-medium">
+                                {animal.name}
+                            </CardDescription>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
 
@@ -194,6 +219,8 @@ const AnimalCard = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onVi
                         <div className="font-semibold text-sm text-gray-900">{animal.weight || 'N/A'}</div>
                     </div>
                 </div>
+
+                {getMRLStatusBadge(animal)}
 
                 {/* Notes if present */}
                 {animal.notes && (
@@ -240,21 +267,6 @@ const AnimalCard = ({ animal, onEdit, onSetStatus, onDelete, onViewHistory, onVi
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={() => onSetStatus("Sold")}
-                            className="text-emerald-600 focus:bg-emerald-50 focus:text-emerald-700"
-                        >
-                            <Package className="mr-2 h-4 w-4" />
-                            Mark as Sold
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => onSetStatus("Culled")}
-                            className="text-orange-600 focus:bg-orange-50 focus:text-orange-700"
-                        >
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            Mark as Culled
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
                             onClick={onDelete}
                             className="text-red-600 focus:bg-red-50 focus:text-red-700"
                         >
@@ -277,7 +289,6 @@ const AnimalsPage = () => {
     const [viewingHistoryOf, setViewingHistoryOf] = useState(null);
     const [tipAnimal, setTipAnimal] = useState(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
     const [speciesFilter, setSpeciesFilter] = useState("all");
     const [viewMode, setViewMode] = useState("grid");
     const { toast } = useToast();
@@ -312,14 +323,11 @@ const AnimalsPage = () => {
     // Calculate stats
     const stats = useMemo(() => {
         const total = animals.length;
-        const active = animals.filter(a => a.status === 'Active').length;
-        const sold = animals.filter(a => a.status === 'Sold').length;
-        const culled = animals.filter(a => a.status === 'Culled').length;
 
         // Get unique species
         const speciesList = [...new Set(animals.map(a => a.species))];
 
-        return { total, active, sold, culled, speciesList };
+        return { total, speciesList };
     }, [animals]);
 
     const handleSaveAnimal = async (animalData) => {
@@ -348,20 +356,6 @@ const AnimalsPage = () => {
         setIsFormOpen(true);
     };
 
-    const handleSetStatus = async (animalId, status) => {
-        try {
-            await updateAnimal(animalId, { status });
-            toast({ title: "Status Updated", description: `Animal marked as ${status}.` });
-            fetchAnimals();
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.response?.data?.message || "Failed to update status."
-            });
-        }
-    };
-
     const handleDeleteAnimal = async (animalId) => {
         if (window.confirm(`Are you sure you want to delete this record? This action cannot be undone.`)) {
             try {
@@ -382,19 +376,18 @@ const AnimalsPage = () => {
         setTipAnimal(animal);
     };
 
-    // Filter animals based on search, status, and species
+    // Filter animals based on search and species
     const filteredAnimals = useMemo(() => {
         return animals.filter(animal => {
             const matchesSearch = searchTerm === "" ||
                 animal.tagId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (animal.name && animal.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            const matchesStatus = statusFilter === "all" || animal.status === statusFilter;
             const matchesSpecies = speciesFilter === "all" || animal.species === speciesFilter;
 
-            return matchesSearch && matchesStatus && matchesSpecies;
+            return matchesSearch && matchesSpecies;
         });
-    }, [animals, searchTerm, statusFilter, speciesFilter]);
+    }, [animals, searchTerm, speciesFilter]);
 
     if (loading) {
         return (
@@ -460,30 +453,12 @@ const AnimalsPage = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
+            <div className="grid grid-cols-1 gap-3 sm:gap-6">
                 <StatCard
                     title="Total Animals"
                     value={stats.total}
                     color="blue"
                     subtitle="Registered in system"
-                />
-                <StatCard
-                    title="Active"
-                    value={stats.active}
-                    color="green"
-                    subtitle="Currently on farm"
-                />
-                <StatCard
-                    title="Sold"
-                    value={stats.sold}
-                    color="purple"
-                    subtitle="Transferred out"
-                />
-                <StatCard
-                    title="Culled"
-                    value={stats.culled}
-                    color="orange"
-                    subtitle="Removed from herd"
                 />
             </div>
 
@@ -514,19 +489,6 @@ const AnimalsPage = () => {
                                     {stats.speciesList.map(species => (
                                         <SelectItem key={species} value={species}>{species}</SelectItem>
                                     ))}
-                                </SelectContent>
-                            </Select>
-
-                            {/* Status Filter */}
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-full sm:w-36">
-                                    <SelectValue placeholder="Status..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Status</SelectItem>
-                                    <SelectItem value="Active">Active</SelectItem>
-                                    <SelectItem value="Sold">Sold</SelectItem>
-                                    <SelectItem value="Culled">Culled</SelectItem>
                                 </SelectContent>
                             </Select>
 
@@ -573,7 +535,6 @@ const AnimalsPage = () => {
                                         key={animal._id}
                                         animal={animal}
                                         onEdit={() => handleEditClick(animal)}
-                                        onSetStatus={(status) => handleSetStatus(animal._id, status)}
                                         onDelete={() => handleDeleteAnimal(animal._id)}
                                         onViewHistory={() => setViewingHistoryOf(animal.tagId)}
                                         onViewTip={() => handleViewTipClick(animal)}
@@ -584,7 +545,6 @@ const AnimalsPage = () => {
                             <AnimalListView
                                 animals={filteredAnimals}
                                 onEdit={handleEditClick}
-                                onSetStatus={handleSetStatus}
                                 onDelete={handleDeleteAnimal}
                                 onViewHistory={setViewingHistoryOf}
                                 onViewTip={handleViewTipClick}
@@ -597,11 +557,11 @@ const AnimalsPage = () => {
                             </div>
                             <p className="text-xl font-semibold text-gray-700">No animals found</p>
                             <p className="text-gray-500 mt-2 max-w-sm mx-auto">
-                                {searchTerm || statusFilter !== "all" || speciesFilter !== "all"
+                                {searchTerm || speciesFilter !== "all"
                                     ? "Try adjusting your search or filter criteria."
                                     : "Add your first animal to get started with herd management."}
                             </p>
-                            {!searchTerm && statusFilter === "all" && speciesFilter === "all" && (
+                            {!searchTerm && speciesFilter === "all" && (
                                 <Button
                                     className="mt-6"
                                     onClick={() => setIsFormOpen(true)}
@@ -633,7 +593,7 @@ const AnimalsPage = () => {
 };
 
 // List View Component
-const AnimalListView = ({ animals, onEdit, onSetStatus, onDelete, onViewHistory, onViewTip }) => {
+const AnimalListView = ({ animals, onEdit, onDelete, onViewHistory, onViewTip }) => {
     return (
         <div className="overflow-x-auto">
             <table className="w-full">
@@ -644,7 +604,6 @@ const AnimalListView = ({ animals, onEdit, onSetStatus, onDelete, onViewHistory,
                         <th className="text-left p-4 font-semibold text-gray-600">Gender</th>
                         <th className="text-left p-4 font-semibold text-gray-600">Age</th>
                         <th className="text-left p-4 font-semibold text-gray-600">Weight</th>
-                        <th className="text-left p-4 font-semibold text-gray-600">Status</th>
                         <th className="text-right p-4 font-semibold text-gray-600">Actions</th>
                     </tr>
                 </thead>
@@ -675,9 +634,6 @@ const AnimalListView = ({ animals, onEdit, onSetStatus, onDelete, onViewHistory,
                                 <td className="p-4 text-gray-700">{calculateAge(animal.dob)}</td>
                                 <td className="p-4 text-gray-700">{animal.weight || 'N/A'}</td>
                                 <td className="p-4">
-                                    <StatusBadge status={animal.status} />
-                                </td>
-                                <td className="p-4">
                                     <div className="flex items-center justify-end gap-2">
                                         <Button
                                             variant="ghost"
@@ -703,13 +659,6 @@ const AnimalListView = ({ animals, onEdit, onSetStatus, onDelete, onViewHistory,
                                                 <DropdownMenuItem onClick={() => onViewTip(animal)}>
                                                     <BrainCircuit className="mr-2 h-4 w-4" />
                                                     AI Health Tip
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => onSetStatus(animal._id, "Sold")}>
-                                                    Mark as Sold
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onSetStatus(animal._id, "Culled")}>
-                                                    Mark as Culled
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem
@@ -765,7 +714,6 @@ const AnimalFormDialog = ({ onSave, animal, onClose }) => {
             ...formData,
             dob: formData.dob ? new Date(formData.dob) : null,
             weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : "",
-            status: animal?.status || "Active",
         };
         onSave(submitData);
     };

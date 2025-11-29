@@ -38,6 +38,11 @@ const animalSchema = new mongoose.Schema({
     notes: {
         type: String,
         trim: true,
+    },
+    isNew: {
+        type: Boolean,
+        default: true,
+        // Set to false when animal receives first treatment or feed medication
     }
 }, {
     timestamps: true // CRITICAL for offline sync

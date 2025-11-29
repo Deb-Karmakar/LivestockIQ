@@ -36,6 +36,12 @@ export const addTreatment = async (req, res) => {
             },
         });
 
+        // Clear the "New" tag when animal receives first treatment
+        await Animal.findOneAndUpdate(
+            { tagId: treatment.animalId, farmerId: req.user._id, isNew: true },
+            { isNew: false }
+        );
+
         if (treatment && treatment.vetId) {
             const vet = await Veterinarian.findOne({ vetId: treatment.vetId });
             const farmer = req.user;
@@ -59,6 +65,7 @@ export const addTreatment = async (req, res) => {
                 });
             }
         }
+
         res.status(201).json(treatment);
     } catch (error) {
         res.status(500).json({ message: `Server Error: ${error.message}` });
@@ -84,17 +91,17 @@ export const updateTreatmentByVet = async (req, res) => {
     try {
         const treatment = await Treatment.findById(req.params.id);
         if (!treatment) {
-            console.log('[DEBUG] ❌ Step 1 FAILED: Treatment not found.');
+            console.log('[DEBUG] Step 1 FAILED: Treatment not found.');
             return res.status(404).json({ message: 'Treatment not found' });
         }
-        console.log('[DEBUG] ✅ Step 1: Found treatment record.');
+        console.log('[DEBUG] Step 1: Found treatment record.');
 
         const farmer = await Farmer.findById(treatment.farmerId);
         if (farmer.vetId !== req.user.vetId) {
-            console.log('[DEBUG] ❌ Authorization FAILED.');
+            console.log('[DEBUG] Authorization FAILED.');
             return res.status(401).json({ message: 'Not authorized to modify this treatment' });
         }
-        console.log('[DEBUG] ✅ Step 2: Vet authorized.');
+        console.log('[DEBUG] Step 2: Vet authorized.');
 
         // Store original state for audit trail
         const originalState = treatment.toObject();
@@ -104,7 +111,7 @@ export const updateTreatmentByVet = async (req, res) => {
         }
 
         const updatedTreatment = await Treatment.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        console.log(`[DEBUG] ✅ Step 3: Treatment status updated to: ${updatedTreatment.status}`);
+        console.log(`[DEBUG] Step 3: Treatment status updated to: ${updatedTreatment.status}`);
 
         // Create audit log for vet approval/rejection with digital signature
         const eventType = req.body.status === 'Approved' ? 'APPROVE' : req.body.status === 'Rejected' ? 'REJECT' : 'UPDATE';
@@ -122,7 +129,7 @@ export const updateTreatmentByVet = async (req, res) => {
 
                 // Ensure vet has crypto keys
                 if (!vet.cryptoKeys || !vet.cryptoKeys.privateKey) {
-                    console.log('[DEBUG] ⚠️  Vet has no crypto keys, generating...');
+                    console.log('[DEBUG] Vet has no crypto keys, generating...');
                     await generateVetKeys(vet._id);
                     // Reload vet with keys
                     const updatedVet = await Veterinarian.findById(vet._id);
@@ -133,9 +140,9 @@ export const updateTreatmentByVet = async (req, res) => {
 
                 // Sign the approval
                 signature = await signTreatmentApproval(updatedTreatment, req.user._id);
-                console.log(`[DEBUG] ✅ Digital signature generated: ${signature.substring(0, 20)}...`);
+                console.log(`[DEBUG] Digital signature generated: ${signature.substring(0, 20)}...`);
             } catch (error) {
-                console.error('[DEBUG] ⚠️  Failed to generate signature:', error.message);
+                console.error('[DEBUG] Failed to generate signature:', error.message);
                 // Continue without signature - don't block the approval
             }
         }
@@ -165,25 +172,25 @@ export const updateTreatmentByVet = async (req, res) => {
 
         // --- PRESCRIPTION LOGIC ---
         if (updatedTreatment && updatedTreatment.status === 'Approved') {
-            console.log('[DEBUG] ✅ Entering prescription generation block...');
+            console.log('[DEBUG] Entering prescription generation block...');
 
             const vet = await Veterinarian.findById(req.user._id);
             console.log(`[DEBUG] Found Vet: ${vet.fullName}`);
 
             const animal = await Animal.findOne({ tagId: updatedTreatment.animalId });
             if (!animal) {
-                console.log(`[DEBUG] ❌ CRITICAL FAILURE: Could not find animal with tagId: ${updatedTreatment.animalId}`);
+                console.log(`[DEBUG] CRITICAL FAILURE: Could not find animal with tagId: ${updatedTreatment.animalId}`);
                 console.log('--- VET UPDATE PROCESS ENDED (Animal not found) ---');
                 return res.json(updatedTreatment);
             }
-            console.log(`[DEBUG] ✅ Found Animal with species: ${animal.species}`);
+            console.log(`[DEBUG] Found Animal with species: ${animal.species}`);
 
             const prescription = await Prescription.create({
                 treatmentId: updatedTreatment._id,
                 farmerId: farmer._id,
                 vetId: vet._id,
             });
-            console.log('[DEBUG] ✅ Step 4: Prescription record created in DB.');
+            console.log('[DEBUG] Step 4: Prescription record created in DB.');
 
             // Create audit log for prescription creation
             await createAuditLog({
@@ -204,12 +211,12 @@ export const updateTreatmentByVet = async (req, res) => {
 
             const pdfDataForFarmer = { ...updatedTreatment.toObject(), animal };
             const pdfBuffer = await generatePrescriptionPdfBuffer(pdfDataForFarmer, farmer, vet);
-            console.log('[DEBUG] ✅ Step 5: PDF Buffer generated successfully.');
+            console.log('[DEBUG] Step 5: PDF Buffer generated successfully.');
 
             const subject = `Prescription for Animal ID: ${updatedTreatment.animalId}`;
             const html = `<p>Hello ${farmer.farmOwner},</p><p>Dr. ${vet.fullName} has approved a treatment and issued a new prescription for your animal (ID: ${updatedTreatment.animalId}).</p><p>The official prescription is attached to this email as a PDF for your records.</p><p>Thank you for using LivestockIQ.</p>`;
 
-            console.log(`[DEBUG] 📧 Step 6: Attempting to send email to: ${farmer.email}`);
+            console.log(`[DEBUG] Step 6: Attempting to send email to: ${farmer.email}`);
 
             await sendEmail({
                 to: farmer.email,
@@ -222,8 +229,7 @@ export const updateTreatmentByVet = async (req, res) => {
                 }],
             });
 
-            console.log('[DEBUG] ✅ Step 7: Email sent successfully!');
-
+            console.log('[DEBUG] Step 7: Email sent successfully!');
         }
         // --- END OF LOGIC ---
 
@@ -231,7 +237,7 @@ export const updateTreatmentByVet = async (req, res) => {
         res.json(updatedTreatment);
 
     } catch (error) {
-        console.error('--- ❌ VET UPDATE PROCESS FAILED WITH AN ERROR ---');
+        console.error('--- VET UPDATE PROCESS FAILED WITH AN ERROR ---');
         console.error(error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
