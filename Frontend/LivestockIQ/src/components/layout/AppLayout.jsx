@@ -16,7 +16,8 @@ import {
     X,
     Package,
     ClipboardCheck,
-    ShieldCheck
+    ShieldCheck,
+    Pill
 } from 'lucide-react';
 
 // --- Navigation Links Configuration ---
@@ -33,7 +34,7 @@ const primaryNavLinks = [
 // Links for the secondary mobile drawer menu
 const secondaryNavLinks = [
     { name: 'MRL Compliance', path: '/farmer/mrl-compliance', icon: ShieldCheck },
-    { name: 'Inventory', path: '/farmer/inventory', icon: Package },
+    { name: 'Drug Inventory', path: '/farmer/inventory', icon: Pill },
     { name: 'Feed Inventory', path: '/farmer/feed-inventory', icon: Package },
     { name: 'Feed Admin', path: '/farmer/feed-administration', icon: ClipboardCheck },
     { name: 'Reports', path: '/farmer/reports', icon: FileText },

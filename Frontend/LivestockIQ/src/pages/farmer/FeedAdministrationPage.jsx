@@ -103,19 +103,7 @@ const FeedAdministrationCard = ({ admin, onComplete }) => {
                     </div>
                 </div>
 
-                {admin.status === 'Active' && !admin.endDate && (
-                    <div className="pt-2">
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => onComplete(admin._id)}
-                        >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Mark as Complete
-                        </Button>
-                    </div>
-                )}
+
             </CardContent>
         </Card>
     );

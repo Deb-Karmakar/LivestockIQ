@@ -4,6 +4,7 @@ import MRL from '../models/mrl.model.js';
 import LabTest from '../models/labTest.model.js';
 import Treatment from '../models/treatment.model.js';
 import Animal from '../models/animal.model.js';
+import FeedAdministration from '../models/feedAdministration.model.js';
 import { sendMRLViolationAlert } from '../services/notification.service.js';
 import { sendMRLViolationAlert as sendMRLViolationWebSocket, sendLabTestResultAlert } from '../services/websocket.service.js';
 import { alertMRLViolation, checkCompliancePatterns } from '../services/regulator.service.js';
@@ -236,6 +237,12 @@ export const getAnimalMRLStatus = async (req, res) => {
             startDate: { $gte: ninetyDaysAgo }
         }).populate('mrlTestResults').sort({ startDate: -1 });
 
+        // Get feed administrations for this animal
+        const feedAdministrations = await FeedAdministration.find({
+            animalIds: animalId,
+            farmerId
+        });
+
         // Get all lab tests for this animal (last 90 days)
         const labTests = await LabTest.find({
             animalId,
@@ -301,22 +308,38 @@ export const getAnimalMRLStatus = async (req, res) => {
             return !withinWithdrawal && !hasTestAfterWithdrawal && t.requiresMrlTest;
         });
 
+        // Check for feed administrations needing tests (only active/approved ones)
+        const feedNeedingTest = feedAdministrations.filter(f => {
+            if (f.status !== 'Active') return false;
+            const withinWithdrawal = f.withdrawalEndDate && new Date() < new Date(f.withdrawalEndDate);
+            const hasTestAfterWithdrawal = labTests.some(test =>
+                new Date(test.testDate) > new Date(f.withdrawalEndDate || f.startDate)
+            );
+            return !withinWithdrawal && !hasTestAfterWithdrawal && f.requiresMrlTest;
+        });
+
         // Override status if treatments need testing
-        if (treatmentsNeedingTest.length > 0) {
+        if (treatmentsNeedingTest.length > 0 || feedNeedingTest.length > 0) {
             mrlStatus = 'TEST_REQUIRED';
             statusMessage = 'MRL testing required before product sale';
             requiresTest = true;
             canSellProducts = false;
         }
 
-        // Check active withdrawal periods (overrides test results UNLESS there is a violation)
-        const activeWithdrawal = recentTreatments.find(t =>
+        // Check active withdrawal periods from treatments  
+        const activeWithdrawalTreatment = recentTreatments.find(t =>
             t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate)
         );
-
+        // Check active withdrawal periods from approved feed administrations
+        const activeWithdrawalFeed = feedAdministrations.find(f =>
+            f.status === 'Active' && f.withdrawalEndDate && new Date() < new Date(f.withdrawalEndDate)
+        );
+        const activeWithdrawal = activeWithdrawalTreatment || activeWithdrawalFeed;
         if (activeWithdrawal && mrlStatus !== 'VIOLATION') {
             mrlStatus = 'WITHDRAWAL_ACTIVE';
-            statusMessage = `Withdrawal period active until ${new Date(activeWithdrawal.withdrawalEndDate).toLocaleDateString()}`;
+            const withdrawalEndDate = new Date(activeWithdrawal.withdrawalEndDate).toLocaleDateString();
+            const source = activeWithdrawalTreatment ? 'treatment' : 'feed medication';
+            statusMessage = `Withdrawal period active until ${withdrawalEndDate} (from ${source})`;
             canSellProducts = false;
         }
 

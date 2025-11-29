@@ -99,21 +99,35 @@ export const calculateAnimalMRLStatus = async (animal, farmerId) => {
             );
             return !withinWithdrawal && !hasTestAfterWithdrawal && t.requiresMrlTest;
         });
-
-        if (treatmentsNeedingTest.length > 0) {
+        // Check for feed administrations needing tests (only approved ones)
+        const feedNeedingTest = feedAdministrations.filter(f => {
+            // Only consider approved feed administrations
+            if (f.status !== 'Active') return false;
+            const withinWithdrawal = f.withdrawalEndDate && new Date() < new Date(f.withdrawalEndDate);
+            const hasTestAfterWithdrawal = labTests.some(test =>
+                new Date(test.testDate) > new Date(f.withdrawalEndDate || f.startDate)
+            );
+            return !withinWithdrawal && !hasTestAfterWithdrawal && f.requiresMrlTest;
+        });
+        if (treatmentsNeedingTest.length > 0 || feedNeedingTest.length > 0) {
             mrlStatus = 'TEST_REQUIRED';
             statusMessage = 'MRL testing required before product sale';
             canSellProducts = false;
         }
-
-        // Check active withdrawal periods
-        const activeWithdrawal = recentTreatments.find(t =>
+        // Check active withdrawal periods from treatments
+        const activeWithdrawalTreatment = recentTreatments.find(t =>
             t.withdrawalEndDate && new Date() < new Date(t.withdrawalEndDate)
         );
-
+        // Check active withdrawal periods from approved feed administrations
+        const activeWithdrawalFeed = feedAdministrations.find(f =>
+            f.status === 'Active' && f.withdrawalEndDate && new Date() < new Date(f.withdrawalEndDate)
+        );
+        const activeWithdrawal = activeWithdrawalTreatment || activeWithdrawalFeed;
         if (activeWithdrawal && mrlStatus !== 'VIOLATION') {
             mrlStatus = 'WITHDRAWAL_ACTIVE';
-            statusMessage = `Withdrawal period active until ${new Date(activeWithdrawal.withdrawalEndDate).toLocaleDateString()}`;
+            const withdrawalEndDate = new Date(activeWithdrawal.withdrawalEndDate).toLocaleDateString();
+            const source = activeWithdrawalTreatment ? 'treatment' : 'feed medication';
+            statusMessage = `Withdrawal period active until ${withdrawalEndDate} (from ${source})`;
             canSellProducts = false;
         }
 
