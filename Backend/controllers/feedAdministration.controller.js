@@ -420,10 +420,19 @@ export const getPendingFeedRequests = async (req, res) => {
             return res.status(403).json({ message: 'Only veterinarians can access this endpoint' });
         }
         // Get farmers supervised by this vet
+        // Get farmers supervised by this vet  
         const farmers = await Farmer.find({ vetId: req.user.vetId });
         const farmerIds = farmers.map(farmer => farmer._id);
-        // Get feed administrations from supervised farmers
-        const feedRequests = await FeedAdministration.find({ farmerId: { $in: farmerIds } })
+
+        // Get all feeds that require prescription
+        const prescriptionFeeds = await Feed.find({ prescriptionRequired: true }).select('_id');
+        const prescriptionFeedIds = prescriptionFeeds.map(f => f._id);
+
+        // Get feed administrations from supervised farmers - only medicated feeds
+        const feedRequests = await FeedAdministration.find({
+            farmerId: { $in: farmerIds },
+            feedId: { $in: prescriptionFeedIds }  // Only show medicated feeds
+        })
             .populate('farmerId', 'farmOwner farmName email')
             .populate('feedId')
             .sort({ createdAt: -1 })
@@ -526,28 +535,32 @@ export const approveFeedAdministration = async (req, res) => {
                 error: emailError.message
             });
         }
-        // Update all animals to withdrawal status
-        try {
-            console.log('📝 Updating animal statuses for tagIds:', approved.animalIds);
-            const updateResult = await Animal.updateMany(
-                { tagId: { $in: approved.animalIds } },
-                {
-                    withdrawalActive: true,
-                    withdrawalEndDate: approved.withdrawalEndDate,
-                    $push: { activeFeedAdministrations: approved._id }
-                }
-            );
-            console.log('✅ Animal status update result:', {
-                matched: updateResult.matchedCount,
-                modified: updateResult.modifiedCount,
-                animalIds: approved.animalIds
-            });
-        } catch (animalError) {
-            console.error('❌ Error updating animal statuses:', animalError);
-            console.error('Animal update error details:', {
-                animalIds: approved.animalIds,
-                error: animalError.message
-            });
+        // Update all animals to withdrawal status - ONLY for medicated feeds
+        if (administration.feedId.prescriptionRequired && administration.feedId.withdrawalPeriodDays > 0) {
+            try {
+                console.log('📝 Updating animal statuses for tagIds:', approved.animalIds);
+                const updateResult = await Animal.updateMany(
+                    { tagId: { $in: approved.animalIds } },
+                    {
+                        withdrawalActive: true,
+                        withdrawalEndDate: approved.withdrawalEndDate,
+                        $push: { activeFeedAdministrations: approved._id }
+                    }
+                );
+                console.log('✅ Animal status update result:', {
+                    matched: updateResult.matchedCount,
+                    modified: updateResult.modifiedCount,
+                    animalIds: approved.animalIds
+                });
+            } catch (animalError) {
+                console.error('❌ Error updating animal statuses:', animalError);
+                console.error('Animal update error details:', {
+                    animalIds: approved.animalIds,
+                    error: animalError.message
+                });
+            }
+        } else {
+            console.log('ℹ️ Skipping animal status update for non-medicated feed');
         }
         // Send email notification to farmer
         await sendEmail({
