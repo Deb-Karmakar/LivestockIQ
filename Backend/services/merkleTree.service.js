@@ -196,14 +196,25 @@ export const generateAndAnchorFarmSnapshot = async (farmerId) => {
 
         // Save blockchain reference in MongoDB (if anchored)
         if (blockchainData) {
-            await AuditLog.create({
+            // Get the last audit log to maintain hash chain
+            const lastAuditLog = await AuditLog.findOne({ farmerId })
+                .sort({ timestamp: -1 })
+                .select('currentHash')
+                .lean();
+
+            const previousHash = lastAuditLog ? lastAuditLog.currentHash : '0';
+
+            // Import generateChainHash to create unique hash with timestamp
+            const { generateChainHash } = await import('../utils/crypto.utils.js');
+
+            const auditData = {
                 eventType: 'BLOCKCHAIN_ANCHOR',
                 entityType: 'MerkleSnapshot',
                 farmerId: farmerId,
                 performedByRole: 'System',
                 performedByModel: 'System',
-                currentHash: snapshot.merkleRoot,
-                previousHash: '0',
+                timestamp: new Date(),
+                previousHash,
                 dataSnapshot: {
                     merkleRoot: snapshot.merkleRoot,
                     totalLogs: snapshot.totalLogs,
@@ -217,7 +228,12 @@ export const generateAndAnchorFarmSnapshot = async (farmerId) => {
                     contract: process.env.AUDIT_ANCHOR_ADDRESS,
                     chainId: 80002
                 }
-            });
+            };
+
+            // Generate unique hash for this anchor event
+            auditData.currentHash = generateChainHash(previousHash, auditData);
+
+            await AuditLog.create(auditData);
         }
 
         return { ...snapshot, blockchain: blockchainData };
