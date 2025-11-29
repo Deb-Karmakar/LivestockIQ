@@ -1,6 +1,7 @@
 import Animal from '../models/animal.model.js';
 import Treatment from '../models/treatment.model.js';
 import Sale from '../models/sale.model.js';
+import FeedAdministration from '../models/feedAdministration.model.js';
 import { createAuditLog } from '../services/auditLog.service.js';
 import { calculateAnimalMRLStatus } from '../utils/mrlStatusCalculator.js';
 
@@ -192,9 +193,10 @@ export const getAnimalHistory = async (req, res) => {
         const { animalId } = req.params;
 
         // 1. Fetch all data concurrently
-        const [animal, treatments, sales] = await Promise.all([
+        const [animal, treatments, feedAdministrations, sales] = await Promise.all([
             Animal.findOne({ tagId: animalId }),
             Treatment.find({ animalId: animalId, status: 'Approved' }).sort({ startDate: 'asc' }),
+            FeedAdministration.find({ animalIds: animalId, status: { $in: ['Active', 'Completed'] } }).populate('feedId').sort({ startDate: 'asc' }),
             Sale.find({ animalId: animalId }).sort({ saleDate: 'asc' })
         ]);
 
@@ -220,6 +222,20 @@ export const getAnimalHistory = async (req, res) => {
                 date: t.startDate,
                 title: `Treatment: ${t.drugName}`,
                 details: `Dose: ${t.dose}. Vet Notes: ${t.vetNotes || 'N/A'}. Withdrawal ends: ${t.withdrawalEndDate ? t.withdrawalEndDate.toLocaleDateString() : 'N/A'}`
+            });
+        });
+
+        // Add feed administration events
+        feedAdministrations.forEach(f => {
+            const feedName = f.feedId?.feedName || 'Unknown Feed';
+            const antimicrobialName = f.feedId?.antimicrobialName || 'N/A';
+            const withdrawalInfo = f.withdrawalEndDate ? f.withdrawalEndDate.toLocaleDateString() : 'N/A';
+
+            timelineEvents.push({
+                type: 'FEED',
+                date: f.startDate,
+                title: `Feed Administration: ${feedName}`,
+                details: `Antimicrobial: ${antimicrobialName}. Quantity: ${f.feedQuantityUsed} kg. Total Dose: ${f.antimicrobialDoseTotal ? f.antimicrobialDoseTotal.toFixed(2) + ' mg' : 'N/A'}. Withdrawal ends: ${withdrawalInfo}`
             });
         });
 

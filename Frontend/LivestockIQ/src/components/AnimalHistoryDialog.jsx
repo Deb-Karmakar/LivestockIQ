@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { getAnimalHistory } from '../services/animalService';
 import { format } from 'date-fns';
-import { PawPrint, Syringe, ShoppingCart, Loader2 } from 'lucide-react';
+import { PawPrint, Syringe, ShoppingCart, Loader2, Pill } from 'lucide-react';
 
 const eventIcons = {
     LOGGED: <PawPrint className="h-5 w-5 text-gray-500" />,
     TREATMENT: <Syringe className="h-5 w-5 text-blue-500" />,
+    FEED: <Pill className="h-5 w-5 text-purple-500" />,
     SALE: <ShoppingCart className="h-5 w-5 text-green-500" />,
 };
 
