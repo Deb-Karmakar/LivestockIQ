@@ -120,7 +120,7 @@ export const sendMRLViolationAlert = (farmerId, data) => {
     sendAlertToFarmer(farmerId, {
         type: 'MRL_VIOLATION',
         severity: 'critical',
-        title: '🚨 MRL Violation Detected',
+        title: 'MRL Violation Detected',
         message: `Animal ${data.animalName} has exceeded MRL limits`,
         data: {
             animalId: data.animalId,
@@ -189,7 +189,7 @@ export const sendTreatmentStatusAlert = (farmerId, data) => {
     sendAlertToFarmer(farmerId, {
         type: 'TREATMENT_STATUS',
         severity: isApproved ? 'success' : 'warning',
-        title: isApproved ? '✅ Treatment Approved' : '❌ Treatment Rejected',
+        title: isApproved ? 'Treatment Approved' : 'Treatment Rejected',
         message: `Treatment for ${data.animalName} has been ${data.status.toLowerCase()}`,
         data: {
             treatmentId: data.treatmentId,
@@ -214,7 +214,7 @@ export const sendTreatmentRequestAlert = (vetId, data) => {
     sendAlertToVet(vetId, {
         type: 'TREATMENT_REQUEST',
         severity: 'info',
-        title: '📋 New Treatment Request',
+        title: 'New Treatment Request',
         message: `${data.farmerName} requested treatment for ${data.animalName}`,
         data: {
             treatmentId: data.treatmentId,
