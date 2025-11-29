@@ -152,10 +152,10 @@ export const submitLabTest = async (req, res) => {
 
         // 🔔 SEND EMAIL ALERT IF MRL VIOLATION
         if (!isPassed) {
-            console.log('⚠️ MRL Violation detected - sending email alert...');
+            console.log('MRL Violation detected - sending email alert...');
             const emailResult = await sendMRLViolationAlert(farmerId, labTest);
             if (emailResult.success) {
-                console.log('✅ MRL violation email sent successfully');
+                console.log('MRL violation email sent successfully');
             }
 
             // 📡 SEND WEBSOCKET ALERT
@@ -198,8 +198,8 @@ export const submitLabTest = async (req, res) => {
 
         res.status(201).json({
             message: isPassed
-                ? 'Lab test submitted successfully. MRL test PASSED! ✅'
-                : 'Lab test submitted. WARNING: MRL limit EXCEEDED! ⚠️ Email alert sent.',
+                ? 'Lab test submitted successfully. MRL test PASSED!'
+                : 'Lab test submitted. WARNING: MRL limit EXCEEDED! Email alert sent.',
             labTest,
             mrlThreshold,
             isPassed,
