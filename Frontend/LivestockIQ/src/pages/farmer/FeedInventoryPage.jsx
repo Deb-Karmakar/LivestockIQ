@@ -337,6 +337,7 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
     const [expiryDate, setExpiryDate] = useState(item?.expiryDate ? new Date(item.expiryDate) : null);
     const [purchaseDate, setPurchaseDate] = useState(item?.purchaseDate ? new Date(item.purchaseDate) : new Date());
     const [targetSpecies, setTargetSpecies] = useState(item?.targetSpecies || []);
+    const [prescriptionRequired, setPrescriptionRequired] = useState(item?.prescriptionRequired !== false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -344,8 +345,8 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
         const data = {
             feedName: formData.get('feedName'),
             feedType: formData.get('feedType'),
-            antimicrobialName: formData.get('antimicrobialName'),
-            antimicrobialConcentration: Number(formData.get('antimicrobialConcentration')),
+            antimicrobialName: prescriptionRequired ? formData.get('antimicrobialName') : '',
+            antimicrobialConcentration: prescriptionRequired ? Number(formData.get('antimicrobialConcentration')) : 0,
             totalQuantity: Number(formData.get('totalQuantity')),
             remainingQuantity: item ? Number(formData.get('remainingQuantity')) : Number(formData.get('totalQuantity')),
             unit: formData.get('unit'),
@@ -353,9 +354,9 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
             manufacturer: formData.get('manufacturer'),
             purchaseDate,
             expiryDate,
-            withdrawalPeriodDays: Number(formData.get('withdrawalPeriodDays')),
+            withdrawalPeriodDays: prescriptionRequired ? Number(formData.get('withdrawalPeriodDays')) : 0,
             targetSpecies: targetSpecies,
-            prescriptionRequired: formData.get('prescriptionRequired') === 'true',
+            prescriptionRequired: prescriptionRequired,
             notes: formData.get('notes')
         };
         onSave(data);
@@ -399,14 +400,43 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
                     </div>
                 </div>
 
+                {!prescriptionRequired && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-sm text-blue-800">
+                            <strong>Non-Medicated Feed:</strong> Antimicrobial fields are disabled since this feed does not require a prescription.
+                        </p>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label htmlFor="antimicrobialName">Antimicrobial Name *</Label>
-                        <Input id="antimicrobialName" name="antimicrobialName" placeholder="e.g., Oxytetracycline" defaultValue={item?.antimicrobialName} required />
+                        <Label htmlFor="antimicrobialName" className={!prescriptionRequired ? 'text-gray-400' : ''}>
+                            Antimicrobial Name {prescriptionRequired ? '*' : '(Medicated feeds only)'}
+                        </Label>
+                        <Input
+                            id="antimicrobialName"
+                            name="antimicrobialName"
+                            placeholder={prescriptionRequired ? "e.g., Oxytetracycline" : "Not required for non-medicated feed"}
+                            defaultValue={item?.antimicrobialName}
+                            required={prescriptionRequired}
+                            disabled={!prescriptionRequired}
+                            className={!prescriptionRequired ? 'bg-gray-100 cursor-not-allowed' : ''}
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="antimicrobialConcentration">Concentration (mg/kg) *</Label>
-                        <Input id="antimicrobialConcentration" name="antimicrobialConcentration" type="number" placeholder="500" defaultValue={item?.antimicrobialConcentration} required />
+                        <Label htmlFor="antimicrobialConcentration" className={!prescriptionRequired ? 'text-gray-400' : ''}>
+                            Concentration (mg/kg) {prescriptionRequired ? '*' : '(Medicated feeds only)'}
+                        </Label>
+                        <Input
+                            id="antimicrobialConcentration"
+                            name="antimicrobialConcentration"
+                            type="number"
+                            placeholder={prescriptionRequired ? "500" : "0"}
+                            defaultValue={item?.antimicrobialConcentration}
+                            required={prescriptionRequired}
+                            disabled={!prescriptionRequired}
+                            className={!prescriptionRequired ? 'bg-gray-100 cursor-not-allowed' : ''}
+                        />
                     </div>
                 </div>
 
@@ -479,8 +509,19 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="withdrawalPeriodDays">Withdrawal Period (Days) *</Label>
-                    <Input id="withdrawalPeriodDays" name="withdrawalPeriodDays" type="number" placeholder="7" defaultValue={item?.withdrawalPeriodDays} required />
+                    <Label htmlFor="withdrawalPeriodDays" className={!prescriptionRequired ? 'text-gray-400' : ''}>
+                        Withdrawal Period (Days) {prescriptionRequired ? '*' : '(Medicated feeds only)'}
+                    </Label>
+                    <Input
+                        id="withdrawalPeriodDays"
+                        name="withdrawalPeriodDays"
+                        type="number"
+                        placeholder={prescriptionRequired ? "7" : "0"}
+                        defaultValue={prescriptionRequired ? item?.withdrawalPeriodDays : 0}
+                        required={prescriptionRequired}
+                        disabled={!prescriptionRequired}
+                        className={!prescriptionRequired ? 'bg-gray-100 cursor-not-allowed' : ''}
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -503,13 +544,18 @@ const FeedFormDialog = ({ item, onSave, onClose }) => {
 
                 <div className="space-y-2">
                     <Label htmlFor="prescriptionRequired">Prescription Required *</Label>
-                    <Select name="prescriptionRequired" defaultValue={item?.prescriptionRequired ? 'true' : 'false'} required>
+                    <Select
+                        name="prescriptionRequired"
+                        value={prescriptionRequired ? 'true' : 'false'}
+                        onValueChange={(value) => setPrescriptionRequired(value === 'true')}
+                        required
+                    >
                         <SelectTrigger>
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="true">Yes</SelectItem>
-                            <SelectItem value="false">No</SelectItem>
+                            <SelectItem value="true">Yes - Medicated Feed</SelectItem>
+                            <SelectItem value="false">No - Non-Medicated Feed</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

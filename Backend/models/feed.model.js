@@ -21,13 +21,32 @@ const feedSchema = new mongoose.Schema({
     },
     antimicrobialName: {
         type: String,
-        required: [true, 'Antimicrobial name is required'],
-        trim: true
+        trim: true,
+        validate: {
+            validator: function (value) {
+                // Required only if prescriptionRequired is true
+                if (this.prescriptionRequired === true) {
+                    return value && value.trim().length > 0;
+                }
+                return true;
+            },
+            message: 'Antimicrobial name is required for medicated feeds'
+        }
     },
     antimicrobialConcentration: {
         type: Number,
-        required: [true, 'Antimicrobial concentration is required'],
-        min: [0, 'Concentration cannot be negative']
+        min: [0, 'Concentration cannot be negative'],
+        default: 0,
+        validate: {
+            validator: function (value) {
+                // Required only if prescriptionRequired is true
+                if (this.prescriptionRequired === true) {
+                    return value != null && value >= 0;
+                }
+                return true;
+            },
+            message: 'Antimicrobial concentration is required for medicated feeds'
+        }
         // Stored in mg/kg of feed
     },
     concentrationUnit: {
@@ -69,8 +88,18 @@ const feedSchema = new mongoose.Schema({
     },
     withdrawalPeriodDays: {
         type: Number,
-        required: [true, 'Withdrawal period is required'],
-        min: [0, 'Withdrawal period cannot be negative']
+        min: [0, 'Withdrawal period cannot be negative'],
+        default: 0,
+        validate: {
+            validator: function (value) {
+                // Required only if prescriptionRequired is true
+                if (this.prescriptionRequired === true) {
+                    return value != null && value >= 0;
+                }
+                return true;
+            },
+            message: 'Withdrawal period is required for medicated feeds'
+        }
     },
     targetSpecies: [{
         type: String,
