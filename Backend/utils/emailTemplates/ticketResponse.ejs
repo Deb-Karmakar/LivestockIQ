@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Response</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .ticket-summary {
+            background-color: #f8f9fc;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .ticket-summary p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .ticket-summary strong {
+            color: #333;
+        }
+
+        .response-box {
+            background-color: #fff8e1;
+            border: 2px solid #ffd54f;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .response-box h3 {
+            margin: 0 0 15px;
+            color: #f57f17;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        .response-box h3::before {
+            content: "💬";
+            margin-right: 8px;
+            font-size: 20px;
+        }
+
+        .response-box p {
+            margin: 0;
+            color: #333;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-open {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-inprogress {
+            background-color: #fff9c4;
+            color: #f9a825;
+        }
+
+        .status-resolved {
+            background-color: #e8f5e9;
+            color: #43a047;
+        }
+
+        .footer {
+            background-color: #f8f9fc;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e0e4ec;
+        }
+
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>📨 Response to Your Ticket</h1>
+            <p>LivestockIQ Support Team</p>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hello <%= userName %>,</p>
+
+            <p class="message">
+                Our support team has responded to your ticket. Please find the details below:
+            </p>
+
+            <div class="ticket-summary">
+                <p><strong>Ticket ID:</strong>
+                    <%= ticketId %>
+                </p>
+                <p><strong>Subject:</strong>
+                    <%= subject %>
+                </p>
+                <p><strong>Status:</strong>
+                    <span class="status-badge status-<%= status.toLowerCase().replace(' ', '') %>">
+                        <%= status %>
+                    </span>
+                </p>
+            </div>
+
+            <div class="response-box">
+                <h3>Admin Response</h3>
+                <p>
+                    <%= adminResponse %>
+                </p>
+            </div>
+
+            <p class="message">
+                If you have any additional questions or concerns, please feel free to reply by creating a new ticket
+                referencing this ticket ID: <strong>
+                    <%= ticketId %>
+                </strong>
+            </p>
+
+            <p class="message" style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0e4ec;">
+                Thank you for using LivestockIQ. We're here to help!
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>LivestockIQ Support Team</strong></p>
+            <p>Dedicated to providing you with the best livestock management experience.</p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

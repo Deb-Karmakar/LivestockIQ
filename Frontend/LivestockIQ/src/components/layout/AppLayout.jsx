@@ -17,7 +17,8 @@ import {
     Package,
     ClipboardCheck,
     ShieldCheck,
-    Pill
+    Pill,
+    HelpCircle
 } from 'lucide-react';
 
 // --- Navigation Links Configuration ---
@@ -38,6 +39,7 @@ const secondaryNavLinks = [
     { name: 'Feed Inventory', path: '/farmer/feed-inventory', icon: Package },
     { name: 'Feed Admin', path: '/farmer/feed-administration', icon: ClipboardCheck },
     { name: 'Reports', path: '/farmer/reports', icon: FileText },
+    { name: 'Support', path: '/farmer/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/farmer/settings', icon: Settings },
 ];
 

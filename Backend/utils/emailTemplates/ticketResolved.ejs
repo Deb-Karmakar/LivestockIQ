@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Resolved</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #43a047 0%, #66bb6a 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .success-banner {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+
+        .success-banner .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .success-banner h2 {
+            margin: 0;
+            color: #2e7d32;
+            font-size: 20px;
+        }
+
+        .ticket-summary {
+            background-color: #f8f9fc;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-left: 4px solid #43a047;
+        }
+
+        .ticket-summary p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .ticket-summary strong {
+            color: #333;
+        }
+
+        .resolution-box {
+            background-color: #f1f8f4;
+            border: 1px solid #81c784;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .resolution-box h3 {
+            margin: 0 0 15px;
+            color: #2e7d32;
+            font-size: 16px;
+        }
+
+        .resolution-box p {
+            margin: 0;
+            color: #333;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+
+        .footer {
+            background-color: #f8f9fc;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e0e4ec;
+        }
+
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #43a047;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>✅ Ticket Resolved</h1>
+            <p>LivestockIQ Support Team</p>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hello <%= userName %>,</p>
+
+            <div class="success-banner">
+                <div class="icon">🎉</div>
+                <h2>Your Support Ticket Has Been Resolved!</h2>
+            </div>
+
+            <p class="message">
+                We're pleased to inform you that your support ticket has been successfully resolved by our team.
+            </p>
+
+            <div class="ticket-summary">
+                <p><strong>Ticket ID:</strong>
+                    <%= ticketId %>
+                </p>
+                <p><strong>Subject:</strong>
+                    <%= subject %>
+                </p>
+                <p><strong>Status:</strong> <span style="color: #43a047; font-weight: 600;">Resolved ✓</span></p>
+            </div>
+
+            <% if (resolutionNote) { %>
+                <div class="resolution-box">
+                    <h3>Resolution Details</h3>
+                    <p>
+                        <%= resolutionNote %>
+                    </p>
+                </div>
+                <% } %>
+
+                    <% if (adminResponse) { %>
+                        <div class="resolution-box">
+                            <h3>Previous Response</h3>
+                            <p>
+                                <%= adminResponse %>
+                            </p>
+                        </div>
+                        <% } %>
+
+                            <p class="message" style="margin-top: 30px;">
+                                <strong>Need Further Assistance?</strong><br>
+                                If you have any additional questions or if the issue persists, please don't hesitate to
+                                create a new support ticket. We're always here to help!
+                            </p>
+
+                            <p class="message"
+                                style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #e0e4ec;">
+                                Thank you for your patience and for being a valued LivestockIQ user.
+                            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>LivestockIQ Support Team</strong></p>
+            <p>We appreciate your feedback and look forward to serving you again.</p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

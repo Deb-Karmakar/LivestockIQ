@@ -14,7 +14,8 @@ import {
     TrendingUp,
     Users2,
     AlertCircle,
-    FileCheck
+    FileCheck,
+    HelpCircle
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -31,6 +32,7 @@ const secondaryNavLinks = [
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
+    { name: 'Support', path: '/regulator/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/regulator/settings', icon: Settings },
 ];
 

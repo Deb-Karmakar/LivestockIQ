@@ -14,7 +14,8 @@ import {
     X,
     ClipboardCheck,
     Users,
-    Package
+    Package,
+    HelpCircle
 } from 'lucide-react';
 
 // --- Vet Navigation Links Configuration ---
@@ -28,6 +29,7 @@ const primaryNavLinks = [
 ];
 
 const secondaryNavLinks = [
+    { name: 'Support', path: '/vet/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/vet/settings', icon: Settings },
 ];
 

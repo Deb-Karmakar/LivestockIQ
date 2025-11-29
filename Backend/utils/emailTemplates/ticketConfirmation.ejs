@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Confirmation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .email-container {
+            max-width: 600px;
+            margin: 30px auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            font-size: 15px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .ticket-details {
+            background-color: #f8f9fc;
+            border-left: 4px solid #667eea;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+
+        .ticket-details h3 {
+            margin: 0 0 15px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e4ec;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .detail-value {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-urgent {
+            background-color: #fee;
+            color: #c00;
+        }
+
+        .badge-high {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+
+        .badge-medium {
+            background-color: #fff9c4;
+            color: #f9a825;
+        }
+
+        .badge-low {
+            background-color: #e8f5e9;
+            color: #43a047;
+        }
+
+        .description-box {
+            background-color: #fafbfc;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .description-box h4 {
+            margin: 0 0 10px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .description-box p {
+            margin: 0;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background-color: #f8f9fc;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e0e4ec;
+        }
+
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎫 Support Ticket Created</h1>
+            <p>LivestockIQ Support System</p>
+        </div>
+
+        <div class="content">
+            <p class="greeting">Hello <%= userName %>,</p>
+
+            <p class="message">
+                Thank you for contacting LivestockIQ support. Your support ticket has been successfully created and our
+                team will review it shortly.
+            </p>
+
+            <div class="ticket-details">
+                <h3>Ticket Information</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Ticket ID:</span>
+                    <span class="detail-value"><strong>
+                            <%= ticketId %>
+                        </strong></span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Subject:</span>
+                    <span class="detail-value">
+                        <%= subject %>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Category:</span>
+                    <span class="detail-value">
+                        <%= category %>
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Priority:</span>
+                    <span class="detail-value">
+                        <span class="badge badge-<%= priority.toLowerCase() %>">
+                            <%= priority %>
+                        </span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="description-box">
+                <h4>Your Message:</h4>
+                <p>
+                    <%= description %>
+                </p>
+            </div>
+
+            <p class="message">
+                <strong>What's Next?</strong><br>
+                Our support team will review your ticket and respond as soon as possible. You will receive an email
+                notification when there's an update to your ticket.
+            </p>
+
+            <p class="message" style="margin-top: 20px;">
+                Please save your <strong>Ticket ID: <%= ticketId %></strong> for future reference.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p><strong>LivestockIQ Support Team</strong></p>
+            <p>For urgent matters, please contact us directly.</p>
+            <p style="margin-top: 15px; font-size: 12px; color: #999;">
+                This is an automated message. Please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>

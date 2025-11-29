@@ -31,6 +31,8 @@ import SettingsPage from "./pages/farmer/SettingsPage";
 import MRLCompliancePage from "./pages/farmer/MRLCompliancePage";
 import FeedInventoryPage from "./pages/farmer/FeedInventoryPage";
 import FeedAdministrationPage from "./pages/farmer/FeedAdministrationPage";
+import RaiseTicketPage from "./pages/shared/RaiseTicketPage";
+import TicketHistoryPage from "./pages/shared/TicketHistoryPage";
 
 
 // Vet Page Imports
@@ -193,6 +195,8 @@ function App() {
                 <Route path="feed-administration" element={<FeedAdministrationPage />} />
                 <Route path="alerts" element={<AlertsPage />} />
                 <Route path="mrl-compliance" element={<MRLCompliancePage />} />
+                <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
+                <Route path="support/history" element={<TicketHistoryPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
@@ -211,6 +215,8 @@ function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<VetDashboardPage />} />
                 <Route path="requests" element={<TreatmentRequestsPage />} />
+                <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
+                <Route path="support/history" element={<TicketHistoryPage />} />
                 <Route path="feed-requests" element={<FeedAdministrationRequestsPage />} />
                 <Route path="farmers" element={<FarmerDirectoryPage />} />
                 <Route path="reports" element={<VetReportsPage />} />
@@ -232,6 +238,8 @@ function App() {
                 <Route path="dashboard" element={<RegulatorDashboardPage />} />
                 <Route path="alerts" element={<RegulatorAlertsPage />} />
                 <Route path="compliance" element={<CompliancePage />} />
+                <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
+                <Route path="support/history" element={<TicketHistoryPage />} />
                 <Route path="verifications" element={<MRLVerificationsPage />} />
                 <Route path="trends" element={<TrendsPage />} />
                 <Route path="demographics" element={<DemographicsPage />} />
