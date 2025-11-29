@@ -126,3 +126,34 @@ export const getVetDashboardData = async () => {
         return await getOfflineVetDashboard();
     }
 };
+
+// Feed Administration Requests for Vets
+export const getFeedAdministrationRequests = async () => {
+    try {
+        const { data } = await axiosInstance.get('/feed-admin/pending');
+        return data;
+    } catch (error) {
+        console.error("Error fetching feed administration requests:", error);
+        throw error;
+    }
+};
+
+export const approveFeedAdministration = async (id, vetNotes) => {
+    try {
+        const { data } = await axiosInstance.post(`/feed-admin/${id}/approve`, { vetNotes });
+        return data;
+    } catch (error) {
+        console.error("Error approving feed administration:", error);
+        throw error;
+    }
+};
+
+export const rejectFeedAdministration = async (id, rejectionReason) => {
+    try {
+        const { data } = await axiosInstance.post(`/feed-admin/${id}/reject`, { rejectionReason });
+        return data;
+    } catch (error) {
+        console.error("Error rejecting feed administration:", error);
+        throw error;
+    }
+};

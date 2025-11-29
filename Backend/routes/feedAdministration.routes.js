@@ -11,7 +11,9 @@ import {
     completeFeedingProgram,
     getAnimalFeedHistory,
     getWithdrawalStatus,
-    approveFeedAdministration
+    getPendingFeedRequests,
+    approveFeedAdministration,
+    rejectFeedAdministration
 } from '../controllers/feedAdministration.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
@@ -29,6 +31,11 @@ router.get('/active', getActivePrograms);
 // @desc    Get animals in withdrawal period from feed
 // @access  Private (Farmer)
 router.get('/withdrawal-status', getWithdrawalStatus);
+
+// @route   GET /api/feed-admin/pending
+// @desc    Get pending feed administration requests (Vet only)
+// @access  Private (Vet)
+router.get('/pending', getPendingFeedRequests);
 
 // @route   GET /api/feed-admin/animal/:animalId
 // @desc    Get feed history for specific animal
@@ -69,5 +76,10 @@ router.post('/:id/complete', completeFeedingProgram);
 // @desc    Approve feed administration (Vet only)
 // @access  Private (Vet)
 router.post('/:id/approve', approveFeedAdministration);
+
+// @route   POST /api/feed-admin/:id/reject
+// @desc    Reject feed administration (Vet only)
+// @access  Private (Vet)
+router.post('/:id/reject', rejectFeedAdministration);
 
 export default router;

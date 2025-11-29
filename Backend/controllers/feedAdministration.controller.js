@@ -3,7 +3,11 @@
 import FeedAdministration from '../models/feedAdministration.model.js';
 import Feed from '../models/feed.model.js';
 import Animal from '../models/animal.model.js';
+import Farmer from '../models/farmer.model.js';
+import Vet from '../models/vet.model.js';
 import { createAuditLog } from '../services/auditLog.service.js';
+import { generateFarmerFeedConfirmation, generateVetFeedApprovalPDF, generateFeedPrescriptionPDF } from '../services/pdfGenerator.service.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // @desc    Get all feed administrations for a farmer
 // @route   GET /api/feed-admin
@@ -148,11 +152,56 @@ export const recordFeedAdministration = async (req, res) => {
             }
         });
 
-        // Populate and return
+        // Generate farmer confirmation PDF
+        const farmer = await Farmer.findById(req.user._id);
+        let pdfBuffer = null;
+        try {
+            pdfBuffer = await generateFarmerFeedConfirmation(
+                savedAdministration,
+                farmer,
+                feed,
+                animals
+            );
+        } catch (pdfError) {
+            console.error('Error generating PDF:', pdfError);
+        }
+
+        // If prescription required, send email to supervising vet
+        if (feed.prescriptionRequired && farmer.vetId) {
+            try {
+                const vet = await Vet.findOne({ vetId: farmer.vetId });
+                if (vet) {
+                    await sendEmail({
+                        to: vet.email,
+                        subject: 'New Feed Administration Pending Your Approval',
+                        html: `
+                            <h2>New Feed Administration Pending Approval</h2>
+                            <p>Dear Dr. ${vet.fullName},</p>
+                            <p>A new feed-based antimicrobial administration has been submitted by <strong>${farmer.farmOwner}</strong> from <strong>${farmer.farmName}</strong> and requires your approval.</p>
+                            <h3>Details:</h3>
+                            <ul>
+                                <li>Feed: ${feed.feedName}</li>
+                                <li>Antimicrobial: ${feed.antimicrobialName}</li>
+                                <li>Animals: ${animals.length}</li>
+                                <li>Group: ${groupName || 'Individual animals'}</li>
+                            </ul>
+                            <p>Please log in to LivestockIQ to review and approve this administration.</p>
+                        `
+                    });
+                }
+            } catch (emailError) {
+                console.error('Error sending vet notification:', emailError);
+            }
+        }
+
+        // Populate and return with PDF
         const populatedAdmin = await FeedAdministration.findById(savedAdministration._id)
             .populate('feedId');
 
-        res.status(201).json(populatedAdmin);
+        res.status(201).json({
+            administration: populatedAdmin,
+            pdfBuffer: pdfBuffer ? pdfBuffer.toString('base64') : null
+        });
     } catch (error) {
         if (error.name === 'ValidationError') {
             return res.status(400).json({ message: error.message });
@@ -395,16 +444,61 @@ export const getWithdrawalStatus = async (req, res) => {
     }
 };
 
+// @desc    Get pending feed administration requests (Vet only)
+// @route   GET /api/feed-admin/pending
+// @access  Private (Vet)
+export const getPendingFeedRequests = async (req, res) => {
+    try {
+        if (req.user.role !== 'veterinarian') {
+            return res.status(403).json({ message: 'Only veterinarians can access this endpoint' });
+        }
+
+        // Get farmers supervised by this vet
+        const farmers = await Farmer.find({ vetId: req.user.vetId });
+        const farmerIds = farmers.map(farmer => farmer._id);
+
+        // Get feed administrations from supervised farmers
+        const feedRequests = await FeedAdministration.find({ farmerId: { $in: farmerIds } })
+            .populate('farmerId', 'farmOwner farmName email')
+            .populate('feedId')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Get all unique animal Tag IDs
+        const animalTagIds = [...new Set(feedRequests.flatMap(req => req.animalIds))];
+
+        // Find all corresponding animal documents
+        const animals = await Animal.find({ tagId: { $in: animalTagIds } }).select('tagId species dob weight gender');
+
+        // Create a lookup map for efficient merging
+        const animalMap = new Map(animals.map(a => [a.tagId, a]));
+
+        // Combine feed request data with animal data
+        const enrichedRequests = feedRequests.map(request => ({
+            ...request,
+            animals: request.animalIds.map(id => animalMap.get(id) || null).filter(a => a !== null)
+        }));
+
+        res.json(enrichedRequests);
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
 // @desc    Approve feed administration (Vet only)
 // @route   POST /api/feed-admin/:id/approve
 // @access  Private (Vet)
 export const approveFeedAdministration = async (req, res) => {
     try {
-        if (req.user.role !== 'vet') {
+        if (req.user.role !== 'veterinarian') {
             return res.status(403).json({ message: 'Only veterinarians can approve feed administrations' });
         }
 
-        const administration = await FeedAdministration.findById(req.params.id);
+        const { vetNotes } = req.body;
+
+        const administration = await FeedAdministration.findById(req.params.id)
+            .populate('farmerId', 'farmOwner farmName email')
+            .populate('feedId');
 
         if (!administration) {
             return res.status(404).json({ message: 'Feed administration not found' });
@@ -417,37 +511,239 @@ export const approveFeedAdministration = async (req, res) => {
         administration.status = 'Active';
         administration.vetApproved = true;
         administration.vetApprovalDate = new Date();
-        administration.vetId = req.user.vetCode;
+        administration.vetId = req.user.vetId;
         administration.approvedBy = req.user._id.toString();
+        if (vetNotes) {
+            administration.notes = (administration.notes ? administration.notes + '\n\n' : '') + `[Vet Notes]: ${vetNotes}`;
+        }
 
         const approved = await administration.save();
+
+        // Get populated data for PDFs
+        const animals = await Animal.find({ tagId: { $in: approved.animalIds } });
+        const vet = await Vet.findById(req.user._id);
+
+        // Generate vet confirmation PDF
+        let vetPdfBuffer = null;
+        try {
+            vetPdfBuffer = await generateVetFeedApprovalPDF(
+                approved,
+                vet,
+                administration.farmerId,
+                administration.feedId,
+                animals
+            );
+        } catch (pdfError) {
+            console.error('Error generating vet PDF:', pdfError);
+        }
+
+        // Generate and send prescription PDF to farmer
+        try {
+            const prescriptionBuffer = await generateFeedPrescriptionPDF(
+                approved,
+                vet,
+                administration.farmerId,
+                administration.feedId,
+                animals
+            );
+
+            await sendEmail({
+                to: administration.farmerId.email,
+                subject: 'Feed Administration Prescription Approved',
+                html: `
+                    <h2>Feed Administration Prescription Approved</h2>
+                    <p>Dear ${administration.farmerId.farmOwner},</p>
+                    <p>Your feed administration for <strong>${administration.feedId.feedName}</strong> has been approved by Dr. ${vet.fullName}.</p>
+                    <p><strong>Withdrawal End Date:</strong> ${new Date(approved.withdrawalEndDate).toLocaleDateString()}</p>
+                    <p>Please find the attached prescription PDF. Ensure all animals complete the withdrawal period before sale or slaughter.</p>
+                    <p>MRL testing will be required after the withdrawal period ends.</p>
+                `,
+                attachments: [{
+                    filename: `Feed_Prescription_${approved._id}.pdf`,
+                    content: prescriptionBuffer
+                }]
+            });
+            console.log('✅ Prescription email sent to farmer:', administration.farmerId.email);
+        } catch (emailError) {
+            console.error('❌ Error sending prescription email:', emailError);
+            console.error('Email error details:', {
+                to: administration.farmerId?.email,
+                vet: vet?.fullName,
+                error: emailError.message
+            });
+        }
+
+        // Update all animals to withdrawal status
+        try {
+            console.log('📝 Updating animal statuses for tagIds:', approved.animalIds);
+            const updateResult = await Animal.updateMany(
+                { tagId: { $in: approved.animalIds } },
+                {
+                    withdrawalActive: true,
+                    withdrawalEndDate: approved.withdrawalEndDate,
+                    $push: { activeFeedAdministrations: approved._id }
+                }
+            );
+            console.log('✅ Animal status update result:', {
+                matched: updateResult.matchedCount,
+                modified: updateResult.modifiedCount,
+                animalIds: approved.animalIds
+            });
+        } catch (animalError) {
+            console.error('❌ Error updating animal statuses:', animalError);
+            console.error('Animal update error details:', {
+                animalIds: approved.animalIds,
+                error: animalError.message
+            });
+        }
+
+        // Send email notification to farmer
+        await sendEmail({
+            to: administration.farmerId.email,
+            subject: 'Feed Administration Approved',
+            text: `Your feed administration for ${administration.groupName || administration.animalIds.join(', ')} has been approved by Dr. ${req.user.fullName}.
+
+Feed: ${administration.feedId.feedName}
+Antimicrobial: ${administration.feedId.antimicrobialName}
+Quantity: ${administration.feedQuantityUsed} ${administration.feedId.unit}
+Start Date: ${new Date(administration.startDate).toLocaleDateString()}
+Withdrawal End Date: ${new Date(administration.withdrawalEndDate).toLocaleDateString()}
+
+${vetNotes ? 'Vet Notes: ' + vetNotes : ''}
+
+Best regards,
+${req.user.fullName}
+LivestockIQ System`
+        });
 
         // Audit log
         await createAuditLog({
             eventType: 'APPROVE',
             entityType: 'FeedAdministration',
             entityId: administration._id,
-            farmerId: administration.farmerId,
+            farmerId: administration.farmerId._id,
             performedBy: req.user._id,
-            performedByRole: 'Vet',
-            performedByModel: 'Vet',
+            performedByRole: 'Veterinarian',
+            performedByModel: 'Veterinarian',
             dataSnapshot: approved.toObject(),
             changes: {
                 status: { from: 'Pending Approval', to: 'Active' },
                 vetApproved: true,
-                approvedBy: req.user.vetCode,
+                approvedBy: req.user.vetId,
                 approvalDate: approved.vetApprovalDate
             },
             metadata: {
                 ipAddress: req.ip,
-                userAgent: req.get('user-agent')
+                userAgent: req.get('user-agent'),
+                vetNotes: vetNotes || ''
             }
         });
 
-        const populated = await FeedAdministration.findById(approved._id).populate('feedId');
+        const populated = await FeedAdministration.findById(approved._id)
+            .populate('feedId')
+            .populate('farmerId', 'farmOwner farmName email');
+
+        res.json({
+            administration: populated,
+            vetPdfBuffer: vetPdfBuffer ? vetPdfBuffer.toString('base64') : null
+        });
+    } catch (error) {
+        console.error('Error approving feed administration:', error);
+        res.status(500).json({ message: `Error approving feed administration: ${error.message}` });
+    }
+};
+
+// @desc    Reject feed administration (Vet only)
+// @route   POST /api/feed-admin/:id/reject
+// @access  Private (Vet)
+export const rejectFeedAdministration = async (req, res) => {
+    try {
+        if (req.user.role !== 'veterinarian') {
+            return res.status(403).json({ message: 'Only veterinarians can reject feed administrations' });
+        }
+
+        const { rejectionReason } = req.body;
+
+        if (!rejectionReason || rejectionReason.trim() === '') {
+            return res.status(400).json({ message: 'Rejection reason is required' });
+        }
+
+        const administration = await FeedAdministration.findById(req.params.id)
+            .populate('farmerId', 'farmOwner farmName email')
+            .populate('feedId');
+
+        if (!administration) {
+            return res.status(404).json({ message: 'Feed administration not found' });
+        }
+
+        if (administration.status !== 'Pending Approval') {
+            return res.status(400).json({ message: 'This administration is not pending approval' });
+        }
+
+        administration.status = 'Rejected';
+        administration.vetId = req.user.vetId;
+        administration.approvedBy = req.user._id.toString();
+        administration.notes = (administration.notes ? administration.notes + '\n\n' : '') + `[Rejection Reason]: ${rejectionReason}`;
+
+        const rejected = await administration.save();
+
+        // Restore feed quantity since it was rejected
+        const feed = await Feed.findById(administration.feedId);
+        if (feed) {
+            feed.remainingQuantity += administration.feedQuantityUsed;
+            await feed.save();
+        }
+
+        // Send email notification to farmer
+        await sendEmail({
+            to: administration.farmerId.email,
+            subject: 'Feed Administration Rejected',
+            text: `Your feed administration for ${administration.groupName || administration.animalIds.join(', ')} has been rejected by Dr. ${req.user.fullName}.
+
+Feed: ${administration.feedId.feedName}
+Antimicrobial: ${administration.feedId.antimicrobialName}
+Quantity: ${administration.feedQuantityUsed} ${administration.feedId.unit}
+
+Rejection Reason: ${rejectionReason}
+
+The feed quantity has been restored to your inventory.
+
+Please contact your veterinarian for further guidance.
+
+Best regards,
+${req.user.fullName}
+LivestockIQ System`
+        });
+
+        // Audit log
+        await createAuditLog({
+            eventType: 'REJECT',
+            entityType: 'FeedAdministration',
+            entityId: administration._id,
+            farmerId: administration.farmerId._id,
+            performedBy: req.user._id,
+            performedByRole: 'Veterinarian',
+            performedByModel: 'Veterinarian',
+            dataSnapshot: rejected.toObject(),
+            changes: {
+                status: { from: 'Pending Approval', to: 'Rejected' },
+                rejectionReason,
+                rejectedBy: req.user.vetId
+            },
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                rejectionReason
+            }
+        });
+
+        const populated = await FeedAdministration.findById(rejected._id)
+            .populate('feedId')
+            .populate('farmerId', 'farmOwner farmName email');
 
         res.json(populated);
     } catch (error) {
-        res.status(500).json({ message: `Error approving feed administration: ${error.message}` });
+        console.error('Error rejecting feed administration:', error);
+        res.status(500).json({ message: `Error rejecting feed administration: ${error.message}` });
     }
 };

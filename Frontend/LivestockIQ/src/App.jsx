@@ -39,6 +39,7 @@ import UserManagementPage from "./pages/admin/UserManagementPage";
 import AuditsPage from "./pages/admin/AuditsPage";
 import SupportPage from "./pages/admin/SupportPage";
 import AdminSettingsPage from "./pages/admin/SettingsPage";
+import FeedAdministrationRequestsPage from "./pages/vet/FeedAdministrationRequestsPage";
 
 // Admin Page Imports
 import AdminAppLayout from "./components/layout/AdminAppLayout";
@@ -210,6 +211,7 @@ function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<VetDashboardPage />} />
                 <Route path="requests" element={<TreatmentRequestsPage />} />
+                <Route path="feed-requests" element={<FeedAdministrationRequestsPage />} />
                 <Route path="farmers" element={<FarmerDirectoryPage />} />
                 <Route path="reports" element={<VetReportsPage />} />
                 <Route path="settings" element={<VetSettingsPage />} />

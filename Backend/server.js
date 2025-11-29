@@ -30,6 +30,7 @@ import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
 import { startWithdrawalAlertJob } from './jobs/withdrawalAlerts.js';
 import { startWeeklySummaryJob } from './jobs/weeklySummary.js';
 import { startMRLTestReminderJob } from './jobs/mrlTestReminders.js';
+import { startWithdrawalStatusUpdater } from './jobs/withdrawalStatusUpdater.job.js';
 import { initializeSocketIO } from './config/socket.js';
 import { initializeWebSocket } from './services/websocket.service.js';
 
@@ -124,6 +125,7 @@ httpServer.listen(PORT, () => {
   startWithdrawalAlertJob();
   startWeeklySummaryJob();
   startMRLTestReminderJob();
+  startWithdrawalStatusUpdater(); // Feed withdrawal tracking
 
   console.log('\n📅 All scheduled jobs initialized');
 });

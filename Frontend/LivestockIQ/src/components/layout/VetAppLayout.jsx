@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from "@/components/ui/button"; // Added missing Button import
+import { Button } from "@/components/ui/button";
 import {
     LayoutDashboard,
     ClipboardList,
@@ -13,7 +13,8 @@ import {
     Menu,
     X,
     ClipboardCheck,
-    Users
+    Users,
+    Package
 } from 'lucide-react';
 
 // --- Vet Navigation Links Configuration ---
@@ -21,6 +22,7 @@ import {
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/vet/dashboard', icon: LayoutDashboard },
     { name: 'Requests', path: '/vet/requests', icon: ClipboardList },
+    { name: 'Feed Requests', path: '/vet/feed-requests', icon: Package },
     { name: 'Farmers', path: '/vet/farmers', icon: Users },
     { name: 'Reports', path: '/vet/reports', icon: FileText },
 ];
@@ -61,6 +63,12 @@ const Sidebar = () => {
                     </NavLink>
                 ))}
             </nav>
+            <div className="p-4 border-t">
+                <button onClick={logout} className="flex items-center w-full px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+                    <LogOut className="w-5 h-5 mr-3" />
+                    Logout
+                </button>
+            </div>
         </aside>
     );
 };
@@ -79,8 +87,8 @@ const MobileHeader = () => {
             <div className={`fixed top-0 right-0 h-full w-64 bg-white z-50 shadow-lg transform transition-transform ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <div className="flex items-center justify-between p-4 border-b"><h2 className="font-semibold">Menu</h2><Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)}><X className="w-6 h-6" /></Button></div>
                 <nav className="p-4 space-y-2">
-                    {secondaryNavLinks.map(link => (
-                         <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
+                    {allNavLinks.map(link => (
+                        <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-blue-100 text-blue-700 font-semibold' : 'hover:bg-gray-100'}`}>
                             <link.icon className="w-5 h-5 mr-3" />{link.name}
                         </NavLink>
                     ))}
@@ -94,8 +102,8 @@ const MobileHeader = () => {
 const BottomNav = () => (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t z-30">
         <div className="flex justify-around">
-            {primaryNavLinks.map(link => (
-                 <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+            {primaryNavLinks.slice(0, 4).map(link => (
+                <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex flex-col items-center justify-center w-full py-2 text-xs transition-colors duration-200 ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
                     <link.icon className="w-6 h-6 mb-1" /><span>{link.name}</span>
                 </NavLink>
             ))}

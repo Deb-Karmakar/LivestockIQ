@@ -61,8 +61,8 @@ const FeedAdministrationCard = ({ admin, onComplete }) => {
             <CardContent className="space-y-4">
                 {withdrawalStatus !== 'pending' && (
                     <div className={`rounded-lg p-4 text-center ${withdrawalStatus === 'safe' ? 'bg-green-50 border border-green-200' :
-                            withdrawalStatus === 'ending_soon' ? 'bg-yellow-50 border border-yellow-200' :
-                                'bg-red-50 border border-red-200'
+                        withdrawalStatus === 'ending_soon' ? 'bg-yellow-50 border border-yellow-200' :
+                            'bg-red-50 border border-red-200'
                         }`}>
                         <div className="text-3xl font-bold mb-1">
                             {daysLeft === 0 ? '✓' : daysLeft}
@@ -153,8 +153,28 @@ const FeedAdministrationPage = () => {
 
     const handleRecord = async (data) => {
         try {
-            await recordFeedAdministration(data);
-            toast({ title: "Success", description: "Feed administration recorded successfully." });
+            const response = await recordFeedAdministration(data);
+
+            // Download PDF if provided
+            if (response.pdfBuffer) {
+                const byteCharacters = atob(response.pdfBuffer);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Feed_Confirmation_${Date.now()}.pdf`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            }
+
+            toast({ title: "Success", description: "Feed recorded! Confirmation PDF downloaded. Vet notified." });
             fetchData();
             setIsFormOpen(false);
         } catch (error) {

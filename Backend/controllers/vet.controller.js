@@ -13,14 +13,14 @@ export const getMyFarmers = async (req, res) => {
         // req.user is attached by the 'protect' middleware and contains the logged-in vet's info.
         // We use the vet's unique vetId to find all matching farmers.
         const farmers = await Farmer.find({ vetId: req.user.vetId });
-        
+
         if (farmers) {
             res.json(farmers);
         } else {
             res.status(404).json({ message: 'No farmers found for this veterinarian.' });
         }
     } catch (error) {
-         res.status(500).json({ message: `Server Error: ${error.message}` });
+        res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
 
@@ -99,12 +99,12 @@ export const updateVetProfile = async (req, res) => {
             // Only update the fields that are meant to be editable
             vet.specialization = req.body.specialization ?? vet.specialization;
             vet.phoneNumber = req.body.phoneNumber ?? vet.phoneNumber;
-            
+
             // NEW: Add logic to update location if it's provided
             if (req.body.location) {
                 vet.location = req.body.location;
             }
-            
+
             if (req.body.notificationPrefs) {
                 vet.notificationPrefs = { ...vet.notificationPrefs, ...req.body.notificationPrefs };
             }
@@ -160,7 +160,7 @@ export const reportFarmer = async (req, res) => {
 
     } catch (error) {
         // NEW: This line will print the actual error to your backend terminal
-        console.error("Error reporting farmer:", error); 
+        console.error("Error reporting farmer:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
@@ -170,15 +170,15 @@ export const getVetDashboardData = async (req, res) => {
         const vetId = req.user.vetId;
         const supervisedFarmers = await Farmer.find({ vetId: vetId }).select('_id');
         const farmerIds = supervisedFarmers.map(f => f._id);
-        
+
         const allTreatments = await Treatment.find({ farmerId: { $in: farmerIds } })
             .populate('farmerId', 'farmOwner');
 
         // This query will now work correctly
         const highAmuAlerts = await HighAmuAlert.find({ farmerId: { $in: farmerIds }, status: 'New' });
-        
+
         const pendingReviews = allTreatments.filter(t => t.status === 'Pending');
-        
+
         const stats = {
             pendingReviewCount: pendingReviews.length,
             activeFarmAlertsCount: highAmuAlerts.length,

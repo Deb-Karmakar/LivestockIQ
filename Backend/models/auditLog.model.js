@@ -46,7 +46,7 @@ const auditLogSchema = new mongoose.Schema({
     performedByRole: {
         type: String,
         required: false,
-        enum: ['Farmer', 'Vet', 'Regulator', 'Admin', 'System'],
+        enum: ['Farmer', 'Vet', 'Veterinarian', 'Regulator', 'Admin', 'System'],
     },
 
     // When the action occurred
