@@ -15,6 +15,69 @@ import { getAnimals } from '../../services/animalService';
 import { getActiveFeed } from '../../services/feedService';
 import { getFeedAdministrations, recordFeedAdministration, getActivePrograms, completeFeedingProgram, getWithdrawalStatus } from '../../services/feedAdministrationService';
 
+// Animal history dialog component added
+const AnimalHistoryDialog = ({ animal, administrations }) => {
+    const animalAdmins = (administrations || []).filter(admin =>
+        (admin.animalIds || []).includes(animal.tagId)
+    );
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs hover:bg-blue-100">
+                    {animal.tagId}
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Package className="h-5 w-5 text-blue-600" />
+                        Feed History: {animal.name || animal.tagId}
+                    </DialogTitle>
+                    <CardDescription>
+                        Species: {animal.species} | Tag ID: {animal.tagId}
+                    </CardDescription>
+                </DialogHeader>
+                <div className="space-y-3 mt-4">
+                    {animalAdmins.length === 0 ? (
+                        <div className="text-center py-8 text-slate-500">
+                            <Package className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                            <p>No feed administration history</p>
+                        </div>
+                    ) : (
+                        animalAdmins.map((admin, idx) => (
+                            <div key={idx} className={`p-4 rounded-lg border ${admin.feedId?.prescriptionRequired
+                                ? 'bg-red-50 border-red-200'
+                                : 'bg-blue-50 border-blue-200'
+                                }`}>
+                                <div className="flex items-start justify-between mb-2">
+                                    <div className="font-semibold">{admin.feedId?.feedName}</div>
+                                    <Badge className={admin.feedId?.prescriptionRequired ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}>
+                                        {admin.feedId?.prescriptionRequired ? 'Medicated' : 'Non-Medicated'}
+                                    </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                        <span className="text-slate-600">Antimicrobial:</span> {admin.feedId?.antimicrobialName || 'N/A'}
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-600">Quantity:</span> {admin.feedQuantityUsed} {admin.feedId?.unit}
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-600">Start:</span> {admin.startDate ? format(new Date(admin.startDate), 'MMM d, yyyy') : 'N/A'}
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-600">Status:</span> {admin.status}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 const WithdrawalStatusBadge = ({ status }) => {
     const config = {
         safe: { text: 'Safe for Sale', color: 'bg-green-100 text-green-800 border-green-300', icon: <ShieldCheck className="h-3 w-3" /> },
@@ -26,8 +89,13 @@ const WithdrawalStatusBadge = ({ status }) => {
     return <Badge className={`flex items-center gap-1.5 border ${finalConfig.color}`}>{finalConfig.icon}{finalConfig.text}</Badge>;
 };
 
-const FeedAdministrationCard = ({ admin, onComplete }) => {
+// Updated FeedAdministrationCard signature and logic
+const FeedAdministrationCard = ({ admin, animals = [], allAdministrations = [], onComplete }) => {
+    const isMedicated = admin.feedId?.prescriptionRequired !== false;
+    const cardAnimals = (animals || []).filter(a => (admin.animalIds || []).includes(a.tagId));
+
     const getWithdrawalInfo = () => {
+        if (!isMedicated) return { daysLeft: 'N/A', status: 'safe' };
         if (!admin.withdrawalEndDate) return { daysLeft: 'N/A', status: 'pending' };
         const endDate = new Date(admin.withdrawalEndDate);
         const daysLeft = differenceInDays(endDate, new Date());
@@ -41,69 +109,120 @@ const FeedAdministrationCard = ({ admin, onComplete }) => {
     const { daysLeft, status: withdrawalStatus } = getWithdrawalInfo();
 
     return (
-        <Card className="hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-start gap-2">
-                        <Package className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div className="flex-1">
-                            <CardTitle className="text-lg">{admin.feedId?.feedName || 'Unknown Feed'}</CardTitle>
-                            <CardDescription>
-                                {admin.groupName ? `Group: ${admin.groupName}` : `${admin.numberOfAnimals} animal(s)`}
-                            </CardDescription>
-                        </div>
-                    </div>
-                    <div className="flex justify-end">
-                        <WithdrawalStatusBadge status={withdrawalStatus} />
+        <Card className={`hover:shadow-lg transition-shadow ${isMedicated ? 'border-l-4 border-l-red-500 bg-red-50/30' : 'border-l-4 border-l-blue-500 bg-blue-50/30'
+            }`}>
+            <CardHeader className="pb-3 space-y-3">
+                {/* Title and Icon */}
+                <div className="flex items-start gap-2">
+                    <Package className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isMedicated ? 'text-red-600' : 'text-blue-600'}`} />
+                    <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg leading-tight break-words">
+                            {admin.feedId?.feedName || 'Unknown Feed'}
+                        </CardTitle>
+                        <CardDescription className="text-xs sm:text-sm mt-1">
+                            {admin.groupName ? `Group: ${admin.groupName}` : `${cardAnimals.length} animal(s)`}
+                        </CardDescription>
                     </div>
                 </div>
+
+                {/* Badges Row */}
+                <div className="flex flex-wrap gap-2">
+                    <Badge className={`text-xs ${isMedicated
+                        ? 'bg-red-100 text-red-800 border-red-300'
+                        : 'bg-blue-100 text-blue-800 border-blue-300'
+                        } border`}>
+                        {isMedicated ? 'Medicated' : 'Non-Medicated'}
+                    </Badge>
+                    <WithdrawalStatusBadge status={withdrawalStatus} />
+                </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
-                {withdrawalStatus !== 'pending' && (
-                    <div className={`rounded-lg p-4 text-center ${withdrawalStatus === 'safe' ? 'bg-green-50 border border-green-200' :
-                        withdrawalStatus === 'ending_soon' ? 'bg-yellow-50 border border-yellow-200' :
-                            'bg-red-50 border border-red-200'
+                {/* Withdrawal Status Display - Prominent at top */}
+                {isMedicated && withdrawalStatus !== 'pending' ? (
+                    <div className={`rounded-xl p-5 text-center shadow-sm ${withdrawalStatus === 'safe' ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200' :
+                        withdrawalStatus === 'ending_soon' ? 'bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300' :
+                            'bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-300'
                         }`}>
-                        <div className="text-3xl font-bold mb-1">
+                        <div className="text-4xl sm:text-5xl font-bold mb-2">
                             {daysLeft === 0 ? '✓' : daysLeft}
                         </div>
-                        <div className="text-sm font-medium">
+                        <div className="text-sm sm:text-base font-semibold mb-1">
                             {daysLeft === 0 ? 'Withdrawal Complete' : `Day${daysLeft > 1 ? 's' : ''} Until Safe`}
+                        </div>
+                        <div className="text-xs text-slate-600">
+                            {withdrawalStatus === 'safe' ? 'Ready for sale' :
+                                withdrawalStatus === 'ending_soon' ? 'Withdrawal ending soon' :
+                                    'Active withdrawal period'}
+                        </div>
+                    </div>
+                ) : !isMedicated ? (
+                    <div className="rounded-xl p-5 text-center bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-sm">
+                        <div className="text-4xl sm:text-5xl font-bold mb-2 text-green-600">✓</div>
+                        <div className="text-sm sm:text-base font-semibold text-green-800 mb-1">Safe for Sale</div>
+                        <div className="text-xs text-green-700">No Withdrawal Period</div>
+                    </div>
+                ) : null}
+
+                {/* Animals Section - Collapsible on mobile */}
+                {cardAnimals.length > 0 && (
+                    <div className="bg-white rounded-lg p-3 border shadow-sm">
+                        <div className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            Animals in this batch: {cardAnimals.length}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                            {cardAnimals.slice(0, 10).map(animal => (
+                                <AnimalHistoryDialog
+                                    key={animal.tagId}
+                                    animal={animal}
+                                    administrations={allAdministrations}
+                                />
+                            ))}
+                            {cardAnimals.length > 10 && (
+                                <Badge variant="outline" className="text-xs">
+                                    +{cardAnimals.length - 10} more
+                                </Badge>
+                            )}
                         </div>
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <div className="text-slate-500 text-xs mb-1">Antimicrobial</div>
-                        <div className="font-medium">{admin.feedId?.antimicrobialName || 'N/A'}</div>
-                    </div>
-                    <div>
-                        <div className="text-slate-500 text-xs mb-1">Quantity Used</div>
-                        <div className="font-medium">{admin.feedQuantityUsed} {admin.feedId?.unit || 'kg'}</div>
-                    </div>
-                    <div>
-                        <div className="text-slate-500 text-xs mb-1 flex items-center gap-1">
-                            <CalendarIcon className="h-3 w-3" />
-                            Start Date
+                {/* Info Grid - Better mobile layout */}
+                <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50 rounded-lg p-3 border">
+                            <div className="text-xs text-slate-500 mb-1">Antimicrobial</div>
+                            <div className="font-semibold text-sm break-words">{admin.feedId?.antimicrobialName || 'N/A'}</div>
                         </div>
-                        <div className="font-medium">
-                            {admin.startDate ? format(new Date(admin.startDate), 'MMM d, yyyy') : 'N/A'}
+                        <div className="bg-slate-50 rounded-lg p-3 border">
+                            <div className="text-xs text-slate-500 mb-1">Quantity Used</div>
+                            <div className="font-semibold text-sm">{admin.feedQuantityUsed} {admin.feedId?.unit || 'kg'}</div>
                         </div>
                     </div>
-                    <div>
-                        <div className="text-slate-500 text-xs mb-1 flex items-center gap-1">
-                            <CalendarIcon className="h-3 w-3" />
-                            {admin.endDate ? 'End Date' : 'Expected End'}
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-slate-50 rounded-lg p-3 border">
+                            <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                                <CalendarIcon className="h-3 w-3" />
+                                Start Date
+                            </div>
+                            <div className="font-semibold text-xs sm:text-sm">
+                                {admin.startDate ? format(new Date(admin.startDate), 'MMM d, yyyy') : 'N/A'}
+                            </div>
                         </div>
-                        <div className="font-medium">
-                            {admin.endDate ? format(new Date(admin.endDate), 'MMM d, yyyy') :
-                                admin.withdrawalEndDate ? format(new Date(admin.withdrawalEndDate), 'MMM d, yyyy') : 'Ongoing'}
+                        <div className="bg-slate-50 rounded-lg p-3 border">
+                            <div className="text-xs text-slate-500 mb-1 flex items-center gap-1">
+                                <CalendarIcon className="h-3 w-3" />
+                                {admin.endDate ? 'End Date' : 'Expected End'}
+                            </div>
+                            <div className="font-semibold text-xs sm:text-sm">
+                                {admin.endDate ? format(new Date(admin.endDate), 'MMM d, yyyy') :
+                                    admin.withdrawalEndDate ? format(new Date(admin.withdrawalEndDate), 'MMM d, yyyy') : 'Ongoing'}
+                            </div>
                         </div>
                     </div>
                 </div>
-
-
             </CardContent>
         </Card>
     );
@@ -269,6 +388,8 @@ const FeedAdministrationPage = () => {
                                 <FeedAdministrationCard
                                     key={admin._id}
                                     admin={admin}
+                                    animals={animals}
+                                    allAdministrations={administrations}
                                     onComplete={handleComplete}
                                 />
                             ))}
