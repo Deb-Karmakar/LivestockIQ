@@ -1,15 +1,42 @@
-// Mobile/src/navigation/VetTabNavigator.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 
-// Import vet screens
+// Screens
 import VetDashboardScreen from '../screens/vet/VetDashboardScreen';
 import TreatmentRequestsScreen from '../screens/vet/TreatmentRequestsScreen';
 import FarmerDirectoryScreen from '../screens/vet/FarmerDirectoryScreen';
+import VetPlaceholderScreen from '../screens/vet/VetPlaceholderScreen';
+import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
+
+// Stacks for tabs that might need navigation
+const DashboardStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="VetDashboard" component={VetDashboardScreen} />
+    </Stack.Navigator>
+);
+
+const RequestsStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="TreatmentRequests" component={TreatmentRequestsScreen} />
+        {/* Add detail screens here if needed */}
+    </Stack.Navigator>
+);
+
+const MoreStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="VetMore" component={VetMoreScreen} />
+        <Stack.Screen name="Settings" component={VetSettingsScreen} />
+        <Stack.Screen name="Reports" component={VetPlaceholderScreen} />
+        <Stack.Screen name="FeedRequests" component={VetPlaceholderScreen} />
+        <Stack.Screen name="Support" component={VetPlaceholderScreen} />
+    </Stack.Navigator>
+);
 
 const VetTabNavigator = () => {
     return (
@@ -22,23 +49,26 @@ const VetTabNavigator = () => {
                         iconName = focused ? 'grid' : 'grid-outline';
                     } else if (route.name === 'Requests') {
                         iconName = focused ? 'clipboard' : 'clipboard-outline';
+                    } else if (route.name === 'Feed') {
+                        iconName = focused ? 'nutrition' : 'nutrition-outline';
                     } else if (route.name === 'Farmers') {
                         iconName = focused ? 'people' : 'people-outline';
-                    } else if (route.name === 'Settings') {
-                        iconName = focused ? 'settings' : 'settings-outline';
+                    } else if (route.name === 'More') {
+                        iconName = focused ? 'menu' : 'menu-outline';
                     }
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#3b82f6',
+                tabBarActiveTintColor: '#2563eb',
                 tabBarInactiveTintColor: '#6b7280',
                 headerShown: false,
             })}
         >
-            <Tab.Screen name="Dashboard" component={VetDashboardScreen} />
-            <Tab.Screen name="Requests" component={TreatmentRequestsScreen} />
+            <Tab.Screen name="Dashboard" component={DashboardStack} />
+            <Tab.Screen name="Requests" component={RequestsStack} />
+            <Tab.Screen name="Feed" component={VetPlaceholderScreen} />
             <Tab.Screen name="Farmers" component={FarmerDirectoryScreen} />
-            <Tab.Screen name="Settings" component={VetSettingsScreen} />
+            <Tab.Screen name="More" component={MoreStack} />
         </Tab.Navigator>
     );
 };

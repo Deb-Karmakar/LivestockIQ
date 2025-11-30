@@ -30,7 +30,10 @@ export const requestTreatment = async (treatmentData) => {
 
 export const approveTreatment = async (id, approvalData) => {
     try {
-        const response = await api.post(`/vet/treatments/${id}/approve`, approvalData);
+        const response = await api.put(`/treatments/${id}/vet-update`, {
+            status: 'Approved',
+            ...approvalData
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to approve treatment' };
@@ -39,7 +42,10 @@ export const approveTreatment = async (id, approvalData) => {
 
 export const rejectTreatment = async (id, reason) => {
     try {
-        const response = await api.post(`/vet/treatments/${id}/reject`, { reason });
+        const response = await api.put(`/treatments/${id}/vet-update`, {
+            status: 'Rejected',
+            rejectionReason: reason
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to reject treatment' };
@@ -48,7 +54,7 @@ export const rejectTreatment = async (id, reason) => {
 
 export const getTreatmentRequests = async () => {
     try {
-        const response = await api.get('/vet/treatment-requests');
+        const response = await api.get('/vets/treatment-requests');
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to fetch treatment requests' };
