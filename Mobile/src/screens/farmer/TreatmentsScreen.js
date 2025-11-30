@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getTreatments } from '../../services/treatmentService';
 import { differenceInDays } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TreatmentsScreen = ({ navigation }) => {
     const [treatments, setTreatments] = useState([]);
@@ -172,12 +173,27 @@ const TreatmentsScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>Treatments</Text>
-                <Text style={styles.subtitle}>
-                    {treatments.length} records • {treatments.filter(t => getWithdrawalInfo(t).status === 'active').length} active withdrawals
-                </Text>
-            </View>
+            <LinearGradient
+                colors={['#0f172a', '#1e293b', '#0f172a']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.header}
+            >
+                <View style={styles.headerContent}>
+                    <View>
+                        <Text style={styles.headerTitle}>Treatment Records</Text>
+                        <Text style={styles.headerSubtitle}>
+                            {treatments.length} records • {treatments.filter(t => getWithdrawalInfo(t).status === 'active').length} active withdrawals
+                        </Text>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.exportButton}
+                        onPress={() => Alert.alert('Export', 'PDF Export feature coming soon!')}
+                    >
+                        <Ionicons name="download-outline" size={24} color="#fff" />
+                    </TouchableOpacity>
+                </View>
+            </LinearGradient>
 
             <View style={styles.filterContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -235,21 +251,32 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     header: {
-        backgroundColor: '#fff',
         padding: 20,
-        paddingTop: 50,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
+        paddingTop: 60,
+        paddingBottom: 24,
     },
-    title: {
+    headerContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+    },
+    headerTitle: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1f2937',
+        color: '#fff',
+        marginBottom: 8,
     },
-    subtitle: {
+    headerSubtitle: {
         fontSize: 14,
-        color: '#6b7280',
-        marginTop: 4,
+        color: '#94a3b8',
+    },
+    exportButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     filterContainer: {
         backgroundColor: '#fff',
