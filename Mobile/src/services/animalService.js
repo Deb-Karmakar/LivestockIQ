@@ -46,9 +46,9 @@ export const deleteAnimal = async (tagId) => {
     }
 };
 
-export const getAnimalHistory = async (tagId) => {
+export const getAnimalHistory = async (animalId) => {
     try {
-        const response = await api.get(`/animals/${tagId}/history`);
+        const response = await api.get(`/animals/${animalId}/history`);
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Failed to fetch animal history' };

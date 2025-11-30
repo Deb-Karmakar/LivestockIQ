@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DashboardScreen from '../screens/farmer/DashboardScreen';
 import AnimalsScreen from '../screens/farmer/AnimalsScreen';
 import AddAnimalScreen from '../screens/farmer/AddAnimalScreen';
+import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
 import TreatmentsScreen from '../screens/farmer/TreatmentsScreen';
 import SalesScreen from '../screens/farmer/SalesScreen';
 import MoreScreen from '../screens/farmer/MoreScreen';
@@ -31,6 +32,7 @@ const AnimalsStack = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="AnimalsList" component={AnimalsScreen} />
             <Stack.Screen name="AddAnimal" component={AddAnimalScreen} />
+            <Stack.Screen name="AnimalHistory" component={AnimalHistoryScreen} />
         </Stack.Navigator>
     );
 };
