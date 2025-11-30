@@ -18,7 +18,7 @@ const MoreScreen = ({ navigation }) => {
             section: 'Compliance & Inventory',
             items: [
                 { name: 'MRL Compliance', icon: 'shield-checkmark', screen: 'MRLCompliance', color: '#10b981' },
-                { name: 'Drug Inventory', icon: 'medkit', screen: 'DrugInventory', color: '#3b82f6' },
+                { name: 'Drug Inventory', icon: 'medkit', screen: 'Inventory', color: '#3b82f6' },
                 { name: 'Feed Inventory', icon: 'nutrition', screen: 'FeedInventory', color: '#f59e0b' },
                 { name: 'Feed Administration', icon: 'clipboard', screen: 'FeedAdmin', color: '#8b5cf6' },
             ],
