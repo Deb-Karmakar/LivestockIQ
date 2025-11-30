@@ -10,6 +10,7 @@ import {
     RefreshControl,
     Modal,
     TextInput,
+    Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -37,13 +38,23 @@ const MRLComplianceScreen = ({ navigation }) => {
         animalId: '',
         drugName: '',
         sampleType: 'Milk',
+        productType: 'Milk',
         residueLevelDetected: '',
         unit: 'µg/kg',
         testDate: new Date(),
         labName: '',
+        labLocation: '',
+        labCertificationNumber: '',
         testReportNumber: '',
+        certificateUrl: '',
+        testedBy: '',
+        notes: ''
     });
     const [showDatePicker, setShowDatePicker] = useState(false);
+
+    // Picker States
+    const [pickerVisible, setPickerVisible] = useState(false);
+    const [pickerType, setPickerType] = useState(null); // 'animal', 'sample', 'product', 'unit'
 
     useEffect(() => {
         fetchData();
@@ -53,14 +64,14 @@ const MRLComplianceScreen = ({ navigation }) => {
         try {
             setLoading(true);
             const animalsData = await getAnimals();
-            const animalsList = Array.isArray(animalsData) ? animalsData : [];
+            const animalsList = Array.isArray(animalsData) ? animalsData : (animalsData.data || []);
             setAnimals(animalsList);
 
             const pendingData = await getPendingMRLTests();
-            setPendingTests(Array.isArray(pendingData) ? pendingData : []);
+            setPendingTests(Array.isArray(pendingData) ? pendingData : (pendingData.data || []));
 
             const historyData = await getLabTestHistory();
-            setTestHistory(Array.isArray(historyData) ? historyData : []);
+            setTestHistory(Array.isArray(historyData) ? historyData : (historyData.data || []));
 
             // MRL Statuses
             const statusPromises = animalsList.map(a =>
@@ -90,19 +101,42 @@ const MRLComplianceScreen = ({ navigation }) => {
     };
 
     const handleOpenUpload = (animalId = '') => {
-        setTestForm(prev => ({ ...prev, animalId }));
+        setTestForm({
+            animalId: animalId,
+            drugName: '',
+            sampleType: 'Milk',
+            productType: 'Milk',
+            residueLevelDetected: '',
+            unit: 'µg/kg',
+            testDate: new Date(),
+            labName: '',
+            labLocation: '',
+            labCertificationNumber: '',
+            testReportNumber: '',
+            certificateUrl: '',
+            testedBy: '',
+            notes: ''
+        });
         setUploadModalVisible(true);
     };
 
     const handleSubmitTest = async () => {
-        if (!testForm.animalId || !testForm.drugName || !testForm.residueLevelDetected || !testForm.labName || !testForm.testReportNumber) {
-            Alert.alert('Error', 'Please fill in all required fields');
+        // Validation
+        if (!testForm.animalId || !testForm.drugName || !testForm.residueLevelDetected ||
+            !testForm.labName || !testForm.testReportNumber || !testForm.certificateUrl) {
+            Alert.alert('Error', 'Please fill in all required fields (*)');
             return;
         }
 
         try {
             await submitLabTest({
                 ...testForm,
+                drugName: testForm.drugName.trim(),
+                labName: testForm.labName.trim(),
+                testReportNumber: testForm.testReportNumber.trim(),
+                certificateUrl: testForm.certificateUrl.trim(),
+                testedBy: testForm.testedBy ? testForm.testedBy.trim() : '',
+                notes: testForm.notes ? testForm.notes.trim() : '',
                 residueLevelDetected: parseFloat(testForm.residueLevelDetected),
                 testDate: testForm.testDate.toISOString(),
             });
@@ -111,6 +145,34 @@ const MRLComplianceScreen = ({ navigation }) => {
             fetchData();
         } catch (error) {
             Alert.alert('Error', error.message || 'Failed to submit lab test');
+        }
+    };
+
+    const openPicker = (type) => {
+        setPickerType(type);
+        setPickerVisible(true);
+    };
+
+    const handlePickerSelect = (value) => {
+        if (pickerType === 'animal') setTestForm({ ...testForm, animalId: value });
+        else if (pickerType === 'sample') setTestForm({ ...testForm, sampleType: value });
+        else if (pickerType === 'product') setTestForm({ ...testForm, productType: value });
+        else if (pickerType === 'unit') setTestForm({ ...testForm, unit: value });
+        setPickerVisible(false);
+    };
+
+    const getPickerOptions = () => {
+        switch (pickerType) {
+            case 'animal':
+                return animals.map(a => ({ label: `${a.name} (${a.tagId})`, value: a.tagId }));
+            case 'sample':
+                return ['Milk', 'Blood', 'Meat', 'Tissue', 'Urine', 'Eggs'].map(v => ({ label: v, value: v }));
+            case 'product':
+                return ['Milk', 'Meat', 'Eggs', 'Honey', 'Fish'].map(v => ({ label: v, value: v }));
+            case 'unit':
+                return ['µg/kg', 'ppb', 'mg/kg', 'ppm'].map(v => ({ label: v, value: v }));
+            default:
+                return [];
         }
     };
 
@@ -285,55 +347,126 @@ const MRLComplianceScreen = ({ navigation }) => {
                 {activeTab === 'history' && renderHistory()}
             </ScrollView>
 
+            {/* Upload Modal */}
             <Modal visible={uploadModalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Upload Lab Test</Text>
-                        <ScrollView>
-                            <Text style={styles.label}>Animal ID</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={testForm.animalId}
-                                onChangeText={(text) => setTestForm({ ...testForm, animalId: text })}
-                                placeholder="Animal ID"
-                            />
+                        <ScrollView showsVerticalScrollIndicator={false}>
 
-                            <Text style={styles.label}>Drug Name</Text>
+                            {/* Animal Selection */}
+                            <Text style={styles.label}>Animal ID *</Text>
+                            <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('animal')}>
+                                <Text style={styles.dropdownText}>{testForm.animalId || 'Select Animal'}</Text>
+                                <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                            </TouchableOpacity>
+
+                            {/* Drug Name */}
+                            <Text style={styles.label}>Drug Name *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.drugName}
                                 onChangeText={(text) => setTestForm({ ...testForm, drugName: text })}
-                                placeholder="Drug Name"
+                                placeholder="e.g., Oxytetracycline"
                             />
 
-                            <Text style={styles.label}>Residue Level</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={testForm.residueLevelDetected}
-                                onChangeText={(text) => setTestForm({ ...testForm, residueLevelDetected: text })}
-                                placeholder="0.00"
-                                keyboardType="numeric"
-                            />
+                            {/* Sample & Product Type */}
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Sample Type *</Text>
+                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('sample')}>
+                                        <Text style={styles.dropdownText}>{testForm.sampleType}</Text>
+                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Product Type *</Text>
+                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('product')}>
+                                        <Text style={styles.dropdownText}>{testForm.productType}</Text>
+                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
 
-                            <Text style={styles.label}>Lab Name</Text>
+                            {/* Residue & Unit */}
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Residue Level *</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={testForm.residueLevelDetected}
+                                        onChangeText={(text) => setTestForm({ ...testForm, residueLevelDetected: text })}
+                                        placeholder="0.00"
+                                        keyboardType="numeric"
+                                    />
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Unit *</Text>
+                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('unit')}>
+                                        <Text style={styles.dropdownText}>{testForm.unit}</Text>
+                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Lab Info */}
+                            <Text style={styles.label}>Lab Name *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.labName}
                                 onChangeText={(text) => setTestForm({ ...testForm, labName: text })}
-                                placeholder="Lab Name"
+                                placeholder="e.g., National MRL Testing Lab"
                             />
 
-                            <Text style={styles.label}>Report Number</Text>
+                            <Text style={styles.label}>Lab Location</Text>
                             <TextInput
                                 style={styles.input}
-                                value={testForm.testReportNumber}
-                                onChangeText={(text) => setTestForm({ ...testForm, testReportNumber: text })}
-                                placeholder="Report #"
+                                value={testForm.labLocation}
+                                onChangeText={(text) => setTestForm({ ...testForm, labLocation: text })}
+                                placeholder="e.g., Mumbai, Maharashtra"
                             />
 
-                            <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                                <Text>Test Date: {testForm.testDate.toLocaleDateString()}</Text>
-                            </TouchableOpacity>
+                            {/* Report Info */}
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Report Number *</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={testForm.testReportNumber}
+                                        onChangeText={(text) => setTestForm({ ...testForm, testReportNumber: text })}
+                                        placeholder="Report #"
+                                    />
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Cert. Number</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={testForm.labCertificationNumber}
+                                        onChangeText={(text) => setTestForm({ ...testForm, labCertificationNumber: text })}
+                                        placeholder="Cert #"
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Date & Tester */}
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Test Date *</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
+                                        <Text>{testForm.testDate.toLocaleDateString()}</Text>
+                                        <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <Text style={styles.label}>Tested By</Text>
+                                    <TextInput
+                                        style={styles.input}
+                                        value={testForm.testedBy}
+                                        onChangeText={(text) => setTestForm({ ...testForm, testedBy: text })}
+                                        placeholder="Name"
+                                    />
+                                </View>
+                            </View>
                             {showDatePicker && (
                                 <DateTimePicker
                                     value={testForm.testDate}
@@ -345,6 +478,28 @@ const MRLComplianceScreen = ({ navigation }) => {
                                     }}
                                 />
                             )}
+
+                            {/* Certificate URL */}
+                            <Text style={styles.label}>Certificate URL *</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={testForm.certificateUrl}
+                                onChangeText={(text) => setTestForm({ ...testForm, certificateUrl: text })}
+                                placeholder="https://..."
+                                autoCapitalize="none"
+                            />
+
+                            {/* Notes */}
+                            <Text style={styles.label}>Notes</Text>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                value={testForm.notes}
+                                onChangeText={(text) => setTestForm({ ...testForm, notes: text })}
+                                placeholder="Additional notes..."
+                                multiline
+                                numberOfLines={3}
+                            />
+
                         </ScrollView>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setUploadModalVisible(false)}>
@@ -356,6 +511,32 @@ const MRLComplianceScreen = ({ navigation }) => {
                         </View>
                     </View>
                 </View>
+            </Modal>
+
+            {/* Selection Picker Modal */}
+            <Modal visible={pickerVisible} animationType="fade" transparent={true}>
+                <TouchableOpacity style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
+                    <View style={styles.pickerContent}>
+                        <Text style={styles.pickerTitle}>Select {pickerType}</Text>
+                        <ScrollView style={{ maxHeight: 300 }}>
+                            {getPickerOptions().map((option) => (
+                                <TouchableOpacity
+                                    key={option.value}
+                                    style={styles.pickerOption}
+                                    onPress={() => handlePickerSelect(option.value)}
+                                >
+                                    <Text style={styles.pickerOptionText}>{option.label}</Text>
+                                    {((pickerType === 'animal' && testForm.animalId === option.value) ||
+                                        (pickerType === 'sample' && testForm.sampleType === option.value) ||
+                                        (pickerType === 'product' && testForm.productType === option.value) ||
+                                        (pickerType === 'unit' && testForm.unit === option.value)) && (
+                                            <Ionicons name="checkmark" size={20} color="#10b981" />
+                                        )}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </TouchableOpacity>
             </Modal>
         </View>
     );
@@ -392,15 +573,24 @@ const styles = StyleSheet.create({
     value: { fontSize: 14, color: '#374151', fontWeight: '500' },
     detailText: { fontSize: 12, color: '#6b7280' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '80%' },
+    modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '90%' },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12 },
-    dateButton: { padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 16 },
-    modalButtons: { flexDirection: 'row', gap: 12 },
+    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#f9fafb' },
+    textArea: { height: 80, textAlignVertical: 'top' },
+    dateButton: { padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
+    modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
     button: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
     cancelButton: { backgroundColor: '#f3f4f6' },
     submitButton: { backgroundColor: '#10b981' },
     buttonText: { fontWeight: '600' },
+    row: { flexDirection: 'row', gap: 12 },
+    halfInput: { flex: 1 },
+    dropdown: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
+    dropdownText: { color: '#1f2937' },
+    pickerContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '80%', alignSelf: 'center', maxHeight: '60%' },
+    pickerTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
+    pickerOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    pickerOptionText: { fontSize: 16, color: '#374151' },
 });
 
 export default MRLComplianceScreen;
