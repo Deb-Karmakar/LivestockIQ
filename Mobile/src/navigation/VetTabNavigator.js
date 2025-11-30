@@ -12,6 +12,8 @@ import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
 import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
 import FeedAdministrationRequestsScreen from '../screens/vet/FeedAdministrationRequestsScreen';
+import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
+import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -36,7 +38,8 @@ const MoreStack = () => (
         <Stack.Screen name="Settings" component={VetSettingsScreen} />
         <Stack.Screen name="Reports" component={VetPlaceholderScreen} />
         <Stack.Screen name="FeedRequests" component={VetPlaceholderScreen} />
-        <Stack.Screen name="Support" component={VetPlaceholderScreen} />
+        <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
+        <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
     </Stack.Navigator>
 );
 

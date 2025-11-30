@@ -17,13 +17,12 @@ const VetMoreScreen = ({ navigation }) => {
             section: 'Practice',
             items: [
                 { name: 'Reports', icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
-                { name: 'Feed Requests', icon: 'nutrition', screen: 'FeedRequests', color: '#8b5cf6' },
             ],
         },
         {
             section: 'Support & Settings',
             items: [
-                { name: 'Support', icon: 'help-circle', screen: 'Support', color: '#6366f1' },
+                { name: 'Support', icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
                 { name: 'Settings', icon: 'settings', screen: 'Settings', color: '#6b7280' },
             ],
         },

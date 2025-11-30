@@ -28,7 +28,7 @@ const MoreScreen = ({ navigation }) => {
             items: [
                 { name: 'Reports', icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
                 { name: 'Alerts', icon: 'notifications', screen: 'Alerts', color: '#ef4444' },
-                { name: 'Support', icon: 'help-circle', screen: 'Support', color: '#6366f1' },
+                { name: 'Support', icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
             ],
         },
         {

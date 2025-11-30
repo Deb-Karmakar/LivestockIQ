@@ -16,6 +16,8 @@ import MRLComplianceScreen from '../screens/farmer/MRLComplianceScreen';
 import InventoryScreen from '../screens/farmer/InventoryScreen';
 import FeedInventoryScreen from '../screens/farmer/FeedInventoryScreen';
 import FeedAdministrationScreen from '../screens/farmer/FeedAdministrationScreen';
+import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
+import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -42,7 +44,10 @@ const MoreStack = () => (
         <Stack.Screen name="Inventory" component={InventoryScreen} />
         <Stack.Screen name="FeedInventory" component={FeedInventoryScreen} />
         <Stack.Screen name="FeedAdmin" component={FeedAdministrationScreen} />
+
         <Stack.Screen name="Alerts" component={AlertsScreen} />
+        <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
+        <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
     </Stack.Navigator>
 );
 

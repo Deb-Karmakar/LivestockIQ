@@ -53,7 +53,7 @@ export const createTicket = async (req, res) => {
             createdBy: userId,
             createdByModel: modelName,
             createdByRole: userRole,
-            createdByName: user.fullName || user.name,  // Vets use fullName, others use name
+            createdByName: user.fullName || user.farmOwner || user.name,  // Vets/Regulators use fullName, Farmers use farmOwner
             createdByEmail: user.email,
             status: 'Open',
             statusHistory: [
