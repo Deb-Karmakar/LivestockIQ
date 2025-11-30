@@ -10,6 +10,7 @@ import FarmerDirectoryScreen from '../screens/vet/FarmerDirectoryScreen';
 import VetPlaceholderScreen from '../screens/vet/VetPlaceholderScreen';
 import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
+import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -24,7 +25,7 @@ const DashboardStack = () => (
 const RequestsStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="TreatmentRequests" component={TreatmentRequestsScreen} />
-        {/* Add detail screens here if needed */}
+        <Stack.Screen name="AnimalHistory" component={AnimalHistoryScreen} />
     </Stack.Navigator>
 );
 
