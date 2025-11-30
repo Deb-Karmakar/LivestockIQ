@@ -179,15 +179,15 @@ const MRLComplianceScreen = ({ navigation }) => {
     const getStatusBadge = (status) => {
         switch (status?.mrlStatus) {
             case 'SAFE':
-                return { color: '#10b981', bg: '#d1fae5', text: 'Safe', icon: 'checkmark-circle' };
+                return { color: '#10b981', bg: '#d1fae5', text: 'Safe for Sale', icon: 'checkmark-circle' };
             case 'PENDING_VERIFICATION':
-                return { color: '#3b82f6', bg: '#dbeafe', text: 'Pending', icon: 'time' };
+                return { color: '#3b82f6', bg: '#dbeafe', text: 'Pending Verification', icon: 'time' };
             case 'TEST_REQUIRED':
-                return { color: '#f59e0b', bg: '#fef3c7', text: 'Test Req', icon: 'alert-circle' };
+                return { color: '#f59e0b', bg: '#fef3c7', text: 'Test Required', icon: 'alert-circle' };
             case 'VIOLATION':
-                return { color: '#ef4444', bg: '#fee2e2', text: 'Violation', icon: 'warning' };
+                return { color: '#ef4444', bg: '#fee2e2', text: 'MRL Violation', icon: 'warning' };
             case 'WITHDRAWAL_ACTIVE':
-                return { color: '#f97316', bg: '#ffedd5', text: 'Withdrawal', icon: 'hand-left' };
+                return { color: '#f97316', bg: '#ffedd5', text: 'Withdrawal Active', icon: 'hand-left' };
             default:
                 return { color: '#6b7280', bg: '#f3f4f6', text: 'No Data', icon: 'help-circle' };
         }
@@ -219,11 +219,26 @@ const MRLComplianceScreen = ({ navigation }) => {
             {animals.map((animal) => {
                 const status = mrlStatuses[animal.tagId];
                 const badge = getStatusBadge(status);
+
+                // Logic from web: Disable if Withdrawal Active, Safe, or Pending Verification (unless violation resolved)
+                const isPendingVerification = status?.details?.labTests?.[0]?.status === 'Pending Verification';
+                const isViolationResolved = status?.details?.labTests?.[0]?.violationResolved;
+
+                const isDisabled =
+                    status?.mrlStatus === 'WITHDRAWAL_ACTIVE' ||
+                    status?.mrlStatus === 'SAFE' ||
+                    (isPendingVerification && !isViolationResolved);
+
                 return (
                     <View key={animal.tagId} style={styles.card}>
                         <View style={styles.cardRow}>
                             <View>
-                                <Text style={styles.animalId}>{animal.tagId}</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                    <Text style={styles.animalId}>{animal.tagId}</Text>
+                                    <View style={styles.speciesTag}>
+                                        <Text style={styles.speciesText}>{animal.species}</Text>
+                                    </View>
+                                </View>
                                 <Text style={styles.animalName}>{animal.name}</Text>
                             </View>
                             <View style={[styles.badge, { backgroundColor: badge.bg }]}>
@@ -231,13 +246,41 @@ const MRLComplianceScreen = ({ navigation }) => {
                                 <Text style={[styles.badgeText, { color: badge.color }]}>{badge.text}</Text>
                             </View>
                         </View>
+
                         <TouchableOpacity
-                            style={styles.uploadButton}
+                            style={[
+                                styles.uploadButton,
+                                isDisabled && styles.uploadButtonDisabled
+                            ]}
                             onPress={() => handleOpenUpload(animal.tagId)}
-                            disabled={status?.mrlStatus === 'WITHDRAWAL_ACTIVE' || status?.mrlStatus === 'SAFE'}
+                            disabled={isDisabled}
                         >
-                            <Text style={styles.uploadButtonText}>Upload Test</Text>
+                            <Ionicons
+                                name={isDisabled ? "lock-closed" : "cloud-upload"}
+                                size={16}
+                                color={isDisabled ? "#9ca3af" : "#10b981"}
+                                style={{ marginRight: 6 }}
+                            />
+                            <Text style={[
+                                styles.uploadButtonText,
+                                isDisabled && styles.uploadButtonTextDisabled
+                            ]}>
+                                {isDisabled
+                                    ? (status?.mrlStatus === 'SAFE' ? 'Safe - No Test Needed' : 'Upload Disabled')
+                                    : 'Upload Test'}
+                            </Text>
                         </TouchableOpacity>
+
+                        {isDisabled && status?.mrlStatus === 'WITHDRAWAL_ACTIVE' && (
+                            <Text style={styles.statusNote}>
+                                Cannot upload during active withdrawal
+                            </Text>
+                        )}
+                        {isDisabled && isPendingVerification && !isViolationResolved && (
+                            <Text style={styles.statusNote}>
+                                Pending verification
+                            </Text>
+                        )}
                     </View>
                 );
             })}
@@ -591,6 +634,11 @@ const styles = StyleSheet.create({
     pickerTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
     pickerOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     pickerOptionText: { fontSize: 16, color: '#374151' },
+    speciesTag: { backgroundColor: '#e0f2fe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    speciesText: { fontSize: 10, color: '#0284c7', fontWeight: '600', textTransform: 'uppercase' },
+    uploadButtonDisabled: { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 },
+    uploadButtonTextDisabled: { color: '#9ca3af' },
+    statusNote: { fontSize: 11, color: '#ef4444', marginTop: 4, fontStyle: 'italic' },
 });
 
 export default MRLComplianceScreen;
