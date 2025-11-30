@@ -48,10 +48,11 @@ connectDB().then(() => {
 
 const app = express();
 
-// ✅ Allow CORS (adjust frontend URL for production)
+// ✅ Allow CORS (allow all origins for mobile app development)
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173', // fallback for local dev
+    origin: true, // Allow all origins (mobile app + web frontend)
+    credentials: true,
   })
 );
 
