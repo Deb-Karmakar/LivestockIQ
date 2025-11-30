@@ -34,3 +34,13 @@ export const getVetProfile = async () => {
     const response = await api.get('/vets/profile');
     return response.data;
 };
+
+export const getAnimalsForFarmer = async (farmerId) => {
+    const response = await api.get(`/vets/farmers/${farmerId}/animals`);
+    return response.data;
+};
+
+export const reportFarmer = async (reportData) => {
+    const response = await api.post('/vets/report-farmer', reportData);
+    return response.data;
+};
