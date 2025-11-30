@@ -9,9 +9,13 @@ import {
     RefreshControl,
     Alert,
     Modal,
-    TextInput
+    TextInput,
+    ScrollView,
+    Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { getTreatmentRequests, approveTreatment, rejectTreatment } from '../../services/treatmentService';
 import { useNavigation } from '@react-navigation/native';
 
@@ -21,9 +25,24 @@ const TreatmentRequestsScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('Pending'); // 'All', 'Pending', 'Approved', 'Rejected'
+
+    // Reject Modal State
     const [rejectModalVisible, setRejectModalVisible] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [rejectionReason, setRejectionReason] = useState('');
+
+    // Approve Modal State
+    const [approveModalVisible, setApproveModalVisible] = useState(false);
+    const [approvalForm, setApprovalForm] = useState({
+        drugName: '',
+        dose: '',
+        route: '',
+        vetNotes: '',
+        startDate: new Date(),
+        withdrawalEndDate: new Date(),
+    });
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [datePickerMode, setDatePickerMode] = useState('start'); // 'start' or 'end'
 
     const fetchRequests = useCallback(async () => {
         try {
@@ -48,30 +67,57 @@ const TreatmentRequestsScreen = () => {
         fetchRequests();
     };
 
-    const handleApprove = (request) => {
-        Alert.alert(
-            'Approve Treatment',
-            `Approve treatment for ${request.animalId}?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Approve',
-                    onPress: async () => {
-                        try {
-                            await approveTreatment(request._id, {
-                                withdrawalPeriodDays: request.withdrawalPeriodDays || 0,
-                            });
-                            Alert.alert('Success', 'Treatment approved');
-                            fetchRequests();
-                        } catch (error) {
-                            Alert.alert('Error', 'Failed to approve treatment');
-                        }
-                    },
-                },
-            ]
-        );
+    // --- Approval Logic ---
+    const openApproveModal = (request) => {
+        setSelectedRequest(request);
+        setApprovalForm({
+            drugName: request.drugName || '',
+            dose: request.dose || '',
+            route: request.route || '',
+            vetNotes: '',
+            startDate: request.startDate ? new Date(request.startDate) : new Date(),
+            withdrawalEndDate: request.withdrawalEndDate ? new Date(request.withdrawalEndDate) : new Date(),
+        });
+        setApproveModalVisible(true);
     };
 
+    const handleDateChange = (event, selectedDate) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            setApprovalForm(prev => ({
+                ...prev,
+                [datePickerMode === 'start' ? 'startDate' : 'withdrawalEndDate']: selectedDate
+            }));
+        }
+    };
+
+    const showDatepicker = (mode) => {
+        setDatePickerMode(mode);
+        setShowDatePicker(true);
+    };
+
+    const handleConfirmApprove = async () => {
+        if (!selectedRequest) return;
+
+        try {
+            // Calculate withdrawal days if needed, or pass dates directly
+            // The backend updateTreatmentByVet likely accepts startDate and withdrawalEndDate directly based on web code
+            const updateData = {
+                ...approvalForm,
+                status: 'Approved'
+            };
+
+            await approveTreatment(selectedRequest._id, updateData);
+            setApproveModalVisible(false);
+            Alert.alert('Success', 'Treatment approved successfully');
+            fetchRequests();
+        } catch (error) {
+            console.error('Approve error:', error);
+            Alert.alert('Error', 'Failed to approve treatment');
+        }
+    };
+
+    // --- Rejection Logic ---
     const openRejectModal = (request) => {
         setSelectedRequest(request);
         setRejectionReason('');
@@ -107,15 +153,18 @@ const TreatmentRequestsScreen = () => {
         return (req.status || 'Pending') === activeTab;
     });
 
+    const calculateAge = (dob) => {
+        if (!dob) return 'N/A';
+        const diff = Date.now() - new Date(dob).getTime();
+        const ageDate = new Date(diff);
+        const years = Math.abs(ageDate.getUTCFullYear() - 1970);
+        const months = ageDate.getUTCMonth();
+        return years > 0 ? `${years}y ${months}m` : `${months}m`;
+    };
+
     const renderRequest = ({ item }) => {
         const isPending = (item.status || 'Pending') === 'Pending';
-        const age = item.animal?.dob ? (() => {
-            const diff = Date.now() - new Date(item.animal.dob).getTime();
-            const ageDate = new Date(diff);
-            const years = Math.abs(ageDate.getUTCFullYear() - 1970);
-            const months = ageDate.getUTCMonth();
-            return years > 0 ? `${years}y ${months}m` : `${months}m`;
-        })() : 'N/A';
+        const age = calculateAge(item.animal?.dob);
 
         return (
             <View style={styles.card}>
@@ -187,7 +236,7 @@ const TreatmentRequestsScreen = () => {
                         <>
                             <TouchableOpacity
                                 style={[styles.actionBtn, styles.approveBtn]}
-                                onPress={() => handleApprove(item)}
+                                onPress={() => openApproveModal(item)}
                             >
                                 <Ionicons name="checkmark-circle" size={18} color="#fff" />
                                 <Text style={styles.actionBtnText}>Approve</Text>
@@ -215,10 +264,21 @@ const TreatmentRequestsScreen = () => {
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Treatment Requests</Text>
-                <Text style={styles.headerSubtitle}>Review and manage verification requests</Text>
-            </View>
+            <LinearGradient
+                colors={['#1e293b', '#0f172a']}
+                style={styles.header}
+            >
+                <View style={styles.headerContent}>
+                    <View style={styles.headerTopRow}>
+                        <Ionicons name="clipboard" size={16} color="#60a5fa" />
+                        <Text style={styles.headerLabel}>Verification Requests</Text>
+                    </View>
+                    <Text style={styles.headerTitle}>Treatment Requests</Text>
+                    <Text style={styles.headerSubtitle}>
+                        Review and manage <Text style={styles.highlightText}>{requests.filter(r => (r.status || 'Pending') === 'Pending').length} pending</Text> verification requests.
+                    </Text>
+                </View>
+            </LinearGradient>
 
             <View style={styles.tabBar}>
                 {['All', 'Pending', 'Approved', 'Rejected'].map((tab) => (
@@ -255,6 +315,7 @@ const TreatmentRequestsScreen = () => {
                 />
             )}
 
+            {/* Reject Modal */}
             <Modal
                 visible={rejectModalVisible}
                 transparent={true}
@@ -289,16 +350,144 @@ const TreatmentRequestsScreen = () => {
                     </View>
                 </View>
             </Modal>
+
+            {/* Approve Modal */}
+            <Modal
+                visible={approveModalVisible}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setApproveModalVisible(false)}
+            >
+                <View style={styles.fullScreenModal}>
+                    <View style={styles.modalHeader}>
+                        <Text style={styles.modalHeaderTitle}>Review & Approve</Text>
+                        <TouchableOpacity onPress={() => setApproveModalVisible(false)}>
+                            <Text style={styles.closeButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView style={styles.modalBody}>
+                        {/* Animal Summary */}
+                        <View style={styles.summaryCard}>
+                            <Text style={styles.summaryTitle}>Animal Summary</Text>
+                            <Text style={styles.summaryText}>
+                                ID: {selectedRequest?.animalId} • {selectedRequest?.animal?.species}
+                            </Text>
+                            <Text style={styles.summarySubtext}>
+                                {calculateAge(selectedRequest?.animal?.dob)} • {selectedRequest?.animal?.gender}
+                            </Text>
+                        </View>
+
+                        {/* Form Fields */}
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Drug Name</Text>
+                            <TextInput
+                                style={styles.inputField}
+                                value={approvalForm.drugName}
+                                onChangeText={(text) => setApprovalForm({ ...approvalForm, drugName: text })}
+                            />
+                        </View>
+
+                        <View style={styles.row}>
+                            <View style={[styles.formSection, { flex: 1, marginRight: 8 }]}>
+                                <Text style={styles.label}>Dose</Text>
+                                <TextInput
+                                    style={styles.inputField}
+                                    value={approvalForm.dose}
+                                    onChangeText={(text) => setApprovalForm({ ...approvalForm, dose: text })}
+                                />
+                            </View>
+                            <View style={[styles.formSection, { flex: 1, marginLeft: 8 }]}>
+                                <Text style={styles.label}>Route</Text>
+                                <TextInput
+                                    style={styles.inputField}
+                                    value={approvalForm.route}
+                                    onChangeText={(text) => setApprovalForm({ ...approvalForm, route: text })}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Withdrawal Start Date</Text>
+                            <TouchableOpacity
+                                style={styles.dateButton}
+                                onPress={() => showDatepicker('start')}
+                            >
+                                <Ionicons name="calendar-outline" size={20} color="#4b5563" />
+                                <Text style={styles.dateButtonText}>
+                                    {approvalForm.startDate.toLocaleDateString()}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Withdrawal End Date</Text>
+                            <TouchableOpacity
+                                style={styles.dateButton}
+                                onPress={() => showDatepicker('end')}
+                            >
+                                <Ionicons name="calendar-outline" size={20} color="#4b5563" />
+                                <Text style={styles.dateButtonText}>
+                                    {approvalForm.withdrawalEndDate.toLocaleDateString()}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Farmer's Notes</Text>
+                            <View style={styles.readOnlyBox}>
+                                <Text style={styles.readOnlyText}>
+                                    {selectedRequest?.notes || "No notes provided."}
+                                </Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.formSection}>
+                            <Text style={styles.label}>Vet's Notes & Instructions</Text>
+                            <TextInput
+                                style={[styles.inputField, styles.textArea]}
+                                value={approvalForm.vetNotes}
+                                onChangeText={(text) => setApprovalForm({ ...approvalForm, vetNotes: text })}
+                                placeholder="Add instructions for the farmer..."
+                                multiline
+                                textAlignVertical="top"
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.confirmApproveButton}
+                            onPress={handleConfirmApprove}
+                        >
+                            <Text style={styles.confirmApproveButtonText}>Save Changes & Approve</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ height: 40 }} />
+                    </ScrollView>
+
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={datePickerMode === 'start' ? approvalForm.startDate : approvalForm.withdrawalEndDate}
+                            mode="date"
+                            display="default"
+                            onChange={handleDateChange}
+                        />
+                    )}
+                </View>
+            </Modal>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f3f4f6' },
-    header: { padding: 20, paddingTop: 50, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-    headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#1f2937' },
-    headerSubtitle: { fontSize: 14, color: '#6b7280', marginTop: 4 },
-    tabBar: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 10 },
+    header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
+    headerContent: {},
+    headerTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+    headerLabel: { color: '#60a5fa', fontSize: 14, fontWeight: '600' },
+    headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
+    headerSubtitle: { color: '#94a3b8', fontSize: 14, lineHeight: 20 },
+    highlightText: { color: '#fb923c', fontWeight: '600' },
+    tabBar: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
     activeTab: {},
     tabText: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
@@ -338,6 +527,8 @@ const styles = StyleSheet.create({
     actionBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
     emptyState: { alignItems: 'center', marginTop: 60 },
     emptyText: { marginTop: 16, fontSize: 16, color: '#9ca3af' },
+
+    // Modal Styles
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
     modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20 },
     modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937', marginBottom: 8 },
@@ -349,6 +540,28 @@ const styles = StyleSheet.create({
     confirmRejectBtn: { backgroundColor: '#ef4444' },
     cancelBtnText: { color: '#4b5563', fontWeight: '600' },
     confirmRejectBtnText: { color: '#fff', fontWeight: '600' },
+
+    // Full Screen Modal
+    fullScreenModal: { flex: 1, backgroundColor: '#f3f4f6' },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 50, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+    modalHeaderTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
+    closeButtonText: { fontSize: 16, color: '#3b82f6', fontWeight: '600' },
+    modalBody: { padding: 20 },
+    summaryCard: { backgroundColor: '#dbeafe', padding: 16, borderRadius: 8, marginBottom: 20 },
+    summaryTitle: { fontSize: 12, fontWeight: '600', color: '#1e40af', marginBottom: 4, textTransform: 'uppercase' },
+    summaryText: { fontSize: 16, fontWeight: 'bold', color: '#1e3a8a' },
+    summarySubtext: { fontSize: 14, color: '#60a5fa', marginTop: 2 },
+    formSection: { marginBottom: 16 },
+    label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+    inputField: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, fontSize: 16, color: '#1f2937' },
+    textArea: { height: 100 },
+    row: { flexDirection: 'row' },
+    dateButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8, padding: 12, gap: 10 },
+    dateButtonText: { fontSize: 16, color: '#1f2937' },
+    readOnlyBox: { backgroundColor: '#f9fafb', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb' },
+    readOnlyText: { color: '#6b7280', fontSize: 14 },
+    confirmApproveButton: { backgroundColor: '#10b981', padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 20, marginBottom: 20 },
+    confirmApproveButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 
 export default TreatmentRequestsScreen;

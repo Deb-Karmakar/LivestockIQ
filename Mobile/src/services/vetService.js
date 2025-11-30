@@ -20,6 +20,16 @@ export const getFeedAdministrationRequests = async () => {
     return response.data;
 };
 
+export const approveFeedAdministration = async (id, vetNotes) => {
+    const response = await api.post(`/feed-admin/${id}/approve`, { vetNotes });
+    return response.data;
+};
+
+export const rejectFeedAdministration = async (id, reason) => {
+    const response = await api.post(`/feed-admin/${id}/reject`, { rejectionReason: reason });
+    return response.data;
+};
+
 export const getVetProfile = async () => {
     const response = await api.get('/vets/profile');
     return response.data;

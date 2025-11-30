@@ -11,6 +11,7 @@ import VetPlaceholderScreen from '../screens/vet/VetPlaceholderScreen';
 import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
 import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
+import FeedAdministrationRequestsScreen from '../screens/vet/FeedAdministrationRequestsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -36,6 +37,13 @@ const MoreStack = () => (
         <Stack.Screen name="Reports" component={VetPlaceholderScreen} />
         <Stack.Screen name="FeedRequests" component={VetPlaceholderScreen} />
         <Stack.Screen name="Support" component={VetPlaceholderScreen} />
+    </Stack.Navigator>
+);
+
+const FeedStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="FeedRequests" component={FeedAdministrationRequestsScreen} />
+        <Stack.Screen name="AnimalHistory" component={AnimalHistoryScreen} />
     </Stack.Navigator>
 );
 
@@ -67,7 +75,7 @@ const VetTabNavigator = () => {
         >
             <Tab.Screen name="Dashboard" component={DashboardStack} />
             <Tab.Screen name="Requests" component={RequestsStack} />
-            <Tab.Screen name="Feed" component={VetPlaceholderScreen} />
+            <Tab.Screen name="Feed" component={FeedStack} />
             <Tab.Screen name="Farmers" component={FarmerDirectoryScreen} />
             <Tab.Screen name="More" component={MoreStack} />
         </Tab.Navigator>

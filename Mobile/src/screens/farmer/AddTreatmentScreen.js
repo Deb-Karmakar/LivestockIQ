@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAnimals } from '../../services/animalService';
-import { addTreatment } from '../../services/treatmentService';
+import { requestTreatment } from '../../services/treatmentService';
 import { getMyProfile } from '../../services/farmerService';
 
 const AddTreatmentScreen = ({ navigation }) => {
@@ -74,7 +74,7 @@ const AddTreatmentScreen = ({ navigation }) => {
                 ...formData,
                 vetId: vetId,
             };
-            await addTreatment(submitData);
+            await requestTreatment(submitData);
             Alert.alert('Success', 'Treatment record submitted for review');
             navigation.goBack();
         } catch (error) {
