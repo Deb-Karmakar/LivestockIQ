@@ -15,6 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { createAnimal, updateAnimal } from '../../services/animalService';
 
+import BarcodeScannerModal from '../../components/BarcodeScannerModal';
+
 const AddAnimalScreen = ({ navigation, route }) => {
     const { animal } = route.params || {};
     const isEditing = !!animal;
@@ -31,6 +33,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
         dob: animal?.dob ? new Date(animal.dob) : new Date(),
     });
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showScanner, setShowScanner] = useState(false);
 
     const speciesList = ['Cattle', 'Buffalo', 'Sheep', 'Goat', 'Pig', 'Horse', 'Yak'];
     const genderList = ['Male', 'Female'];
@@ -76,6 +79,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
         }
     };
 
+    const handleScan = (data) => {
+        setFormData({ ...formData, tagId: data });
+        setShowScanner(false);
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -103,6 +111,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         <TouchableOpacity
                             style={[styles.scanButton, isEditing && styles.buttonDisabled]}
                             disabled={isEditing}
+                            onPress={() => setShowScanner(true)}
                         >
                             <Ionicons name="qr-code" size={20} color={isEditing ? '#9ca3af' : '#10b981'} />
                         </TouchableOpacity>
@@ -289,6 +298,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            <BarcodeScannerModal
+                visible={showScanner}
+                onClose={() => setShowScanner(false)}
+                onScan={handleScan}
+            />
         </View>
     );
 };
