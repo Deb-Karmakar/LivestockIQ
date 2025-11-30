@@ -30,3 +30,18 @@ export const getFeedStats = async () => {
     const response = await api.get('/feed/stats');
     return response.data;
 };
+
+export const getActiveFeed = async () => {
+    const response = await api.get('/feed/active');
+    return response.data;
+};
+
+export const getExpiringFeed = async (days = 30) => {
+    const response = await api.get(`/feed/expiring/${days}`);
+    return response.data;
+};
+
+export const consumeFeed = async (id, quantityUsed) => {
+    const response = await api.patch(`/feed/${id}/consume`, { quantityUsed });
+    return response.data;
+};
