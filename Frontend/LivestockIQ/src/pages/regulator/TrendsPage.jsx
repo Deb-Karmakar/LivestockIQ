@@ -1,6 +1,7 @@
 // frontend/src/pages/regulator/TrendsPage.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useToast } from '../../hooks/use-toast';
@@ -123,9 +124,9 @@ const TrendsPage = () => {
                             Automated analysis of AMU trends and risk assessment
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="prose prose-indigo max-w-none p-6 pt-0">
-                        <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
-                            {insights}
+                    <CardContent className="p-6 pt-0">
+                        <div className="prose prose-indigo max-w-none text-slate-700 leading-relaxed">
+                            <ReactMarkdown>{insights}</ReactMarkdown>
                         </div>
                     </CardContent>
                 </Card>

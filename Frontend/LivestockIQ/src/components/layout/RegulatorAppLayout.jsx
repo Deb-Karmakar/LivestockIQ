@@ -20,6 +20,7 @@ import {
     Stethoscope,
     BriefcaseMedical,
     ShieldCheck,
+    UserCog,
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -37,7 +38,7 @@ const secondaryNavLinks = [
     { name: 'Map View', path: '/regulator/map', icon: Map },
     { name: 'Prescriptions', path: '/regulator/prescriptions', icon: BriefcaseMedical },
     { name: 'Audit Trails', path: '/regulator/audit-trails', icon: ShieldCheck },
-    { name: 'User Oversight', path: '/regulator/users', icon: Users2 },
+    { name: 'User Oversight', path: '/regulator/users', icon: UserCog },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
