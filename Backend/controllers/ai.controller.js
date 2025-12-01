@@ -173,3 +173,93 @@ export const generateRegulatorInsights = async (req, res) => {
     res.status(500).json({ message: "Failed to generate AI insights." });
   }
 };
+
+export const generateDemographicsInsights = async (req, res) => {
+  try {
+    // 1. Fetch Summary Data
+    const [speciesCount, regionalCount, mrlStats] = await Promise.all([
+      // Species Distribution
+      Animal.aggregate([
+        { $group: { _id: '$species', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+      ]),
+      // Regional Distribution (State level for summary)
+      Animal.aggregate([
+        {
+          $lookup: {
+            from: 'farmers',
+            localField: 'farmerId',
+            foreignField: '_id',
+            as: 'farmInfo'
+          }
+        },
+        { $unwind: '$farmInfo' },
+        {
+          $group: {
+            _id: '$farmInfo.location.state',
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } }
+      ]),
+      // MRL Compliance Status
+      Animal.aggregate([
+        { $group: { _id: '$mrlStatus', count: { $sum: 1 } } }
+      ])
+    ]);
+
+    // 2. Format Data for AI
+    const speciesSummary = speciesCount.map(s => `${s._id}: ${s.count}`).join(', ');
+    const regionalSummary = regionalCount.map(r => `${r._id || 'Unknown Region'}: ${r.count}`).join(', ');
+
+    // Calculate compliance % for context
+    let totalAnimals = 0;
+    let compliantAnimals = 0;
+    const mrlSummary = mrlStats.map(m => {
+      const status = m._id || 'SAFE';
+      const count = m.count;
+      totalAnimals += count;
+      if (status === 'SAFE' || status === 'NEW') compliantAnimals += count;
+      return `${status}: ${count}`;
+    }).join(', ');
+
+    const complianceRate = totalAnimals > 0 ? ((compliantAnimals / totalAnimals) * 100).toFixed(1) : 100;
+
+    const contextForAI = `
+      Total Animals: ${totalAnimals}
+      Species Distribution: ${speciesSummary}
+      Regional Distribution: ${regionalSummary}
+      MRL Status Breakdown: ${mrlSummary}
+      Overall MRL Compliance Rate: ${complianceRate}%
+    `;
+
+    // 3. Build Prompt
+    const systemPrompt = `You are an expert veterinary epidemiologist and policy advisor.
+    Analyze the provided livestock demographics and MRL compliance data.
+    Identify key observations regarding the animal population structure, regional concentration, and safety compliance.
+    Provide 3 strategic recommendations for the regulator to improve monitoring or support specific regions/sectors.
+    Format your response in Markdown with headers: ## Population Analysis, ## Compliance Assessment, ## Strategic Recommendations.`;
+
+    const fullPrompt = `${systemPrompt}\n\nDATA:\n${contextForAI}`;
+
+    // 4. Call Groq
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: fullPrompt }],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const insights = response.choices[0]?.message?.content?.trim();
+
+    if (!insights) {
+      return res.json({ insights: "Unable to generate insights at this time." });
+    }
+
+    res.json({ insights });
+
+  } catch (error) {
+    console.error("Error generating demographics insights:", error);
+    res.status(500).json({ message: "Failed to generate AI insights." });
+  }
+};

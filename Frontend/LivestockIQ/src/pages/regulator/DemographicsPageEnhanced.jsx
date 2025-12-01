@@ -8,7 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from '../../hooks/use-toast';
 import { getDemographicsDataEnhanced } from '../../services/regulatorServiceEnhanced';
-import { PawPrint, Cake, Users, Sparkles, MapPin, Syringe, Shield, TrendingUp, Calendar, Activity } from 'lucide-react';
+import { getDemographicsInsights } from '../../services/aiService';
+import { Button } from "@/components/ui/button";
+import ReactMarkdown from 'react-markdown';
+import { PawPrint, Cake, Users, Sparkles, MapPin, Syringe, Shield, TrendingUp, Calendar, Activity, BrainCircuit } from 'lucide-react';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF4560'];
 
@@ -59,6 +62,8 @@ const DemographicsPageEnhanced = () => {
     const [demographicsData, setDemographicsData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [period, setPeriod] = useState('12m');
+    const [insights, setInsights] = useState(null);
+    const [generatingInsights, setGeneratingInsights] = useState(false);
     const { toast } = useToast();
 
     const fetchData = useCallback(async () => {
@@ -76,6 +81,19 @@ const DemographicsPageEnhanced = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    const handleGenerateInsights = async () => {
+        try {
+            setGeneratingInsights(true);
+            const data = await getDemographicsInsights();
+            setInsights(data.insights);
+            toast({ title: "Insights Generated", description: "AI analysis complete." });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to generate insights." });
+        } finally {
+            setGeneratingInsights(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -129,7 +147,7 @@ const DemographicsPageEnhanced = () => {
                             Animal demographics with regional distribution, AMU correlation, MRL compliance metrics, and temporal trends.
                         </p>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 flex-wrap">
                         <Select value={period} onValueChange={setPeriod}>
                             <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white">
                                 <Calendar className="w-4 h-4 mr-2" />
@@ -142,6 +160,23 @@ const DemographicsPageEnhanced = () => {
                                 <SelectItem value="12m">Last 12 Months</SelectItem>
                             </SelectContent>
                         </Select>
+                        <Button
+                            onClick={handleGenerateInsights}
+                            disabled={generatingInsights}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            {generatingInsights ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                    Analyzing...
+                                </>
+                            ) : (
+                                <>
+                                    <BrainCircuit className="w-4 h-4 mr-2" />
+                                    AI Insights
+                                </>
+                            )}
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -184,6 +219,26 @@ const DemographicsPageEnhanced = () => {
                     color="red"
                 />
             </div>
+
+            {/* AI Insights Card */}
+            {insights && (
+                <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-l-indigo-500">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-indigo-900">
+                            <BrainCircuit className="w-6 h-6 text-indigo-600" />
+                            AI Strategic Analysis
+                        </CardTitle>
+                        <CardDescription className="text-indigo-700">
+                            Automated analysis of demographics and MRL compliance
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6 pt-0">
+                        <div className="prose prose-indigo max-w-none text-slate-700 leading-relaxed">
+                            <ReactMarkdown>{insights}</ReactMarkdown>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Row 1: Herd Composition & Regional Distribution */}
             <div className="grid gap-6 lg:grid-cols-2">

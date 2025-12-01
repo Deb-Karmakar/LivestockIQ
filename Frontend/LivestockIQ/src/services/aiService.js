@@ -21,3 +21,13 @@ export const getRegulatorInsights = async () => {
         throw error;
     }
 };
+
+export const getDemographicsInsights = async () => {
+    try {
+        const { data } = await axiosInstance.post('/ai/demographics-insights');
+        return data; // Returns { insights: "..." }
+    } catch (error) {
+        console.error("Error fetching demographics insights:", error);
+        throw error;
+    }
+};
