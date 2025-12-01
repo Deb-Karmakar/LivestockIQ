@@ -2,6 +2,7 @@
 
 import Veterinarian from '../models/vet.model.js';
 import Farmer from '../models/farmer.model.js';
+import Animal from '../models/animal.model.js';
 import Treatment from '../models/treatment.model.js';
 import Prescription from '../models/prescription.model.js';
 import RegulatorAlert from '../models/regulatorAlert.model.js';

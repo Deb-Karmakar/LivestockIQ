@@ -219,44 +219,45 @@ const VetDetailsPage = () => {
                                 <Building2 className="w-4 h-4 mr-2" />
                                 Farms
                             </TabsTrigger>
-                            <TabsTrigger value="prescriptions">
-                                <FileText className="w-4 h-4 mr-2" />
-                                Prescriptions
-                            </TabsTrigger>
-                            <TabsTrigger value="compliance">
-                                <BarChart3 className="w-4 h-4 mr-2" />
-                                Compliance
-                            </TabsTrigger>
                         </TabsList>
                     </CardHeader>
 
                     <CardContent className="p-6">
                         <TabsContent value="farms" className="mt-0">
                             {farms.length > 0 ? (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Farm Name</TableHead>
-                                            <TableHead>Owner</TableHead>
-                                            <TableHead>Species</TableHead>
-                                            <TableHead>Animals</TableHead>
-                                            <TableHead>Treatments</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {farms.map((farm) => (
-                                            <TableRow key={farm._id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/regulator/farms/${farm._id}`)}>
-                                                <TableCell className="font-medium">{farm.farmName}</TableCell>
-                                                <TableCell>{farm.farmOwner}</TableCell>
-                                                <TableCell>{farm.speciesReared || 'Mixed'}</TableCell>
-                                                <TableCell>{farm.statistics?.totalAnimals || 0}</TableCell>
-                                                <TableCell>{farm.statistics?.activeTreatments || 0}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {farms.map((farm) => (
+                                        <Card
+                                            key={farm._id}
+                                            className="border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                                            onClick={() => navigate(`/regulator/farms/${farm._id}`)}
+                                        >
+                                            <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b pb-3">
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <Building2 className="w-4 h-4 text-blue-600" />
+                                                    {farm.farmName}
+                                                </CardTitle>
+                                                <p className="text-sm text-gray-600 mt-1">{farm.farmOwner}</p>
+                                            </CardHeader>
+                                            <CardContent className="p-4 space-y-2">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-600">Species:</span>
+                                                    <span className="font-medium">{farm.speciesReared || 'Mixed'}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-600">Animals:</span>
+                                                    <span className="font-medium">{farm.statistics?.totalAnimals || 0}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="text-gray-600">Active Treatments:</span>
+                                                    <Badge variant="outline">{farm.statistics?.activeTreatments || 0}</Badge>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
                             ) : (
-                                <p className="text-center text-gray-500 py-8">No farms data available</p>
+                                <p className="text-center text-gray-500 py-8">No farms under supervision</p>
                             )}
                         </TabsContent>
 
