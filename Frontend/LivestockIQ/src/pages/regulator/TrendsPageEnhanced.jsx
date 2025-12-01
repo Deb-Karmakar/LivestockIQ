@@ -1,4 +1,4 @@
-// frontend/src/pages/regulator/TrendsPage.jsx
+// Enhanced Trends Page - Frontend/LivestockIQ/src/pages/regulator/TrendsPageEnhanced.jsx
 
 import React, { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -49,7 +49,7 @@ const StatCard = ({ title, value, subtitle, icon: Icon, color }) => {
     );
 };
 
-const TrendsPage = () => {
+const TrendsPageEnhanced = () => {
     const [trendData, setTrendData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [insights, setInsights] = useState(null);
@@ -61,7 +61,6 @@ const TrendsPage = () => {
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-            // Use the enhanced trend data service which supports period
             const data = await getTrendDataEnhanced(period);
             setTrendData(data);
         } catch (error) {
@@ -348,7 +347,7 @@ const TrendsPage = () => {
                 </Card>
             )}
 
-            {/* AMU by Drug Type (Bar Chart) */}
+            {/* Existing Charts */}
             <Card className="border-0 shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
                     <CardTitle className="flex items-center gap-2">
@@ -373,7 +372,6 @@ const TrendsPage = () => {
                 </CardContent>
             </Card>
 
-            {/* AMU by Species (Line Chart) */}
             <Card className="border-0 shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
                     <CardTitle className="flex items-center gap-2">
@@ -401,4 +399,4 @@ const TrendsPage = () => {
     );
 };
 
-export default TrendsPage;
+export default TrendsPageEnhanced;

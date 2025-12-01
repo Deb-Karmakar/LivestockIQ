@@ -28,6 +28,7 @@ import ticketRoutes from './routes/ticket.routes.js';
 import farmManagementRoutes from './routes/farmManagement.routes.js';
 import vetManagementRoutes from './routes/vetManagement.routes.js';
 import prescriptionReviewRoutes from './routes/prescriptionReview.routes.js';
+import trendsEnhancedRoutes from './routes/trendsEnhanced.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -92,6 +93,7 @@ app.use('/api/tickets', ticketRoutes); // Support ticket system routes
 app.use('/api/regulator/farms', farmManagementRoutes); // Farm management for regulators
 app.use('/api/regulator/vets', vetManagementRoutes); // Vet management for regulators
 app.use('/api/regulator/prescriptions', prescriptionReviewRoutes); // Prescription review for regulators
+app.use('/api/regulator/trends-enhanced', trendsEnhancedRoutes); // Enhanced trends analysis
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported

@@ -29,7 +29,7 @@ const primaryNavLinks = [
     { name: 'Dashboard', path: '/regulator/dashboard', icon: LayoutDashboard },
     { name: 'Farms', path: '/regulator/farms', icon: Building2 },
     { name: 'Vets', path: '/regulator/vets', icon: Stethoscope },
-    { name: 'Compliance', path: '/regulator/compliance', icon: ClipboardCheck },
+    //  { name: 'Compliance', path: '/regulator/compliance', icon: ClipboardCheck },
     { name: 'Trends', path: '/regulator/trends', icon: TrendingUp },
 ];
 
@@ -40,7 +40,7 @@ const secondaryNavLinks = [
     { name: 'Audit Trails', path: '/regulator/audit-trails', icon: ShieldCheck },
     { name: 'User Oversight', path: '/regulator/users', icon: UserCog },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
-    { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
+    { name: 'MRL Verifications', path: '/regulator/mrl-verifications', icon: FileCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
     { name: 'Support', path: '/regulator/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/regulator/settings', icon: Settings },
