@@ -4,6 +4,7 @@ import Veterinarian from '../models/vet.model.js';
 import Farmer from '../models/farmer.model.js';
 import Animal from '../models/animal.model.js';
 import Treatment from '../models/treatment.model.js';
+import FeedAdministration from '../models/feedAdministration.model.js';
 import Prescription from '../models/prescription.model.js';
 import RegulatorAlert from '../models/regulatorAlert.model.js';
 
@@ -118,6 +119,8 @@ export const getVetDetails = async (req, res) => {
             totalTreatments,
             approvedTreatments,
             rejectedTreatments,
+            totalFeedAdministrations,
+            approvedFeedAdministrations,
             totalAlerts,
             activeAlerts,
             recentPrescriptions,
@@ -128,8 +131,10 @@ export const getVetDetails = async (req, res) => {
             Treatment.countDocuments({ vetId: id }),
             Treatment.countDocuments({ vetId: id, status: 'Approved' }),
             Treatment.countDocuments({ vetId: id, status: 'Rejected' }),
+            FeedAdministration.countDocuments({ vetId: vet.vetId }),
+            FeedAdministration.countDocuments({ vetId: vet.vetId, vetApproved: true }),
             RegulatorAlert.countDocuments({ vetId: id }),
-            RegulatorAlert.countDocuments({ vetId: id, status: { $ne: 'Resolved' } }),
+            RegulatorAlert.countDocuments({ vetId: id, status: { $ne: 'RESOLVED' } }),
             Prescription.find({ vetId: id })
                 .sort({ createdAt: -1 })
                 .limit(5)
@@ -147,6 +152,11 @@ export const getVetDetails = async (req, res) => {
             ])
         ]);
 
+        // Calculate approval rate: (Approved Treatments + Approved Feed) / (Total Treatments + Total Feed) * 100
+        const totalRequests = totalTreatments + totalFeedAdministrations;
+        const totalApprovals = approvedTreatments + approvedFeedAdministrations;
+        const approvalRate = totalRequests > 0 ? Math.round((totalApprovals / totalRequests) * 100) : 0;
+
         const complianceRate = totalAlerts === 0 ? 100 :
             Math.max(0, 100 - (activeAlerts / totalAlerts) * 100);
 
@@ -162,10 +172,13 @@ export const getVetDetails = async (req, res) => {
                     treatments: {
                         total: totalTreatments,
                         approved: approvedTreatments,
-                        rejected: rejectedTreatments,
-                        approvalRate: totalTreatments > 0 ?
-                            Math.round((approvedTreatments / totalTreatments) * 100) : 0
+                        rejected: rejectedTreatments
                     },
+                    feedAdministrations: {
+                        total: totalFeedAdministrations,
+                        approved: approvedFeedAdministrations
+                    },
+                    approvalRate,
                     alerts: {
                         total: totalAlerts,
                         active: activeAlerts

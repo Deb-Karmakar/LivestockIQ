@@ -172,40 +172,28 @@ const VetDetailsPage = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-white">
                     <CardContent className="p-6">
-                        <p className="text-sm text-gray-600 mb-1">Farms</p>
+                        <p className="text-sm text-gray-600 mb-1">Farms Supervised</p>
                         <p className="text-3xl font-bold text-blue-600">{statistics.farms}</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-white">
                     <CardContent className="p-6">
-                        <p className="text-sm text-gray-600 mb-1">Prescriptions</p>
+                        <p className="text-sm text-gray-600 mb-1">Prescriptions Issued</p>
                         <p className="text-3xl font-bold text-green-600">{statistics.prescriptions.total}</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-lg bg-gradient-to-br from-orange-50 to-white">
-                    <CardContent className="p-6">
-                        <p className="text-sm text-gray-600 mb-1">Treatments</p>
-                        <p className="text-3xl font-bold text-orange-600">{statistics.treatments.total}</p>
-                        <p className="text-xs text-gray-500 mt-1">{statistics.treatments.approved} approved</p>
                     </CardContent>
                 </Card>
 
                 <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-white">
                     <CardContent className="p-6">
                         <p className="text-sm text-gray-600 mb-1">Approval Rate</p>
-                        <p className="text-3xl font-bold text-purple-600">{statistics.treatments.approvalRate}%</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-0 shadow-lg bg-gradient-to-br from-pink-50 to-white">
-                    <CardContent className="p-6">
-                        <p className="text-sm text-gray-600 mb-1">Compliance</p>
-                        <p className="text-3xl font-bold text-pink-600">{statistics.complianceRate}%</p>
+                        <p className="text-3xl font-bold text-purple-600">{statistics.approvalRate}%</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                            {(statistics.treatments?.approved || 0) + (statistics.feedAdministrations?.approved || 0)} approved of {(statistics.treatments?.total || 0) + (statistics.feedAdministrations?.total || 0)} requests
+                        </p>
                     </CardContent>
                 </Card>
             </div>
