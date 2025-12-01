@@ -5,8 +5,11 @@ import mongoose from 'mongoose';
 const prescriptionSchema = new mongoose.Schema({
     treatmentId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
         ref: 'Treatment'
+    },
+    feedAdministrationId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'FeedAdministration'
     },
     farmerId: {
         type: mongoose.Schema.Types.ObjectId,

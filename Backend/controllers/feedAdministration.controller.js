@@ -4,6 +4,7 @@ import Feed from '../models/feed.model.js';
 import Animal from '../models/animal.model.js';
 import Farmer from '../models/farmer.model.js';
 import Vet from '../models/vet.model.js';
+import Prescription from '../models/prescription.model.js';
 import { createAuditLog } from '../services/auditLog.service.js';
 import { generateFarmerFeedConfirmation, generateVetFeedApprovalPDF, generateFeedPrescriptionPDF } from '../services/pdfGenerator.service.js';
 import sendEmail from '../utils/sendEmail.js';
@@ -480,6 +481,21 @@ export const approveFeedAdministration = async (req, res) => {
             administration.notes = (administration.notes ? administration.notes + '\n\n' : '') + `[Vet Notes]: ${vetNotes}`;
         }
         const approved = await administration.save();
+
+        // --- NEW: Create Prescription Record ---
+        try {
+            await Prescription.create({
+                feedAdministrationId: approved._id,
+                farmerId: administration.farmerId._id,
+                vetId: req.user._id,
+                issueDate: new Date()
+            });
+            console.log('✅ Prescription record created for feed administration:', approved._id);
+        } catch (prescError) {
+            console.error('❌ Error creating prescription record:', prescError);
+            // Don't fail the whole request, just log error
+        }
+        // ---------------------------------------
         // Clear the "New" tag for all animals in this feed administration
         await Animal.updateMany(
             { tagId: { $in: approved.animalIds }, farmerId: administration.farmerId._id, isNew: true },
