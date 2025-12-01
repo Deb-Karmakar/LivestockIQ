@@ -11,7 +11,7 @@ import { useToast } from '../../hooks/use-toast';
 import { getTrendDataEnhanced } from '../../services/trendsEnhancedService';
 import { getRegulatorInsights } from '../../services/aiService';
 import { Button } from "@/components/ui/button";
-import { Syringe, PawPrint, Sparkles, BrainCircuit, TrendingUp, AlertTriangle, FileText, Calendar } from 'lucide-react';
+import { Syringe, PawPrint, Sparkles, BrainCircuit, TrendingUp, AlertTriangle, FileText, Calendar, TrendingDown, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const generateColor = (index) => {
@@ -292,7 +292,7 @@ const TrendsPage = () => {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <span className="text-lg">{drug.trend === 'up' ? '📈' : drug.trend === 'down' ? '📉' : '➡️'}</span>
+                                            <span className="text-lg">{drug.trend === 'up' ? <TrendingUp /> : drug.trend === 'down' ? <TrendingDown /> : <ArrowRight />}</span>
                                         </TableCell>
                                     </TableRow>
                                 ))
