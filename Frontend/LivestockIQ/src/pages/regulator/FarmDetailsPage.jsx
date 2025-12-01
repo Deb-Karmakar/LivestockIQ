@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, ArrowLeft, MapPin, Phone, Mail, Users, Activity, AlertCircle, FileText, PawPrint } from 'lucide-react';
+import { Building2, ArrowLeft, MapPin, Phone, Mail, Users, Activity, AlertCircle, FileText, PawPrint, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { getFarmDetails, getFarmAnimals, getFarmTreatments, getFarmCompliance } from '@/services/farmManagementService';
 import { format } from 'date-fns';
@@ -23,6 +24,7 @@ const FarmDetailsPage = () => {
     const [treatments, setTreatments] = useState([]);
     const [compliance, setCompliance] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [selectedViolation, setSelectedViolation] = useState(null);
 
     useEffect(() => {
         fetchFarmDetails();
@@ -383,11 +385,15 @@ const FarmDetailsPage = () => {
                                             <h3 className="font-semibold mb-3">Recent Violations</h3>
                                             <div className="space-y-2">
                                                 {compliance.recentViolations.map((violation, idx) => (
-                                                    <div key={idx} className="p-3 bg-red-50 rounded-lg border border-red-200">
+                                                    <div
+                                                        key={idx}
+                                                        className="p-3 bg-red-50 rounded-lg border border-red-200 cursor-pointer hover:bg-red-100 transition-colors"
+                                                        onClick={() => setSelectedViolation(violation)}
+                                                    >
                                                         <div className="flex items-start justify-between">
                                                             <div className="flex-1">
                                                                 <p className="font-medium text-red-900">{violation.alertType}</p>
-                                                                <p className="text-sm text-red-700 mt-1">{violation.description}</p>
+                                                                <p className="text-sm text-red-700 mt-1">{violation.message || 'No description available'}</p>
                                                             </div>
                                                             <Badge variant="destructive">{violation.severity}</Badge>
                                                         </div>
@@ -407,6 +413,156 @@ const FarmDetailsPage = () => {
                     </CardContent>
                 </Tabs>
             </Card>
+
+            {/* Violation Details Dialog */}
+            <Dialog open={!!selectedViolation} onOpenChange={() => setSelectedViolation(null)}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertCircle className="w-5 h-5" />
+                            MRL Violation Details
+                        </DialogTitle>
+                    </DialogHeader>
+                    {selectedViolation && (
+                        <div className="space-y-6">
+                            {/* Header Info */}
+                            <div className="grid grid-cols-2 gap-4 p-4 bg-red-50 rounded-lg">
+                                <div>
+                                    <p className="text-sm text-gray-600">Alert Type</p>
+                                    <p className="font-semibold text-red-900">{selectedViolation.alertType}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Severity</p>
+                                    <Badge variant="destructive" className="mt-1">{selectedViolation.severity}</Badge>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Status</p>
+                                    <Badge className="mt-1">{selectedViolation.status || 'NEW'}</Badge>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Risk Level</p>
+                                    <Badge className={`mt-1 ${selectedViolation.riskLevel === 'IMMEDIATE_ACTION' ? 'bg-red-600' :
+                                            selectedViolation.riskLevel === 'HIGH_PRIORITY' ? 'bg-orange-600' :
+                                                'bg-yellow-600'
+                                        }`}>{selectedViolation.riskLevel || 'MONITOR'}</Badge>
+                                </div>
+                            </div>
+
+                            {/* Message */}
+                            <div>
+                                <h4 className="font-semibold mb-2">Description</h4>
+                                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
+                                    {selectedViolation.message || 'No description available'}
+                                </p>
+                            </div>
+
+                            {/* Violation Details */}
+                            {selectedViolation.violationDetails && (
+                                <div>
+                                    <h4 className="font-semibold mb-3">Violation Details</h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {selectedViolation.violationDetails.animalName && (
+                                            <div className="p-3 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600">Animal</p>
+                                                <p className="font-medium">{selectedViolation.violationDetails.animalName}</p>
+                                                {selectedViolation.violationDetails.animalId && (
+                                                    <p className="text-xs text-gray-500 mt-1">ID: {selectedViolation.violationDetails.animalId}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                        {selectedViolation.violationDetails.drugName && (
+                                            <div className="p-3 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600">Drug</p>
+                                                <p className="font-medium">{selectedViolation.violationDetails.drugName}</p>
+                                                {selectedViolation.violationDetails.productType && (
+                                                    <p className="text-xs text-gray-500 mt-1">Type: {selectedViolation.violationDetails.productType}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                        {selectedViolation.violationDetails.residueLevel && (
+                                            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                                                <p className="text-sm text-gray-600">Residue Level</p>
+                                                <p className="font-bold text-red-600">{selectedViolation.violationDetails.residueLevel} ppb</p>
+                                                {selectedViolation.violationDetails.mrlLimit && (
+                                                    <p className="text-xs text-gray-600 mt-1">Limit: {selectedViolation.violationDetails.mrlLimit} ppb</p>
+                                                )}
+                                            </div>
+                                        )}
+                                        {selectedViolation.violationDetails.exceededBy && (
+                                            <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                                                <p className="text-sm text-gray-600">Exceeded By</p>
+                                                <p className="font-bold text-red-600">{selectedViolation.violationDetails.exceededBy} ppb</p>
+                                                {selectedViolation.violationDetails.percentageOver && (
+                                                    <p className="text-xs text-red-600 mt-1">{selectedViolation.violationDetails.percentageOver}% over limit</p>
+                                                )}
+                                            </div>
+                                        )}
+                                        {selectedViolation.violationDetails.testDate && (
+                                            <div className="p-3 bg-gray-50 rounded-lg">
+                                                <p className="text-sm text-gray-600">Test Date</p>
+                                                <p className="font-medium">{format(new Date(selectedViolation.violationDetails.testDate), 'MMM dd, yyyy')}</p>
+                                            </div>
+                                        )}
+                                        {selectedViolation.violationDetails.violationCount && (
+                                            <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                                <p className="text-sm text-gray-600">Violation Count</p>
+                                                <p className="font-bold text-orange-600">{selectedViolation.violationDetails.violationCount} violations</p>
+                                                {selectedViolation.violationDetails.timeWindow && (
+                                                    <p className="text-xs text-gray-600 mt-1">in {selectedViolation.violationDetails.timeWindow}</p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timestamps */}
+                            <div>
+                                <h4 className="font-semibold mb-3">Timeline</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                        <span className="text-sm text-gray-600">Created</span>
+                                        <span className="font-medium">{format(new Date(selectedViolation.createdAt), 'MMM dd, yyyy HH:mm')}</span>
+                                    </div>
+                                    {selectedViolation.acknowledgedAt && (
+                                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                            <span className="text-sm text-gray-600">Acknowledged</span>
+                                            <span className="font-medium">{format(new Date(selectedViolation.acknowledgedAt), 'MMM dd, yyyy HH:mm')}</span>
+                                        </div>
+                                    )}
+                                    {selectedViolation.resolvedAt && (
+                                        <div className="flex justify-between items-center p-2 bg-green-50 rounded">
+                                            <span className="text-sm text-gray-600">Resolved</span>
+                                            <span className="font-medium text-green-600">{format(new Date(selectedViolation.resolvedAt), 'MMM dd, yyyy HH:mm')}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Notes */}
+                            {(selectedViolation.investigationNotes || selectedViolation.resolutionNotes) && (
+                                <div>
+                                    <h4 className="font-semibold mb-3">Notes</h4>
+                                    <div className="space-y-2">
+                                        {selectedViolation.investigationNotes && (
+                                            <div className="p-3 bg-blue-50 rounded-lg">
+                                                <p className="text-sm font-medium text-blue-900 mb-1">Investigation Notes</p>
+                                                <p className="text-sm text-gray-700">{selectedViolation.investigationNotes}</p>
+                                            </div>
+                                        )}
+                                        {selectedViolation.resolutionNotes && (
+                                            <div className="p-3 bg-green-50 rounded-lg">
+                                                <p className="text-sm font-medium text-green-900 mb-1">Resolution Notes</p>
+                                                <p className="text-sm text-gray-700">{selectedViolation.resolutionNotes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };
