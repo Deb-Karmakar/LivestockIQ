@@ -47,6 +47,10 @@ export const getAllPrescriptions = async (req, res) => {
             Prescription.find(query)
                 .populate('vetId', 'fullName licenseNumber email')
                 .populate('farmerId', 'farmName farmOwner email')
+                .populate({
+                    path: 'treatmentId',
+                    select: 'drugName animalId vetSigned updatedAt'
+                })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .sort({ createdAt: -1 })
@@ -54,9 +58,20 @@ export const getAllPrescriptions = async (req, res) => {
             Prescription.countDocuments(query)
         ]);
 
+        // Map prescriptions to include treatment details at top level
+        const mappedPrescriptions = prescriptions.map(p => ({
+            ...p,
+            drugName: p.treatmentId?.drugName || p.drugName || 'Unknown Drug',
+            animalId: p.treatmentId?.animalId ? { tagId: p.treatmentId.animalId } : p.animalId,
+            digitalSignature: p.treatmentId?.vetSigned ? {
+                signedAt: p.treatmentId.updatedAt,
+                hasSignature: true
+            } : p.digitalSignature
+        }));
+
         res.status(200).json({
             success: true,
-            data: prescriptions,
+            data: mappedPrescriptions,
             pagination: {
                 currentPage: parseInt(page),
                 totalPages: Math.ceil(totalPrescriptions / parseInt(limit)),
@@ -86,6 +101,10 @@ export const getPrescriptionDetails = async (req, res) => {
         const prescription = await Prescription.findById(id)
             .populate('vetId', 'fullName licenseNumber email phoneNumber university degree cryptoKeys.publicKey')
             .populate('farmerId', 'farmName farmOwner email phoneNumber location')
+            .populate({
+                path: 'treatmentId',
+                select: 'drugName animalId vetSigned updatedAt dosage dosageUnit diagnosis instructions'
+            })
             .lean();
 
         if (!prescription) {
@@ -97,6 +116,8 @@ export const getPrescriptionDetails = async (req, res) => {
 
         // Check if digital signature exists and is valid
         let signatureVerification = null;
+
+        // Check either existing digitalSignature or treatment vetSigned status
         if (prescription.digitalSignature && prescription.vetId?.cryptoKeys?.publicKey) {
             signatureVerification = {
                 hasSignature: true,
@@ -105,14 +126,31 @@ export const getPrescriptionDetails = async (req, res) => {
                 signedAt: prescription.digitalSignature.signedAt,
                 signature: prescription.digitalSignature.signature
             };
+        } else if (prescription.treatmentId?.vetSigned) {
+            signatureVerification = {
+                hasSignature: true,
+                hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
+                signedBy: prescription.vetId?.fullName || 'Veterinarian',
+                signedAt: prescription.treatmentId.updatedAt,
+                signature: 'Verified via Treatment Record'
+            };
         }
+
+        // Map treatment details to top level
+        const mappedPrescription = {
+            ...prescription,
+            drugName: prescription.treatmentId?.drugName || prescription.drugName,
+            animalId: prescription.treatmentId?.animalId ? { tagId: prescription.treatmentId.animalId } : prescription.animalId,
+            dosage: prescription.treatmentId?.dosage || prescription.dosage,
+            dosageUnit: prescription.treatmentId?.dosageUnit || prescription.dosageUnit,
+            diagnosis: prescription.treatmentId?.diagnosis || prescription.diagnosis,
+            instructions: prescription.treatmentId?.instructions || prescription.instructions,
+            signatureVerification
+        };
 
         res.status(200).json({
             success: true,
-            data: {
-                ...prescription,
-                signatureVerification
-            }
+            data: mappedPrescription
         });
     } catch (error) {
         console.error('Error in getPrescriptionDetails:', error);
