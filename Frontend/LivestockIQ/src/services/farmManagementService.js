@@ -65,3 +65,16 @@ export const getFarmCompliance = async (farmId) => {
         throw error.response?.data || error;
     }
 };
+
+/**
+ * Get medicated feed batches for a farm
+ */
+export const getFarmFeedBatches = async (farmId, params = {}) => {
+    try {
+        const response = await axiosInstance.get(`${FARMS_BASE}/${farmId}/feed-batches`, { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching farm feed batches:', error);
+        throw error.response?.data || error;
+    }
+};

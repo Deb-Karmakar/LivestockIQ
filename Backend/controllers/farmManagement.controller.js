@@ -379,3 +379,71 @@ export const getFarmCompliance = async (req, res) => {
         });
     }
 };
+
+/**
+ * @desc    Get medicated feed batches for a farm
+ * @route   GET /api/regulator/farms/:id/feed-batches
+ * @access  Private (Regulator)
+ */
+export const getFarmFeedBatches = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, page = 1, limit = 50 } = req.query;
+
+        // Verify farm exists
+        const farm = await Farmer.findById(id);
+        if (!farm) {
+            return res.status(404).json({
+                success: false,
+                message: 'Farm not found'
+            });
+        }
+
+        // Build query
+        const query = { farmerId: id };
+        if (status) query.status = status;
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const [feedBatches, totalBatches] = await Promise.all([
+            FeedAdministration.find(query)
+                .populate('feedId', 'feedName antimicrobialName antimicrobialConcentration withdrawalPeriodDays isMedicated')
+                .skip(skip)
+                .limit(parseInt(limit))
+                .sort({ administrationDate: -1 })
+                .lean(),
+            FeedAdministration.countDocuments(query)
+        ]);
+
+        // For each batch, get animal details
+        const batchesWithAnimals = await Promise.all(feedBatches.map(async (batch) => {
+            const animals = await Animal.find({
+                farmerId: id,
+                tagId: { $in: batch.animalIds }
+            }).select('tagId name species mrlStatus').lean();
+
+            return {
+                ...batch,
+                animals
+            };
+        }));
+
+        res.status(200).json({
+            success: true,
+            data: batchesWithAnimals,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(totalBatches / parseInt(limit)),
+                totalItems: totalBatches,
+                itemsPerPage: parseInt(limit)
+            }
+        });
+    } catch (error) {
+        console.error('Error in getFarmFeedBatches:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch farm feed batches',
+            error: error.message
+        });
+    }
+};

@@ -71,11 +71,6 @@ const VetsPage = () => {
         vet.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const getComplianceBadge = (rate) => {
-        if (rate >= 90) return <Badge className="bg-green-500">Excellent</Badge>;
-        if (rate >= 70) return <Badge className="bg-yellow-500">Good</Badge>;
-        return <Badge variant="destructive">Needs Attention</Badge>;
-    };
 
     if (loading) {
         return (
@@ -196,12 +191,6 @@ const VetsPage = () => {
                                 </div>
                             </div>
 
-                            <div className="pt-2 border-t">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs text-gray-500">Compliance</span>
-                                    {getComplianceBadge(vet.statistics?.complianceRate || 100)}
-                                </div>
-                            </div>
                         </CardContent>
                     </Card>
                 ))}

@@ -6,7 +6,8 @@ import {
     getFarmDetails,
     getFarmAnimals,
     getFarmTreatments,
-    getFarmCompliance
+    getFarmCompliance,
+    getFarmFeedBatches
 } from '../controllers/farmManagement.controller.js';
 import { protect, protectRegulator } from '../middlewares/auth.middleware.js';
 
@@ -21,5 +22,6 @@ router.get('/:id', getFarmDetails);
 router.get('/:id/animals', getFarmAnimals);
 router.get('/:id/treatments', getFarmTreatments);
 router.get('/:id/compliance', getFarmCompliance);
+router.get('/:id/feed-batches', getFarmFeedBatches);
 
 export default router;

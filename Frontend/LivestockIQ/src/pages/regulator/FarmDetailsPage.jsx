@@ -2,7 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Building2, ArrowLeft, MapPin, Phone, Mail, Users, Activity, AlertCircle, FileText, PawPrint, X } from 'lucide-react';
+import {
+    Building2,
+    ArrowLeft,
+    MapPin,
+    Phone,
+    Mail,
+    Users,
+    Activity,
+    AlertCircle,
+    FileText,
+    PawPrint,
+    X,
+    Wheat
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +23,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { getFarmDetails, getFarmAnimals, getFarmTreatments, getFarmCompliance } from '@/services/farmManagementService';
+import {
+    getFarmDetails,
+    getFarmAnimals,
+    getFarmTreatments,
+    getFarmCompliance,
+    getFarmFeedBatches
+} from '@/services/farmManagementService';
 import { format } from 'date-fns';
 
 const FarmDetailsPage = () => {
@@ -23,6 +42,7 @@ const FarmDetailsPage = () => {
     const [animals, setAnimals] = useState([]);
     const [treatments, setTreatments] = useState([]);
     const [compliance, setCompliance] = useState(null);
+    const [feedBatches, setFeedBatches] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [selectedViolation, setSelectedViolation] = useState(null);
 
@@ -34,6 +54,7 @@ const FarmDetailsPage = () => {
         if (activeTab === 'animals') fetchAnimals();
         if (activeTab === 'treatments') fetchTreatments();
         if (activeTab === 'compliance') fetchCompliance();
+        if (activeTab === 'feed-batches') fetchFeedBatches();
     }, [activeTab]);
 
     const fetchFarmDetails = async () => {
@@ -75,15 +96,13 @@ const FarmDetailsPage = () => {
         }
     };
 
-    const getMRLBadge = (status) => {
-        const badges = {
-            'SAFE': <Badge className="bg-green-500">Safe</Badge>,
-            'WITHDRAWAL_ACTIVE': <Badge className="bg-yellow-500">Withdrawal</Badge>,
-            'TEST_REQUIRED': <Badge className="bg-orange-500">Test Required</Badge>,
-            'PENDING_VERIFICATION': <Badge className="bg-blue-500">Pending</Badge>,
-            'VIOLATION': <Badge variant="destructive">Violation</Badge>
-        };
-        return badges[status] || <Badge>Unknown</Badge>;
+    const fetchFeedBatches = async () => {
+        try {
+            const response = await getFarmFeedBatches(id, { page: 1, limit: 50 });
+            setFeedBatches(response.data);
+        } catch (error) {
+            console.error('Error fetching feed batches:', error);
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -278,6 +297,10 @@ const FarmDetailsPage = () => {
                                 <FileText className="w-4 h-4 mr-2" />
                                 Compliance
                             </TabsTrigger>
+                            <TabsTrigger value="feed-batches">
+                                <Wheat className="w-4 h-4 mr-2" />
+                                Feed Batches
+                            </TabsTrigger>
                         </TabsList>
                     </CardHeader>
 
@@ -410,6 +433,86 @@ const FarmDetailsPage = () => {
                                 <p className="text-center text-gray-500 py-8">Loading compliance data...</p>
                             )}
                         </TabsContent>
+
+                        {/* Feed Batches Tab Content (inserted) */}
+                        <TabsContent value="feed-batches" className="mt-0">
+                            {feedBatches.length > 0 ? (
+                                <div className="space-y-4">
+                                    {feedBatches.map((batch, idx) => (
+                                        <Card key={batch._id} className="border border-gray-200">
+                                            <CardHeader className="bg-gradient-to-r from-amber-50 to-white border-b">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <CardTitle className="text-lg flex items-center gap-2">
+                                                            <Wheat className="w-5 h-5 text-amber-600" />
+                                                            {batch.feedId?.feedName || 'Unknown Feed'}
+                                                        </CardTitle>
+                                                        <p className="text-sm text-gray-600 mt-1">Batch #{idx + 1} • {batch.groupName || 'Unnamed Group'}</p>
+                                                    </div>
+                                                    <Badge className={
+                                                        batch.status === 'Active' ? 'bg-green-500' :
+                                                            batch.status === 'Completed' ? 'bg-blue-500' : 'bg-yellow-500'
+                                                    }>
+                                                        {batch.status}
+                                                    </Badge>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="p-4">
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                                                    <div className="p-3 bg-gray-50 rounded-lg">
+                                                        <p className="text-xs text-gray-500">Antimicrobial</p>
+                                                        <p className="font-medium">{batch.feedId?.antimicrobialName || 'N/A'}</p>
+                                                    </div>
+                                                    <div className="p-3 bg-gray-50 rounded-lg">
+                                                        <p className="text-xs text-gray-500">Feed Quantity</p>
+                                                        <p className="font-medium">{batch.feedQuantityUsed} kg</p>
+                                                    </div>
+                                                    <div className="p-3 bg-gray-50 rounded-lg">
+                                                        <p className="text-xs text-gray-500">Animals</p>
+                                                        <p className="font-medium">{batch.numberOfAnimals}</p>
+                                                    </div>
+                                                    <div className="p-3 bg-gray-50 rounded-lg">
+                                                        <p className="text-xs text-gray-500">Start Date</p>
+                                                        <p className="font-medium">{format(new Date(batch.startDate), 'MMM dd, yyyy')}</p>
+                                                    </div>
+                                                </div>
+
+                                                {batch.withdrawalEndDate && (
+                                                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
+                                                        <p className="text-sm font-medium text-yellow-900">Withdrawal Period Ends: {format(new Date(batch.withdrawalEndDate), 'MMM dd, yyyy')}</p>
+                                                    </div>
+                                                )}
+
+                                                <div>
+                                                    <h4 className="font-semibold mb-2 flex items-center gap-2">
+                                                        <PawPrint className="w-4 h-4" />
+                                                        Animals in this Batch ({batch.animals?.length || 0})
+                                                    </h4>
+                                                    {batch.animals?.length > 0 ? (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                            {batch.animals.map((animal) => (
+                                                                <div key={animal._id} className="p-2 bg-white border rounded-lg hover:shadow-sm transition-shadow">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <div>
+                                                                            <p className="font-medium text-sm">{animal.tagId}</p>
+                                                                            <p className="text-xs text-gray-600">{animal.name} • {animal.species}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm text-gray-500">No animal details available</p>
+                                                    )}
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-center text-gray-500 py-8">No feed batch data available</p>
+                            )}
+                        </TabsContent>
                     </CardContent>
                 </Tabs>
             </Card>
@@ -442,8 +545,8 @@ const FarmDetailsPage = () => {
                                 <div>
                                     <p className="text-sm text-gray-600">Risk Level</p>
                                     <Badge className={`mt-1 ${selectedViolation.riskLevel === 'IMMEDIATE_ACTION' ? 'bg-red-600' :
-                                            selectedViolation.riskLevel === 'HIGH_PRIORITY' ? 'bg-orange-600' :
-                                                'bg-yellow-600'
+                                        selectedViolation.riskLevel === 'HIGH_PRIORITY' ? 'bg-orange-600' :
+                                            'bg-yellow-600'
                                         }`}>{selectedViolation.riskLevel || 'MONITOR'}</Badge>
                                 </div>
                             </div>
