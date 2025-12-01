@@ -51,6 +51,10 @@ export const getAllPrescriptions = async (req, res) => {
                     path: 'treatmentId',
                     select: 'drugName animalId vetSigned updatedAt'
                 })
+                .populate({
+                    path: 'feedAdministrationId',
+                    populate: { path: 'feedId', select: 'antimicrobialName' }
+                })
                 .skip(skip)
                 .limit(parseInt(limit))
                 .sort({ createdAt: -1 })
@@ -58,16 +62,48 @@ export const getAllPrescriptions = async (req, res) => {
             Prescription.countDocuments(query)
         ]);
 
-        // Map prescriptions to include treatment details at top level
-        const mappedPrescriptions = prescriptions.map(p => ({
-            ...p,
-            drugName: p.treatmentId?.drugName || p.drugName || 'Unknown Drug',
-            animalId: p.treatmentId?.animalId ? { tagId: p.treatmentId.animalId } : p.animalId,
-            digitalSignature: p.treatmentId?.vetSigned ? {
-                signedAt: p.treatmentId.updatedAt,
-                hasSignature: true
-            } : p.digitalSignature
-        }));
+        // Map prescriptions to include treatment/feed details at top level
+        const mappedPrescriptions = prescriptions.map(p => {
+            let drugName = 'Unknown Drug';
+            let animalId = null;
+            let digitalSignature = p.digitalSignature;
+
+            if (p.treatmentId) {
+                drugName = p.treatmentId.drugName || p.drugName;
+                animalId = p.treatmentId.animalId ? { tagId: p.treatmentId.animalId } : p.animalId;
+                if (p.treatmentId.vetSigned) {
+                    digitalSignature = {
+                        signedAt: p.treatmentId.updatedAt,
+                        hasSignature: true
+                    };
+                }
+            } else if (p.feedAdministrationId) {
+                drugName = p.feedAdministrationId.feedId?.antimicrobialName || 'Feed Medication';
+                // For feed, show list of animal IDs or count if too many
+                const animalIds = p.feedAdministrationId.animalIds || [];
+                const display = animalIds.length > 5
+                    ? `${animalIds.slice(0, 5).join(', ')}... (+${animalIds.length - 5} more)`
+                    : animalIds.join(', ');
+                animalId = { tagId: display };
+                // Feed admins are vet approved by definition if they are here (mostly)
+                if (p.feedAdministrationId.vetApproved) {
+                    digitalSignature = {
+                        signedAt: p.feedAdministrationId.vetApprovalDate,
+                        hasSignature: true
+                    };
+                }
+            } else {
+                drugName = p.drugName;
+                animalId = p.animalId;
+            }
+
+            return {
+                ...p,
+                drugName,
+                animalId,
+                digitalSignature
+            };
+        });
 
         res.status(200).json({
             success: true,
@@ -105,6 +141,10 @@ export const getPrescriptionDetails = async (req, res) => {
                 path: 'treatmentId',
                 select: 'drugName animalId vetSigned updatedAt dosage dosageUnit diagnosis instructions'
             })
+            .populate({
+                path: 'feedAdministrationId',
+                populate: { path: 'feedId', select: 'antimicrobialName antimicrobialConcentration unit' }
+            })
             .lean();
 
         if (!prescription) {
@@ -134,19 +174,36 @@ export const getPrescriptionDetails = async (req, res) => {
                 signedAt: prescription.treatmentId.updatedAt,
                 signature: 'Verified via Treatment Record'
             };
+        } else if (prescription.feedAdministrationId?.vetApproved) {
+            signatureVerification = {
+                hasSignature: true,
+                hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
+                signedBy: prescription.vetId?.fullName || 'Veterinarian',
+                signedAt: prescription.feedAdministrationId.vetApprovalDate,
+                signature: 'Verified via Feed Approval'
+            };
         }
 
-        // Map treatment details to top level
-        const mappedPrescription = {
-            ...prescription,
-            drugName: prescription.treatmentId?.drugName || prescription.drugName,
-            animalId: prescription.treatmentId?.animalId ? { tagId: prescription.treatmentId.animalId } : prescription.animalId,
-            dosage: prescription.treatmentId?.dosage || prescription.dosage,
-            dosageUnit: prescription.treatmentId?.dosageUnit || prescription.dosageUnit,
-            diagnosis: prescription.treatmentId?.diagnosis || prescription.diagnosis,
-            instructions: prescription.treatmentId?.instructions || prescription.instructions,
-            signatureVerification
-        };
+        // Map details
+        let mappedPrescription = { ...prescription, signatureVerification };
+
+        if (prescription.treatmentId) {
+            mappedPrescription.drugName = prescription.treatmentId.drugName;
+            mappedPrescription.animalId = { tagId: prescription.treatmentId.animalId };
+            mappedPrescription.dosage = prescription.treatmentId.dosage;
+            mappedPrescription.dosageUnit = prescription.treatmentId.dosageUnit;
+            mappedPrescription.diagnosis = prescription.treatmentId.diagnosis;
+            mappedPrescription.instructions = prescription.treatmentId.instructions;
+        } else if (prescription.feedAdministrationId) {
+            mappedPrescription.drugName = prescription.feedAdministrationId.feedId?.antimicrobialName;
+            const animalIds = prescription.feedAdministrationId.animalIds || [];
+            // Show all animals in details view
+            mappedPrescription.animalId = { tagId: animalIds.join(', ') };
+            mappedPrescription.dosage = prescription.feedAdministrationId.antimicrobialDoseTotal;
+            mappedPrescription.dosageUnit = 'mg (Total)';
+            mappedPrescription.diagnosis = 'Feed Medication';
+            mappedPrescription.instructions = prescription.feedAdministrationId.notes;
+        }
 
         res.status(200).json({
             success: true,
