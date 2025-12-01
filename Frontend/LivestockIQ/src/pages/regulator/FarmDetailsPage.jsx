@@ -290,7 +290,6 @@ const FarmDetailsPage = () => {
                                             <TableHead>Species</TableHead>
                                             <TableHead>Gender</TableHead>
                                             <TableHead>Status</TableHead>
-                                            <TableHead>MRL Status</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -305,7 +304,6 @@ const FarmDetailsPage = () => {
                                                         {animal.status}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell>{getMRLBadge(animal.mrlStatus)}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -322,23 +320,19 @@ const FarmDetailsPage = () => {
                                         <TableRow>
                                             <TableHead>Animal</TableHead>
                                             <TableHead>Drug</TableHead>
-                                            <TableHead>Type</TableHead>
                                             <TableHead>Date</TableHead>
                                             <TableHead>Status</TableHead>
-                                            <TableHead>Vet</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {treatments.map((treatment) => (
                                             <TableRow key={treatment._id}>
                                                 <TableCell className="font-medium">
-                                                    {treatment.animalId?.tagId || 'N/A'}
+                                                    {treatment.animalId || 'N/A'}
                                                 </TableCell>
                                                 <TableCell>{treatment.drugName}</TableCell>
-                                                <TableCell>{treatment.drugType}</TableCell>
                                                 <TableCell>{format(new Date(treatment.createdAt), 'MMM dd, yyyy')}</TableCell>
                                                 <TableCell>{getStatusBadge(treatment.status)}</TableCell>
-                                                <TableCell>{treatment.vetId?.fullName || 'N/A'}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
