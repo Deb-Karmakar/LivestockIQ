@@ -11,3 +11,13 @@ export const getAnimalHealthTip = async (animalId) => {
         throw error;
     }
 };
+
+export const getRegulatorInsights = async () => {
+    try {
+        const { data } = await axiosInstance.post('/ai/regulator-insights');
+        return data; // Returns { insights: "..." }
+    } catch (error) {
+        console.error("Error fetching regulator insights:", error);
+        throw error;
+    }
+};

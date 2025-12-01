@@ -3,7 +3,7 @@
 import { groq } from "../config/groq.js";
 import Animal from "../models/animal.model.js";
 import Treatment from "../models/treatment.model.js";
-import { format } from "date-fns";
+import { format, subMonths } from "date-fns";
 
 export const generateHealthTip = async (req, res) => {
   try {
@@ -33,8 +33,7 @@ export const generateHealthTip = async (req, res) => {
         treatments
           .map(
             (t) =>
-              `- Treated for "${t.notes || t.drugName}" with ${
-                t.drugName
+              `- Treated for "${t.notes || t.drugName}" with ${t.drugName
               } on ${format(new Date(t.startDate), "PPP")}.`
           )
           .join("\n");
@@ -83,5 +82,94 @@ export const generateHealthTip = async (req, res) => {
     res
       .status(500)
       .json({ message: "Failed to generate AI health tip from Groq." });
+  }
+};
+
+export const generateRegulatorInsights = async (req, res) => {
+  try {
+    const twelveMonthsAgo = subMonths(new Date(), 12);
+
+    // 1. Fetch Trend Data (Reusing logic from regulator.controller.js)
+    const [amuByDrugRaw, amuBySpeciesRaw] = await Promise.all([
+      Treatment.aggregate([
+        { $match: { status: 'Approved', startDate: { $gte: twelveMonthsAgo } } },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$startDate' },
+              month: { $month: '$startDate' },
+              drugName: '$drugName'
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ]),
+      Treatment.aggregate([
+        { $match: { status: 'Approved', startDate: { $gte: twelveMonthsAgo } } },
+        {
+          $lookup: {
+            from: 'animals',
+            localField: 'animalId',
+            foreignField: 'tagId',
+            as: 'animalInfo'
+          }
+        },
+        { $unwind: '$animalInfo' },
+        {
+          $group: {
+            _id: {
+              year: { $year: '$startDate' },
+              month: { $month: '$startDate' },
+              species: '$animalInfo.species'
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { '_id.year': 1, '_id.month': 1 } }
+      ])
+    ]);
+
+    // 2. Format Data for AI
+    const drugSummary = amuByDrugRaw.map(d =>
+      `${d._id.drugName} (${d._id.month}/${d._id.year}): ${d.count}`
+    ).join(', ');
+
+    const speciesSummary = amuBySpeciesRaw.map(s =>
+      `${s._id.species} (${s._id.month}/${s._id.year}): ${s.count}`
+    ).join(', ');
+
+    const contextForAI = `
+      AMU by Drug (Last 12 Months): ${drugSummary}
+      AMU by Species (Last 12 Months): ${speciesSummary}
+    `;
+
+    // 3. Build Prompt
+    const systemPrompt = `You are an expert veterinary epidemiologist and regulatory advisor. 
+    Analyze the provided Antimicrobial Usage (AMU) data. 
+    Identify key trends, potential resistance risks (e.g., spikes in specific drugs), and provide 3 actionable recommendations for the regulator.
+    Format your response in Markdown with headers: ## Key Trends, ## Risk Assessment, ## Recommendations.`;
+
+    const fullPrompt = `${systemPrompt}\n\nDATA:\n${contextForAI}`;
+
+    // 4. Call Groq
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: fullPrompt }],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const insights = response.choices[0]?.message?.content?.trim();
+
+    if (!insights) {
+      return res.json({ insights: "Unable to generate insights at this time." });
+    }
+
+    res.json({ insights });
+
+  } catch (error) {
+    console.error("Error generating regulator insights:", error);
+    res.status(500).json({ message: "Failed to generate AI insights." });
   }
 };

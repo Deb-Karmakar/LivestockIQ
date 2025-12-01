@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useToast } from '../../hooks/use-toast';
 import { getTrendData } from '../../services/regulatorService';
-import { Syringe, PawPrint, Sparkles } from 'lucide-react';
+import { getRegulatorInsights } from '../../services/aiService';
+import { Button } from "@/components/ui/button";
+import { Syringe, PawPrint, Sparkles, BrainCircuit } from 'lucide-react';
 
 const generateColor = (index) => {
     const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
@@ -15,6 +17,8 @@ const generateColor = (index) => {
 const TrendsPage = () => {
     const [trendData, setTrendData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [insights, setInsights] = useState(null);
+    const [generatingInsights, setGeneratingInsights] = useState(false);
     const { toast } = useToast();
 
     const fetchData = useCallback(async () => {
@@ -32,6 +36,19 @@ const TrendsPage = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    const handleGenerateInsights = async () => {
+        try {
+            setGeneratingInsights(true);
+            const data = await getRegulatorInsights();
+            setInsights(data.insights);
+            toast({ title: "Insights Generated", description: "AI analysis complete." });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to generate insights." });
+        } finally {
+            setGeneratingInsights(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -74,8 +91,45 @@ const TrendsPage = () => {
                             Analyze antimicrobial usage patterns over the last 12 months. Track drug types and species-specific trends.
                         </p>
                     </div>
+                    <Button
+                        onClick={handleGenerateInsights}
+                        disabled={generatingInsights}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                        {generatingInsights ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                Analyzing...
+                            </>
+                        ) : (
+                            <>
+                                <BrainCircuit className="w-4 h-4 mr-2" />
+                                Generate AI Insights
+                            </>
+                        )}
+                    </Button>
                 </div>
             </div>
+
+            {/* AI Insights Card */}
+            {insights && (
+                <Card className="border-0 shadow-lg bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-l-indigo-500">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-indigo-900">
+                            <BrainCircuit className="w-6 h-6 text-indigo-600" />
+                            AI Strategic Analysis
+                        </CardTitle>
+                        <CardDescription className="text-indigo-700">
+                            Automated analysis of AMU trends and risk assessment
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="prose prose-indigo max-w-none p-6 pt-0">
+                        <div className="whitespace-pre-wrap text-slate-700 leading-relaxed">
+                            {insights}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Charts */}
             <Card className="border-0 shadow-lg">
