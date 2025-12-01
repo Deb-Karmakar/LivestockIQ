@@ -15,20 +15,25 @@ import {
     Users2,
     AlertCircle,
     FileCheck,
-    HelpCircle
+    HelpCircle,
+    Building2,
+    Stethoscope
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
 
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/regulator/dashboard', icon: LayoutDashboard },
+    { name: 'Farms', path: '/regulator/farms', icon: Building2 },
+    { name: 'Vets', path: '/regulator/vets', icon: Stethoscope },
     { name: 'Compliance', path: '/regulator/compliance', icon: ClipboardCheck },
     { name: 'Trends', path: '/regulator/trends', icon: TrendingUp },
-    { name: 'Demographics', path: '/regulator/demographics', icon: Users2 },
-    { name: 'Map View', path: '/regulator/map', icon: Map },
 ];
 
 const secondaryNavLinks = [
+    { name: 'Demographics', path: '/regulator/demographics', icon: Users2 },
+    { name: 'Map View', path: '/regulator/map', icon: Map },
+    { name: 'Prescriptions', path: '/regulator/prescriptions', icon: FileText },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
@@ -59,7 +64,7 @@ const Sidebar = () => {
     return (
         <aside className="hidden md:flex md:flex-col md:w-64 bg-white border-r">
             <div className="px-6 py-4"><h1 className="text-2xl font-bold text-green-700">LivestockIQ</h1></div>
-            <nav className="flex-1 px-4 py-2 space-y-2">
+            <nav className="flex-1 px-4 py-2 space-y-2 overflow-y-auto">
                 {allNavLinks.map(link => (
                     <NavLink
                         key={link.name}
@@ -101,14 +106,14 @@ const MobileHeader = () => {
                     <h2 className="font-semibold">Menu</h2>
                     <Button variant="ghost" size="icon" onClick={() => setIsDrawerOpen(false)}><X className="w-6 h-6" /></Button>
                 </div>
-                <nav className="p-4 space-y-2">
-                    {secondaryNavLinks.map(link => (
+                <nav className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 120px)' }}>
+                    {allNavLinks.map(link => (
                         <NavLink key={link.name} to={link.path} className={({ isActive }) => `flex items-center px-4 py-2 text-gray-700 rounded-lg ${isActive ? 'bg-slate-100 text-slate-900 font-semibold' : 'hover:bg-gray-100'}`}>
                             <link.icon className="w-5 h-5 mr-3" />{link.name}
                         </NavLink>
                     ))}
                 </nav>
-                <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
+                <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-white">
                     <button onClick={logout} className="flex items-center w-full px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
                         <LogOut className="w-5 h-5 mr-3" />Logout
                     </button>
@@ -130,8 +135,8 @@ const BottomNav = () => (
                         }`
                     }
                 >
-                    <link.icon className="w-6 h-6 mb-1" />
-                    <span>{link.name}</span>
+                    <link.icon className="w-5 h-5 mb-1" />
+                    <span className="truncate px-1">{link.name}</span>
                 </NavLink>
             ))}
         </div>

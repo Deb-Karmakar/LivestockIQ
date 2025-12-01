@@ -63,6 +63,11 @@ import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPage from "./pages/regulator/DemographicsPage";
 import RegulatorAlertsPage from "./pages/regulator/RegulatorAlertsPage";
 import MRLVerificationsPage from "./pages/regulator/MRLVerificationsPage";
+import FarmsPage from "./pages/regulator/FarmsPage";
+import FarmDetailsPage from "./pages/regulator/FarmDetailsPage";
+import VetsPage from "./pages/regulator/VetsPage";
+import VetDetailsPage from "./pages/regulator/VetDetailsPage";
+import PrescriptionsPage from "./pages/regulator/PrescriptionsPage";
 
 // --- Google Analytics Integration ---
 
@@ -241,6 +246,11 @@ function App() {
                 <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
                 <Route path="support/history" element={<TicketHistoryPage />} />
                 <Route path="verifications" element={<MRLVerificationsPage />} />
+                <Route path="farms" element={<FarmsPage />} />
+                <Route path="farms/:id" element={<FarmDetailsPage />} />
+                <Route path="vets" element={<VetsPage />} />
+                <Route path="vets/:id" element={<VetDetailsPage />} />
+                <Route path="prescriptions" element={<PrescriptionsPage />} />
                 <Route path="trends" element={<TrendsPage />} />
                 <Route path="demographics" element={<DemographicsPage />} />
                 <Route path="map" element={<MapViewPage />} />

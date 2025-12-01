@@ -25,6 +25,9 @@ import regulatorAlertsRoutes from './routes/regulatorAlerts.routes.js';
 import feedRoutes from './routes/feed.routes.js';
 import feedAdministrationRoutes from './routes/feedAdministration.routes.js';
 import ticketRoutes from './routes/ticket.routes.js';
+import farmManagementRoutes from './routes/farmManagement.routes.js';
+import vetManagementRoutes from './routes/vetManagement.routes.js';
+import prescriptionReviewRoutes from './routes/prescriptionReview.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -86,6 +89,9 @@ app.use('/api/regulator', regulatorAlertsRoutes); // Regulator alert system rout
 app.use('/api/feed', feedRoutes); // Feed inventory management routes
 app.use('/api/feed-admin', feedAdministrationRoutes); // Feed administration tracking routes
 app.use('/api/tickets', ticketRoutes); // Support ticket system routes
+app.use('/api/regulator/farms', farmManagementRoutes); // Farm management for regulators
+app.use('/api/regulator/vets', vetManagementRoutes); // Vet management for regulators
+app.use('/api/regulator/prescriptions', prescriptionReviewRoutes); // Prescription review for regulators
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported
