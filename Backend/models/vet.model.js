@@ -40,6 +40,8 @@ const vetSchema = new mongoose.Schema({
     location: {
         latitude: { type: Number },
         longitude: { type: Number },
+        state: { type: String },
+        district: { type: String }
     },
     status: { type: String, enum: ['Active', 'Suspended'], default: 'Active' },
 }, { timestamps: true });

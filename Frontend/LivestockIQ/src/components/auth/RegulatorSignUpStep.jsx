@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,14 +7,23 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft } from 'lucide-react';
+import districtsData from '@/data/districts';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const RegulatorSignUpStep = ({ onBack }) => {
-    // In the future, you'll create this function in your AuthContext
     const { registerRegulator } = useAuth();
+    const [selectedState, setSelectedState] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('');
 
     const handleSignUp = async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
 
@@ -23,11 +32,13 @@ const RegulatorSignUpStep = ({ onBack }) => {
             return;
         }
 
-        // This will be implemented in your AuthContext later
         if (registerRegulator) {
-             await registerRegulator(data);
+            await registerRegulator({
+                ...data,
+                state: selectedState,
+                district: selectedDistrict
+            });
         } else {
-            // Placeholder for now
             alert("Regulator registration is not yet implemented in the backend.");
         }
     };
@@ -66,6 +77,46 @@ const RegulatorSignUpStep = ({ onBack }) => {
                                     <Label htmlFor="jurisdiction">Jurisdiction</Label>
                                     <Input id="jurisdiction" name="jurisdiction" placeholder="e.g., State of Maharashtra" required />
                                 </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="state">State</Label>
+                                    <Select
+                                        onValueChange={(value) => {
+                                            setSelectedState(value);
+                                            setSelectedDistrict('');
+                                        }}
+                                        value={selectedState}
+                                    >
+                                        <SelectTrigger id="state">
+                                            <SelectValue placeholder="Select State" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Object.keys(districtsData).map((state) => (
+                                                <SelectItem key={state} value={state}>
+                                                    {state}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="district">District</Label>
+                                    <Select
+                                        onValueChange={setSelectedDistrict}
+                                        value={selectedDistrict}
+                                        disabled={!selectedState}
+                                    >
+                                        <SelectTrigger id="district">
+                                            <SelectValue placeholder="Select District" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {selectedState && districtsData[selectedState]?.map((district) => (
+                                                <SelectItem key={district} value={district}>
+                                                    {district}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </div>
                         <Separator />
@@ -77,7 +128,7 @@ const RegulatorSignUpStep = ({ onBack }) => {
                                     <Label htmlFor="email">Official Email Address</Label>
                                     <Input id="email" name="email" type="email" required />
                                 </div>
-                                 <div className="space-y-2">
+                                <div className="space-y-2">
                                     <Label htmlFor="phoneNumber">Phone Number</Label>
                                     <Input id="phoneNumber" name="phoneNumber" type="tel" />
                                 </div>
@@ -90,7 +141,7 @@ const RegulatorSignUpStep = ({ onBack }) => {
                                     <Input id="confirmPassword" name="confirmPassword" type="password" required />
                                 </div>
                             </div>
-                             <div className="items-top flex space-x-2 mt-4">
+                            <div className="items-top flex space-x-2 mt-4">
                                 <Checkbox id="terms" required />
                                 <div className="grid gap-1.5 leading-none">
                                     <label htmlFor="terms" className="text-sm font-medium">

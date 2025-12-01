@@ -11,6 +11,8 @@ const regulatorSchema = new mongoose.Schema({
     agencyName: { type: String, required: true },
     regulatorId: { type: String, required: true, unique: true },
     jurisdiction: { type: String, required: true },
+    state: { type: String },
+    district: { type: String },
     notificationPrefs: {
         highAmuAlerts: { type: Boolean, default: true },
         vetComplianceReports: { type: Boolean, default: true },

@@ -89,7 +89,7 @@ export const registerVet = async (req, res) => {
 
 // NEW: Function to register a new Regulator
 export const registerRegulator = async (req, res) => {
-    const { fullName, email, password, agencyName, regulatorId, jurisdiction, phoneNumber } = req.body;
+    const { fullName, email, password, agencyName, regulatorId, jurisdiction, phoneNumber, state, district } = req.body;
 
     try {
         const regulatorExists = await Regulator.findOne({ email });
@@ -98,7 +98,7 @@ export const registerRegulator = async (req, res) => {
         }
 
         const regulator = await Regulator.create({
-            fullName, email, password, agencyName, regulatorId, jurisdiction, phoneNumber
+            fullName, email, password, agencyName, regulatorId, jurisdiction, phoneNumber, state, district
         });
 
         if (regulator) {

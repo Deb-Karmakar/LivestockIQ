@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, CalendarIcon, MapPin, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import districtsData from '@/data/districts';
 
 const VetSignUpStep = ({ onBack }) => {
     const { registerVet } = useAuth();
@@ -18,6 +19,8 @@ const VetSignUpStep = ({ onBack }) => {
     const [location, setLocation] = useState(null);
     const [locationStatus, setLocationStatus] = useState('idle'); // idle, loading, success, error
     const [locationError, setLocationError] = useState('');
+    const [selectedState, setSelectedState] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('');
 
     // Fetch location when component mounts
     useEffect(() => {
@@ -47,8 +50,8 @@ const VetSignUpStep = ({ onBack }) => {
             (error) => {
                 setLocationStatus('error');
                 let errorMessage = 'Unable to fetch location';
-                
-                switch(error.code) {
+
+                switch (error.code) {
                     case error.PERMISSION_DENIED:
                         errorMessage = 'Location access denied. Please enable location permissions.';
                         break;
@@ -61,7 +64,7 @@ const VetSignUpStep = ({ onBack }) => {
                     default:
                         errorMessage = 'An unknown error occurred';
                 }
-                
+
                 setLocationError(errorMessage);
                 console.error('Geolocation error:', error);
             },
@@ -75,7 +78,7 @@ const VetSignUpStep = ({ onBack }) => {
 
     const handleSignUp = async (e) => {
         e.preventDefault();
-        
+
         // Collect all form data using their 'name' attributes
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
@@ -97,7 +100,11 @@ const VetSignUpStep = ({ onBack }) => {
         await registerVet({
             ...data,
             dob: dob,
-            location: location || null, // Include location if available
+            location: {
+                ...(location || {}),
+                state: selectedState,
+                district: selectedDistrict
+            }
         });
     };
 
@@ -138,10 +145,10 @@ const VetSignUpStep = ({ onBack }) => {
                                 )}
                             </div>
                             {locationStatus === 'error' && (
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    size="sm" 
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={fetchLocation}
                                     className="mt-2"
                                 >
@@ -153,6 +160,50 @@ const VetSignUpStep = ({ onBack }) => {
                                     Coordinates: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
                                 </p>
                             )}
+                        </div>
+
+                        {/* State and District Dropdowns */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="state">State</Label>
+                                <Select
+                                    onValueChange={(value) => {
+                                        setSelectedState(value);
+                                        setSelectedDistrict('');
+                                    }}
+                                    value={selectedState}
+                                >
+                                    <SelectTrigger id="state">
+                                        <SelectValue placeholder="Select State" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.keys(districtsData).map((state) => (
+                                            <SelectItem key={state} value={state}>
+                                                {state}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="district">District</Label>
+                                <Select
+                                    onValueChange={setSelectedDistrict}
+                                    value={selectedDistrict}
+                                    disabled={!selectedState}
+                                >
+                                    <SelectTrigger id="district">
+                                        <SelectValue placeholder="Select District" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {selectedState && districtsData[selectedState]?.map((district) => (
+                                            <SelectItem key={district} value={district}>
+                                                {district}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Section 1: Personal Info */}

@@ -7,11 +7,19 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
+import districtsData from '@/data/districts';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 
 const FarmerSignUpStep = ({ onBack }) => {
     const { register } = useAuth();
     const { toast } = useToast();
-    
+
     // State to hold all form data, including location object
     const [formData, setFormData] = useState({
         farmOwner: '',
@@ -21,9 +29,11 @@ const FarmerSignUpStep = ({ onBack }) => {
         confirmPassword: '',
         farmName: '',
         vetId: '',
+        state: '',
+        district: '',
         location: null // Will hold { latitude, longitude }
     });
-    
+
     const [locationStatus, setLocationStatus] = useState('idle'); // idle, loading, success, error
     const [locationError, setLocationError] = useState('');
 
@@ -39,10 +49,10 @@ const FarmerSignUpStep = ({ onBack }) => {
         if (!navigator.geolocation) {
             setLocationStatus('error');
             setLocationError('Geolocation is not supported by your browser');
-            toast({ 
-                variant: 'destructive', 
-                title: 'Error', 
-                description: "Geolocation is not supported by your browser." 
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: "Geolocation is not supported by your browser."
             });
             return;
         }
@@ -55,17 +65,17 @@ const FarmerSignUpStep = ({ onBack }) => {
                 };
                 setFormData(prev => ({ ...prev, location: coords }));
                 setLocationStatus('success');
-                toast({ 
-                    title: 'Success', 
-                    description: 'Farm location captured successfully!' 
+                toast({
+                    title: 'Success',
+                    description: 'Farm location captured successfully!'
                 });
                 console.log('Location fetched:', coords);
             },
             (error) => {
                 setLocationStatus('error');
                 let errorMessage = 'Unable to fetch location';
-                
-                switch(error.code) {
+
+                switch (error.code) {
                     case error.PERMISSION_DENIED:
                         errorMessage = 'Location access denied. Please enable location permissions.';
                         break;
@@ -78,12 +88,12 @@ const FarmerSignUpStep = ({ onBack }) => {
                     default:
                         errorMessage = 'An unknown error occurred';
                 }
-                
+
                 setLocationError(errorMessage);
-                toast({ 
-                    variant: 'destructive', 
-                    title: 'Location Error', 
-                    description: errorMessage 
+                toast({
+                    variant: 'destructive',
+                    title: 'Location Error',
+                    description: errorMessage
                 });
                 console.error('Geolocation error:', error);
             },
@@ -99,15 +109,15 @@ const FarmerSignUpStep = ({ onBack }) => {
         const { id, value } = e.target;
         setFormData(prev => ({ ...prev, [id]: value }));
     };
-    
+
     const handleSignUp = async (e) => {
         e.preventDefault();
-        
+
         if (formData.password !== formData.confirmPassword) {
-            toast({ 
-                variant: 'destructive', 
-                title: 'Error', 
-                description: 'Passwords do not match!' 
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Passwords do not match!'
             });
             return;
         }
@@ -120,7 +130,14 @@ const FarmerSignUpStep = ({ onBack }) => {
             if (!proceed) return;
         }
 
-        await register(formData);
+        await register({
+            ...formData,
+            location: {
+                ...formData.location,
+                state: formData.state,
+                district: formData.district
+            }
+        });
     };
 
     return (
@@ -160,10 +177,10 @@ const FarmerSignUpStep = ({ onBack }) => {
                                 )}
                             </div>
                             {locationStatus === 'error' && (
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    size="sm" 
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
                                     onClick={fetchLocation}
                                     className="mt-2"
                                 >
@@ -183,54 +200,54 @@ const FarmerSignUpStep = ({ onBack }) => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="farmOwner">Full Name</Label>
-                                    <Input 
-                                        id="farmOwner" 
-                                        value={formData.farmOwner} 
-                                        onChange={handleChange} 
+                                    <Input
+                                        id="farmOwner"
+                                        value={formData.farmOwner}
+                                        onChange={handleChange}
                                         placeholder="John Doe"
-                                        required 
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="phoneNumber">Phone Number</Label>
-                                    <Input 
-                                        id="phoneNumber" 
-                                        type="tel" 
-                                        value={formData.phoneNumber} 
+                                    <Input
+                                        id="phoneNumber"
+                                        type="tel"
+                                        value={formData.phoneNumber}
                                         onChange={handleChange}
-                                        placeholder="+91 98765 43210" 
-                                        required 
+                                        placeholder="+91 98765 43210"
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="email">Email</Label>
-                                    <Input 
-                                        id="email" 
-                                        type="email" 
-                                        value={formData.email} 
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        value={formData.email}
                                         onChange={handleChange}
-                                        placeholder="farmer@example.com" 
-                                        required 
+                                        placeholder="farmer@example.com"
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="password">Password</Label>
-                                    <Input 
-                                        id="password" 
-                                        type="password" 
-                                        value={formData.password} 
-                                        onChange={handleChange} 
-                                        required 
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                                    <Input 
-                                        id="confirmPassword" 
-                                        type="password" 
-                                        value={formData.confirmPassword} 
-                                        onChange={handleChange} 
-                                        required 
+                                    <Input
+                                        id="confirmPassword"
+                                        type="password"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -244,33 +261,80 @@ const FarmerSignUpStep = ({ onBack }) => {
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="farmName">Farm Name</Label>
-                                    <Input 
-                                        id="farmName" 
-                                        value={formData.farmName} 
+                                    <Input
+                                        id="farmName"
+                                        value={formData.farmName}
                                         onChange={handleChange}
-                                        placeholder="Green Valley Farm" 
-                                        required 
+                                        placeholder="Green Valley Farm"
+                                        required
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="vetId">Veterinarian ID</Label>
-                                    <Input 
-                                        id="vetId" 
-                                        placeholder="Enter the unique ID provided by your vet" 
-                                        value={formData.vetId} 
-                                        onChange={handleChange} 
-                                        required 
+                                    <Input
+                                        id="vetId"
+                                        placeholder="Enter the unique ID provided by your vet"
+                                        value={formData.vetId}
+                                        onChange={handleChange}
+                                        required
                                     />
                                     <p className="text-xs text-gray-500">
                                         Ask your veterinarian for their unique ID (e.g., x7b2k1j)
                                     </p>
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="state">State</Label>
+                                        <Select
+                                            onValueChange={(value) => {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    state: value,
+                                                    district: '' // Reset district when state changes
+                                                }));
+                                            }}
+                                            value={formData.state}
+                                        >
+                                            <SelectTrigger id="state">
+                                                <SelectValue placeholder="Select State" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.keys(districtsData).map((state) => (
+                                                    <SelectItem key={state} value={state}>
+                                                        {state}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="district">District</Label>
+                                        <Select
+                                            onValueChange={(value) => {
+                                                setFormData(prev => ({ ...prev, district: value }));
+                                            }}
+                                            value={formData.district}
+                                            disabled={!formData.state}
+                                        >
+                                            <SelectTrigger id="district">
+                                                <SelectValue placeholder="Select District" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {formData.state && districtsData[formData.state]?.map((district) => (
+                                                    <SelectItem key={district} value={district}>
+                                                        {district}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button 
-                            type="submit" 
+                        <Button
+                            type="submit"
                             className="w-full bg-green-600 hover:bg-green-700"
                             disabled={locationStatus === 'loading'}
                         >

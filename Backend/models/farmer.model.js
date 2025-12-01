@@ -10,6 +10,8 @@ const farmerSchema = new mongoose.Schema({
     location: {
         latitude: { type: Number },
         longitude: { type: Number },
+        state: { type: String },
+        district: { type: String }
     },
     speciesReared: { type: String },
     herdSize: { type: Number },

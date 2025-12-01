@@ -60,7 +60,7 @@ import MapViewPage from "./pages/regulator/MapViewPage";
 import RegulatorReportsPage from "./pages/regulator/ReportsPage";
 import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";
-import DemographicsPage from "./pages/regulator/DemographicsPage";
+import DemographicsPageEnhanced from "./pages/regulator/DemographicsPageEnhanced";
 import RegulatorAlertsPage from "./pages/regulator/RegulatorAlertsPage";
 import MRLVerificationsPage from "./pages/regulator/MRLVerificationsPage";
 import FarmsPage from "./pages/regulator/FarmsPage";
@@ -256,7 +256,7 @@ function App() {
                 <Route path="vets/:id" element={<VetDetailsPage />} />
                 <Route path="prescriptions" element={<PrescriptionsPage />} />
                 <Route path="trends" element={<TrendsPage />} />
-                <Route path="demographics" element={<DemographicsPage />} />
+                <Route path="demographics" element={<DemographicsPageEnhanced />} />
                 <Route path="map" element={<MapViewPage />} />
                 <Route path="reports" element={<RegulatorReportsPage />} />
                 <Route path="settings" element={<RegulatorSettingsPage />} />
