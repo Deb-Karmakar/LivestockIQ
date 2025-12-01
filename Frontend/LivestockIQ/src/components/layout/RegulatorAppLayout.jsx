@@ -17,7 +17,8 @@ import {
     FileCheck,
     HelpCircle,
     Building2,
-    Stethoscope
+    Stethoscope,
+    BriefcaseMedical,
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -33,7 +34,7 @@ const primaryNavLinks = [
 const secondaryNavLinks = [
     { name: 'Demographics', path: '/regulator/demographics', icon: Users2 },
     { name: 'Map View', path: '/regulator/map', icon: Map },
-    { name: 'Prescriptions', path: '/regulator/prescriptions', icon: FileText },
+    { name: 'Prescriptions', path: '/regulator/prescriptions', icon: BriefcaseMedical },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'MRL Verifications', path: '/regulator/verifications', icon: FileCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },

@@ -125,31 +125,9 @@ const PrescriptionsPage = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-1">With Digital Signatures</p>
-                                    <p className="text-3xl font-bold text-green-600">
-                                        <AnimatedCounter value={stats.overview.withDigitalSignatures} />
-                                    </p>
-                                </div>
-                                <Shield className="w-12 h-12 text-green-500 opacity-20" />
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-white">
-                        <CardContent className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-600 mb-1">Signature Rate</p>
-                                    <p className="text-3xl font-bold text-purple-600">{stats.overview.signatureRate}%</p>
-                                </div>
-                                <Shield className="w-12 h-12 text-purple-500 opacity-20" />
-                            </div>
-                        </CardContent>
-                    </Card>
+
+
                 </div>
             )}
 
