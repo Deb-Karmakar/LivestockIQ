@@ -35,6 +35,11 @@ const animalSchema = new mongoose.Schema({
         type: String,
         default: 'Active', // e.g., Active, Sold, Culled
     },
+    mrlStatus: {
+        type: String,
+        enum: ['NEW', 'SAFE', 'WITHDRAWAL_ACTIVE', 'TEST_REQUIRED', 'PENDING_VERIFICATION', 'VIOLATION'],
+        default: 'SAFE'
+    },
     notes: {
         type: String,
         trim: true,

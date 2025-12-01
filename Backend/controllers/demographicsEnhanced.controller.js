@@ -357,6 +357,7 @@ export const getDemographicsDataEnhanced = async (req, res) => {
                 mrlStatusMap[species] = {
                     species,
                     SAFE: 0,
+                    NEW: 0,
                     WITHDRAWAL_ACTIVE: 0,
                     TEST_REQUIRED: 0,
                     PENDING_VERIFICATION: 0,
@@ -369,9 +370,11 @@ export const getDemographicsDataEnhanced = async (req, res) => {
 
         const mrlCompliance = {
             bySpecies: Object.values(mrlStatusMap).map(item => {
-                const total = item.SAFE + item.WITHDRAWAL_ACTIVE + item.TEST_REQUIRED +
+                const total = item.SAFE + item.NEW + item.WITHDRAWAL_ACTIVE + item.TEST_REQUIRED +
                     item.PENDING_VERIFICATION + item.VIOLATION;
-                const compliancePercentage = total > 0 ? ((item.SAFE / total) * 100).toFixed(1) : 100;
+                // Count SAFE and NEW as compliant
+                const compliantCount = item.SAFE + item.NEW;
+                const compliancePercentage = total > 0 ? ((compliantCount / total) * 100).toFixed(1) : 100;
 
                 return {
                     ...item,
