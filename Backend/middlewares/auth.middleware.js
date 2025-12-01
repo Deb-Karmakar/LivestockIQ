@@ -63,4 +63,13 @@ const protectAdmin = (req, res, next) => {
     }
 };
 
-export { protect, protectRegulator, protectAdmin };
+// Middleware to protect routes for admins OR regulators
+const protectAdminOrRegulator = (req, res, next) => {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'regulator')) {
+        next();
+    } else {
+        res.status(401).json({ message: 'Not authorized. Access restricted to admins or regulators.' });
+    }
+};
+
+export { protect, protectRegulator, protectAdmin, protectAdminOrRegulator };

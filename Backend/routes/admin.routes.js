@@ -10,7 +10,7 @@ import {
     deleteUser,
     getDashboardStats
 } from '../controllers/admin.controller.js';
-import { protect, protectAdmin } from '../middlewares/auth.middleware.js';
+import { protect, protectAdmin, protectAdminOrRegulator } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
 
@@ -20,8 +20,8 @@ router.post('/trigger-peer-analysis', protect, protectAdmin, triggerPeerAnalysis
 router.post('/trigger-disease-prediction', protect, protectAdmin, triggerDiseasePrediction);
 
 // User Management Routes
-router.get('/users', protect, protectAdmin, getAllUsers);
-router.patch('/users/:id/status', protect, protectAdmin, updateUserStatus);
+router.get('/users', protect, protectAdminOrRegulator, getAllUsers);
+router.patch('/users/:id/status', protect, protectAdminOrRegulator, updateUserStatus);
 router.delete('/users/:id', protect, protectAdmin, deleteUser);
 
 // Dashboard Stats

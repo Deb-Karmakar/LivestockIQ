@@ -68,6 +68,8 @@ import FarmDetailsPage from "./pages/regulator/FarmDetailsPage";
 import VetsPage from "./pages/regulator/VetsPage";
 import VetDetailsPage from "./pages/regulator/VetDetailsPage";
 import PrescriptionsPage from "./pages/regulator/PrescriptionsPage";
+import AuditTrailsPage from "./pages/regulator/AuditTrailsPage";
+import UserOversightPage from "./pages/regulator/UserOversightPage";
 
 // --- Google Analytics Integration ---
 
@@ -245,7 +247,9 @@ function App() {
                 <Route path="compliance" element={<CompliancePage />} />
                 <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
                 <Route path="support/history" element={<TicketHistoryPage />} />
-                <Route path="verifications" element={<MRLVerificationsPage />} />
+                <Route path="mrl-verifications" element={<MRLVerificationsPage />} />
+                <Route path="audit-trails" element={<AuditTrailsPage />} />
+                <Route path="users" element={<UserOversightPage />} />
                 <Route path="farms" element={<FarmsPage />} />
                 <Route path="farms/:id" element={<FarmDetailsPage />} />
                 <Route path="vets" element={<VetsPage />} />
