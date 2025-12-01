@@ -53,7 +53,7 @@ export const getAllFarms = async (req, res) => {
                 }),
                 RegulatorAlert.countDocuments({
                     farmerId: farm._id,
-                    status: { $ne: 'Resolved' }
+                    status: { $ne: 'RESOLVED' }
                 }),
                 Veterinarian.findOne({ vetId: farm.vetId }).select('fullName email')
             ]);
@@ -133,7 +133,7 @@ export const getFarmDetails = async (req, res) => {
             Treatment.countDocuments({ farmerId: id }),
             Treatment.countDocuments({ farmerId: id, status: { $in: ['Pending', 'Approved'] } }),
             RegulatorAlert.countDocuments({ farmerId: id }),
-            RegulatorAlert.countDocuments({ farmerId: id, status: { $ne: 'Resolved' } }),
+            RegulatorAlert.countDocuments({ farmerId: id, status: { $ne: 'RESOLVED' } }),
             Veterinarian.findOne({ vetId: farm.vetId }).select('fullName email phoneNumber licenseNumber'),
             Treatment.find({ farmerId: id })
                 .sort({ createdAt: -1 })
@@ -337,7 +337,7 @@ export const getFarmCompliance = async (req, res) => {
                 { $group: { _id: '$status', count: { $sum: 1 } } }
             ]),
             RegulatorAlert.countDocuments({ farmerId: id }),
-            RegulatorAlert.countDocuments({ farmerId: id, status: 'Resolved' })
+            RegulatorAlert.countDocuments({ farmerId: id, status: 'RESOLVED' })
         ]);
 
         // Get recent violations
