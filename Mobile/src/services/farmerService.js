@@ -17,3 +17,12 @@ export const updateMyProfile = async (profileData) => {
         throw error.response?.data || { message: 'Failed to update profile' };
     }
 };
+
+export const getMyHighAmuAlerts = async () => {
+    try {
+        const response = await api.get('/farmers/high-amu-alerts');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch AMU alerts' };
+    }
+};
