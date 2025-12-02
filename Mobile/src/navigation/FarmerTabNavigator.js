@@ -11,6 +11,7 @@ import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
 import TreatmentsScreen from '../screens/farmer/TreatmentsScreen';
 import AddTreatmentScreen from '../screens/farmer/AddTreatmentScreen';
 import AlertsScreen from '../screens/farmer/AlertsScreen';
+import ReportsScreen from '../screens/farmer/ReportsScreen';
 import MoreScreen from '../screens/farmer/MoreScreen';
 import MRLComplianceScreen from '../screens/farmer/MRLComplianceScreen';
 import InventoryScreen from '../screens/farmer/InventoryScreen';
@@ -45,6 +46,8 @@ const MoreStack = () => (
         <Stack.Screen name="FeedInventory" component={FeedInventoryScreen} />
         <Stack.Screen name="FeedAdmin" component={FeedAdministrationScreen} />
 
+
+
         <Stack.Screen name="Alerts" component={AlertsScreen} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
@@ -58,6 +61,8 @@ const FarmerTabNavigator = () => {
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName;
 
+
+
                     if (route.name === 'Dashboard') {
                         iconName = focused ? 'grid' : 'grid-outline';
                     } else if (route.name === 'Animals') {
@@ -66,6 +71,8 @@ const FarmerTabNavigator = () => {
                         iconName = focused ? 'medkit' : 'medkit-outline';
                     } else if (route.name === 'Alerts') {
                         iconName = focused ? 'notifications' : 'notifications-outline';
+                    } else if (route.name === 'Reports') {
+                        iconName = focused ? 'document-text' : 'document-text-outline';
                     } else if (route.name === 'More') {
                         iconName = focused ? 'menu' : 'menu-outline';
                     }
@@ -80,6 +87,7 @@ const FarmerTabNavigator = () => {
             <Tab.Screen name="Dashboard" component={DashboardScreen} />
             <Tab.Screen name="Animals" component={AnimalsStack} />
             <Tab.Screen name="Treatments" component={TreatmentsStack} />
+            <Tab.Screen name="Reports" component={ReportsScreen} />
             <Tab.Screen name="Alerts" component={AlertsScreen} />
             <Tab.Screen name="More" component={MoreStack} />
         </Tab.Navigator>

@@ -53,8 +53,21 @@ api.interceptors.response.use(
         return response;
     },
     async (error) => {
-        console.error('API Error:', error.response?.status, error.config?.url);
-        console.error('Error details:', error.response?.data);
+        console.error('API Error:', error.message);
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.error('Status:', error.response.status);
+            console.error('Data:', error.response.data);
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error('No response received. Network error or timeout.');
+            console.error('Request details:', error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error('Error setting up request:', error.message);
+        }
+        console.error('Config:', error.config);
 
         if (error.response?.status === 401) {
             // Token expired or invalid, logout user

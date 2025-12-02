@@ -26,3 +26,56 @@ export const getMyHighAmuAlerts = async () => {
         throw error.response?.data || { message: 'Failed to fetch AMU alerts' };
     }
 };
+
+export const getFarmerAmuReport = async (startDate, endDate) => {
+    try {
+        const response = await api.get('/reports/farmer/amu-data', {
+            params: { from: startDate, to: endDate }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch AMU report' };
+    }
+};
+
+export const getFarmerAnimalHealthReport = async (startDate, endDate) => {
+    try {
+        const response = await api.get('/reports/farmer/animal-health-data', {
+            params: { from: startDate, to: endDate }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch animal health report' };
+    }
+};
+
+export const getFarmerHerdDemographics = async () => {
+    try {
+        const response = await api.get('/reports/farmer/herd-demographics-data');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch herd demographics' };
+    }
+};
+
+export const getFarmerTreatmentHistory = async (startDate, endDate) => {
+    try {
+        const response = await api.get('/reports/farmer/treatment-history-data', {
+            params: { from: startDate, to: endDate }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch treatment history' };
+    }
+};
+
+export const getFarmerMrlCompliance = async (startDate, endDate) => {
+    try {
+        const response = await api.get('/reports/farmer/mrl-compliance-data', {
+            params: { from: startDate, to: endDate }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to fetch MRL compliance report' };
+    }
+};
