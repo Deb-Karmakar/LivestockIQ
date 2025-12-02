@@ -1,3 +1,4 @@
+// Mobile/src/screens/farmer/FeedAdministrationScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
@@ -23,8 +24,10 @@ import {
     recordFeedAdministration,
     completeFeedingProgram
 } from '../../services/feedAdministrationService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const FeedAdministrationScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [administrations, setAdministrations] = useState([]);
@@ -62,7 +65,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
             setActiveFeed(Array.isArray(feedData) ? feedData : []);
         } catch (error) {
             console.error('Error fetching data:', error);
-            Alert.alert('Error', 'Failed to load data');
+            Alert.alert(t('error'), 'Failed to load data');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -103,18 +106,18 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         if (!form.feedId || !form.feedQuantityUsed) {
-            Alert.alert('Error', 'Please fill in all required fields (*)');
+            Alert.alert(t('error'), t('fill_required'));
             return;
         }
 
         if (form.isGroupFeeding) {
             if (!form.groupName || form.selectedAnimals.length === 0) {
-                Alert.alert('Error', 'Please provide a group name and select at least one animal');
+                Alert.alert(t('error'), t('provide_group_name'));
                 return;
             }
         } else {
             if (!form.animalId) {
-                Alert.alert('Error', 'Please select an animal');
+                Alert.alert(t('error'), t('select_an_animal'));
                 return;
             }
         }
@@ -130,11 +133,11 @@ const FeedAdministrationScreen = ({ navigation }) => {
             };
 
             await recordFeedAdministration(data);
-            Alert.alert('Success', 'Feed administration recorded successfully');
+            Alert.alert(t('success'), t('feed_admin_recorded'));
             setModalVisible(false);
             fetchData();
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to record feed');
+            Alert.alert(t('error'), error.response?.data?.message || t('failed_record_feed'));
         }
     };
 
@@ -164,15 +167,15 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
     const getWithdrawalInfo = (admin) => {
         const isMedicated = admin.feedId?.prescriptionRequired !== false;
-        if (!isMedicated) return { daysLeft: 'N/A', status: 'safe', label: 'Safe for Sale', color: '#10b981', bg: '#d1fae5' };
-        if (!admin.withdrawalEndDate) return { daysLeft: 'N/A', status: 'pending', label: 'Pending', color: '#6b7280', bg: '#f3f4f6' };
+        if (!isMedicated) return { daysLeft: 'N/A', status: 'safe', label: t('safe_for_sale'), color: '#10b981', bg: '#d1fae5' };
+        if (!admin.withdrawalEndDate) return { daysLeft: 'N/A', status: 'pending', label: t('pending'), color: '#6b7280', bg: '#f3f4f6' };
 
         const endDate = new Date(admin.withdrawalEndDate);
         const daysLeft = differenceInDays(endDate, new Date());
 
-        if (daysLeft < 0) return { daysLeft: 0, status: 'safe', label: 'Safe for Sale', color: '#10b981', bg: '#d1fae5' };
-        if (daysLeft <= 5) return { daysLeft, status: 'ending_soon', label: 'Ending Soon', color: '#f59e0b', bg: '#fef3c7' };
-        return { daysLeft, status: 'active', label: 'Active Withdrawal', color: '#ef4444', bg: '#fee2e2' };
+        if (daysLeft < 0) return { daysLeft: 0, status: 'safe', label: t('safe_for_sale'), color: '#10b981', bg: '#d1fae5' };
+        if (daysLeft <= 5) return { daysLeft, status: 'ending_soon', label: t('ending_soon'), color: '#f59e0b', bg: '#fef3c7' };
+        return { daysLeft, status: 'active', label: t('withdrawal_active'), color: '#ef4444', bg: '#fee2e2' };
     };
 
     const stats = {
@@ -199,8 +202,8 @@ const FeedAdministrationScreen = ({ navigation }) => {
             >
                 <View style={styles.headerRow}>
                     <View>
-                        <Text style={styles.headerTitle}>Feed Administration</Text>
-                        <Text style={styles.headerSubtitle}>Track medicated feed usage</Text>
+                        <Text style={styles.headerTitle}>{t('feed_admin_title')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('feed_admin_subtitle')}</Text>
                     </View>
                     <TouchableOpacity style={styles.addButton} onPress={handleOpenModal}>
                         <Ionicons name="add" size={24} color="#fff" />
@@ -220,11 +223,11 @@ const FeedAdministrationScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.active}</Text>
-                        <Text style={styles.statLabel}>Active</Text>
+                        <Text style={styles.statLabel}>{t('active')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.medicated}</Text>
-                        <Text style={styles.statLabel}>Medicated</Text>
+                        <Text style={styles.statLabel}>{t('medicated')}</Text>
                     </View>
                 </View>
 
@@ -232,7 +235,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
                 {administrations.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Ionicons name="clipboard-outline" size={48} color="#9ca3af" />
-                        <Text style={styles.emptyText}>No feed administrations recorded</Text>
+                        <Text style={styles.emptyText}>{t('no_feed_items')}</Text>
                     </View>
                 ) : (
                     administrations.map((admin) => {
@@ -251,7 +254,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                     <View style={styles.badgesRow}>
                                         <View style={[styles.badge, isMedicated ? styles.medicatedBadge : styles.nonMedicatedBadge]}>
                                             <Text style={[styles.badgeText, isMedicated ? styles.medicatedText : styles.nonMedicatedText]}>
-                                                {isMedicated ? 'Medicated' : 'Non-Medicated'}
+                                                {isMedicated ? t('medicated') : t('non_medicated')}
                                             </Text>
                                         </View>
                                         <View style={[styles.badge, { backgroundColor: withdrawal.bg }]}>
@@ -262,26 +265,26 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
                                 <View style={styles.detailsGrid}>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>Antimicrobial</Text>
+                                        <Text style={styles.detailLabel}>{t('antimicrobial_name')}</Text>
                                         <Text style={styles.detailValue}>{admin.feedId?.antimicrobialName || 'N/A'}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>Quantity</Text>
+                                        <Text style={styles.detailLabel}>{t('quantity')}</Text>
                                         <Text style={styles.detailValue}>{admin.feedQuantityUsed} {admin.feedId?.unit}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>Start Date</Text>
+                                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
                                         <Text style={styles.detailValue}>{format(new Date(admin.startDate), 'MMM dd, yyyy')}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>Status</Text>
+                                        <Text style={styles.detailLabel}>{t('status')}</Text>
                                         <Text style={styles.detailValue}>{admin.status}</Text>
                                     </View>
                                 </View>
 
                                 {/* Animals List */}
                                 <View style={styles.animalsSection}>
-                                    <Text style={styles.animalsHeader}>Animals in this batch ({(admin.animalIds || []).length})</Text>
+                                    <Text style={styles.animalsHeader}>{t('animals_in_batch')} ({(admin.animalIds || []).length})</Text>
                                     <View style={styles.animalsList}>
                                         {(admin.animalIds || []).map((animalTag, index) => (
                                             <TouchableOpacity
@@ -309,16 +312,16 @@ const FeedAdministrationScreen = ({ navigation }) => {
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Record Feed Use</Text>
+                        <Text style={styles.modalTitle}>{t('record_feed_use')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.label}>Select Feed *</Text>
+                            <Text style={styles.label}>{t('select_feed')} *</Text>
                             <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('feed')}>
-                                <Text style={styles.dropdownText}>{form.feedName || 'Select Feed'}</Text>
+                                <Text style={styles.dropdownText}>{form.feedName || t('select_feed')}</Text>
                                 <Ionicons name="chevron-down" size={20} color="#6b7280" />
                             </TouchableOpacity>
 
                             <View style={styles.switchContainer}>
-                                <Text style={styles.label}>Group Feeding</Text>
+                                <Text style={styles.label}>{t('group_feeding')}</Text>
                                 <Switch
                                     value={form.isGroupFeeding}
                                     onValueChange={(value) => setForm({ ...form, isGroupFeeding: value })}
@@ -329,14 +332,14 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
                             {form.isGroupFeeding ? (
                                 <>
-                                    <Text style={styles.label}>Group Name *</Text>
+                                    <Text style={styles.label}>{t('group_name')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.groupName}
                                         onChangeText={(text) => setForm({ ...form, groupName: text })}
                                         placeholder="e.g., Pen 1 - Broilers"
                                     />
-                                    <Text style={styles.label}>Select Animals ({form.selectedAnimals.length}) *</Text>
+                                    <Text style={styles.label}>{t('select_animals')} ({form.selectedAnimals.length}) *</Text>
                                     <View style={styles.multiSelectContainer}>
                                         {eligibleAnimals.map(animal => (
                                             <TouchableOpacity
@@ -362,15 +365,15 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                 </>
                             ) : (
                                 <>
-                                    <Text style={styles.label}>Select Animal *</Text>
+                                    <Text style={styles.label}>{t('select_animal')} *</Text>
                                     <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('animal')}>
-                                        <Text style={styles.dropdownText}>{form.animalTag || 'Select Animal'}</Text>
+                                        <Text style={styles.dropdownText}>{form.animalTag || t('select_animal')}</Text>
                                         <Ionicons name="chevron-down" size={20} color="#6b7280" />
                                     </TouchableOpacity>
                                 </>
                             )}
 
-                            <Text style={styles.label}>Quantity Used *</Text>
+                            <Text style={styles.label}>{t('quantity_used')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.feedQuantityUsed}
@@ -379,7 +382,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                 keyboardType="numeric"
                             />
 
-                            <Text style={styles.label}>Start Date *</Text>
+                            <Text style={styles.label}>{t('start_date')} *</Text>
                             <TouchableOpacity onPress={() => setShowStartDate(true)} style={styles.dateButton}>
                                 <Text>{format(form.startDate, 'MMM dd, yyyy')}</Text>
                                 <Ionicons name="calendar-outline" size={20} color="#6b7280" />
@@ -396,22 +399,22 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                 />
                             )}
 
-                            <Text style={styles.label}>Notes</Text>
+                            <Text style={styles.label}>{t('notes_label')}</Text>
                             <TextInput
                                 style={[styles.input, styles.textArea]}
                                 value={form.notes}
                                 onChangeText={(text) => setForm({ ...form, notes: text })}
-                                placeholder="Additional notes..."
+                                placeholder={t('notes_placeholder')}
                                 multiline
                                 numberOfLines={3}
                             />
                         </ScrollView>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.buttonText}>Cancel</Text>
+                                <Text style={styles.buttonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSave}>
-                                <Text style={[styles.buttonText, { color: '#fff' }]}>Record</Text>
+                                <Text style={[styles.buttonText, { color: '#fff' }]}>{t('submit_review')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -422,7 +425,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
             <Modal visible={pickerVisible} animationType="fade" transparent={true}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
                     <View style={styles.pickerContent}>
-                        <Text style={styles.pickerTitle}>Select {pickerType === 'feed' ? 'Feed' : 'Animal'}</Text>
+                        <Text style={styles.pickerTitle}>{pickerType === 'feed' ? t('select_feed') : t('select_animal')}</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {pickerType === 'feed' ? (
                                 activeFeed.map((feed) => (
@@ -434,7 +437,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                         <View>
                                             <Text style={styles.pickerOptionText}>{feed.feedName}</Text>
                                             <Text style={styles.pickerOptionSubtext}>
-                                                {feed.remainingQuantity} {feed.unit} left • {feed.prescriptionRequired ? 'Medicated' : 'Standard'}
+                                                {feed.remainingQuantity} {feed.unit} left • {feed.prescriptionRequired ? t('medicated') : 'Standard'}
                                             </Text>
                                         </View>
                                         {form.feedId === feed._id && <Ionicons name="checkmark" size={20} color="#8b5cf6" />}

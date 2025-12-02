@@ -1,3 +1,4 @@
+// Mobile/src/screens/shared/RaiseTicketScreen.js
 import React, { useState } from 'react';
 import {
     View,
@@ -16,8 +17,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { createTicket } from '../../services/ticketService';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const RaiseTicketScreen = () => {
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -39,25 +42,47 @@ const RaiseTicketScreen = () => {
 
     const priorities = ['Low', 'Medium', 'High', 'Urgent'];
 
+    const getCategoryLabel = (category) => {
+        switch (category) {
+            case 'Technical Issue': return t('technical_issue');
+            case 'Account Problem': return t('account_problem');
+            case 'Feature Request': return t('feature_request');
+            case 'Bug Report': return t('bug_report');
+            case 'General Inquiry': return t('general_inquiry');
+            case 'Other': return t('other');
+            default: return category;
+        }
+    };
+
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 'Low': return t('low');
+            case 'Medium': return t('medium');
+            case 'High': return t('high');
+            case 'Urgent': return t('urgent');
+            default: return priority;
+        }
+    };
+
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
     const validate = () => {
         if (!formData.subject.trim()) {
-            Alert.alert('Validation Error', 'Subject is required');
+            Alert.alert(t('validation_error'), t('subject_required'));
             return false;
         }
         if (!formData.category) {
-            Alert.alert('Validation Error', 'Please select a category');
+            Alert.alert(t('validation_error'), t('select_category'));
             return false;
         }
         if (!formData.description.trim()) {
-            Alert.alert('Validation Error', 'Description is required');
+            Alert.alert(t('validation_error'), t('description_required'));
             return false;
         }
         if (formData.description.trim().length < 20) {
-            Alert.alert('Validation Error', 'Description must be at least 20 characters');
+            Alert.alert(t('validation_error'), t('description_min_length'));
             return false;
         }
         return true;
@@ -75,8 +100,8 @@ const RaiseTicketScreen = () => {
             };
             const response = await createTicket(ticketData);
             Alert.alert(
-                'Success',
-                `Ticket Created Successfully!\nTicket ID: ${response.ticket.ticketId}`,
+                t('success'),
+                `${t('ticket_created_success')}\nTicket ID: ${response.ticket.ticketId}`,
                 [
                     {
                         text: 'OK',
@@ -94,7 +119,7 @@ const RaiseTicketScreen = () => {
             );
         } catch (error) {
             console.error('Error creating ticket:', error);
-            Alert.alert('Error', error.response?.data?.message || 'Failed to create ticket');
+            Alert.alert(t('error'), error.response?.data?.message || t('failed_create_ticket'));
         } finally {
             setLoading(false);
         }
@@ -118,7 +143,7 @@ const RaiseTicketScreen = () => {
                             styles.pillText,
                             selectedValue === option && styles.activePillText
                         ]}>
-                            {option}
+                            {field === 'category' ? getCategoryLabel(option) : getPriorityLabel(option)}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -152,11 +177,11 @@ const RaiseTicketScreen = () => {
                     <View style={styles.headerTextContainer}>
                         <View style={styles.headerTopRow}>
                             <Ionicons name="help-circle" size={16} color="#60a5fa" />
-                            <Text style={styles.headerLabel}>Support Center</Text>
+                            <Text style={styles.headerLabel}>{t('support_center')}</Text>
                         </View>
-                        <Text style={styles.headerTitle}>Raise a Ticket</Text>
+                        <Text style={styles.headerTitle}>{t('raise_ticket')}</Text>
                         <Text style={styles.headerSubtitle}>
-                            Submit a support request and we'll help you out.
+                            {t('raise_ticket_subtitle')}
                         </Text>
                     </View>
                     <TouchableOpacity
@@ -171,24 +196,24 @@ const RaiseTicketScreen = () => {
             <ScrollView style={styles.formContainer} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.card}>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Subject <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t('subject')} <Text style={styles.required}>*</Text></Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Brief summary of your issue"
+                            placeholder={t('subject_placeholder')}
                             value={formData.subject}
                             onChangeText={(text) => handleChange('subject', text)}
                             maxLength={100}
                         />
                     </View>
 
-                    {renderDropdown('Category', categories, formData.category, 'category')}
-                    {renderDropdown('Priority', priorities, formData.priority, 'priority')}
+                    {renderDropdown(t('category'), categories, formData.category, 'category')}
+                    {renderDropdown(t('priority'), priorities, formData.priority, 'priority')}
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Description <Text style={styles.required}>*</Text></Text>
+                        <Text style={styles.label}>{t('description_label')} <Text style={styles.required}>*</Text></Text>
                         <TextInput
                             style={[styles.input, styles.textArea]}
-                            placeholder="Describe your issue in detail..."
+                            placeholder={t('description_placeholder')}
                             value={formData.description}
                             onChangeText={(text) => handleChange('description', text)}
                             multiline
@@ -207,7 +232,7 @@ const RaiseTicketScreen = () => {
                         ) : (
                             <>
                                 <Ionicons name="send" size={20} color="#fff" />
-                                <Text style={styles.submitBtnText}>Submit Ticket</Text>
+                                <Text style={styles.submitBtnText}>{t('submit_ticket')}</Text>
                             </>
                         )}
                     </TouchableOpacity>

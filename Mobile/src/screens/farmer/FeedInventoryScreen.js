@@ -1,3 +1,4 @@
+// Mobile/src/screens/farmer/FeedInventoryScreen.js
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -23,8 +24,10 @@ import {
     updateFeedItem,
     deleteFeedItem
 } from '../../services/feedService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const FeedInventoryScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [feedInventory, setFeedInventory] = useState([]);
@@ -70,7 +73,7 @@ const FeedInventoryScreen = ({ navigation }) => {
             setStats(statsData);
         } catch (error) {
             console.error('Error fetching feed inventory:', error);
-            Alert.alert('Error', 'Failed to load feed inventory');
+            Alert.alert(t('error'), 'Failed to load feed inventory');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -127,12 +130,12 @@ const FeedInventoryScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         if (!form.feedName || !form.totalQuantity || !form.unit || !form.manufacturer) {
-            Alert.alert('Error', 'Please fill in all required fields (*)');
+            Alert.alert(t('error'), t('fill_required'));
             return;
         }
 
         if (form.prescriptionRequired && (!form.antimicrobialName || !form.antimicrobialConcentration || !form.withdrawalPeriodDays)) {
-            Alert.alert('Error', 'Medicated feed requires antimicrobial details and withdrawal period');
+            Alert.alert(t('error'), t('medicated_feed_req'));
             return;
         }
 
@@ -149,33 +152,33 @@ const FeedInventoryScreen = ({ navigation }) => {
 
             if (editingItem) {
                 await updateFeedItem(editingItem._id, itemData);
-                Alert.alert('Success', 'Feed updated successfully');
+                Alert.alert(t('success'), t('feed_updated'));
             } else {
                 await addFeedItem(itemData);
-                Alert.alert('Success', 'Feed added successfully');
+                Alert.alert(t('success'), t('feed_added'));
             }
             setModalVisible(false);
             fetchData();
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to save feed');
+            Alert.alert(t('error'), error.message || t('failed_save_feed'));
         }
     };
 
     const handleDelete = (id) => {
         Alert.alert(
-            'Delete Feed',
-            'Are you sure you want to delete this feed item?',
+            t('delete_feed'),
+            t('delete_feed_confirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await deleteFeedItem(id);
                             fetchData();
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to delete feed');
+                            Alert.alert(t('error'), t('failed_delete_feed'));
                         }
                     }
                 }
@@ -204,9 +207,9 @@ const FeedInventoryScreen = ({ navigation }) => {
 
     const getExpiryStatus = (expiryDate) => {
         const daysLeft = differenceInDays(new Date(expiryDate), new Date());
-        if (daysLeft < 0) return { label: 'Expired', color: '#ef4444', bg: '#fee2e2' };
-        if (daysLeft <= 30) return { label: `${daysLeft} days left`, color: '#f59e0b', bg: '#fef3c7' };
-        return { label: 'Healthy', color: '#10b981', bg: '#d1fae5' };
+        if (daysLeft < 0) return { label: t('expired'), color: '#ef4444', bg: '#fee2e2' };
+        if (daysLeft <= 30) return { label: `${daysLeft} ${t('days_left')}`, color: '#f59e0b', bg: '#fef3c7' };
+        return { label: t('healthy'), color: '#10b981', bg: '#d1fae5' };
     };
 
     const calculatedStats = {
@@ -237,8 +240,8 @@ const FeedInventoryScreen = ({ navigation }) => {
             >
                 <View style={styles.headerRow}>
                     <View>
-                        <Text style={styles.headerTitle}>Feed Inventory</Text>
-                        <Text style={styles.headerSubtitle}>Manage medicated feed</Text>
+                        <Text style={styles.headerTitle}>{t('feed_inventory_title')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('feed_subtitle')}</Text>
                     </View>
                     <TouchableOpacity style={styles.addButton} onPress={() => handleOpenModal()}>
                         <Ionicons name="add" size={24} color="#fff" />
@@ -258,15 +261,15 @@ const FeedInventoryScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#10b981' }]}>{calculatedStats.active}</Text>
-                        <Text style={styles.statLabel}>Active</Text>
+                        <Text style={styles.statLabel}>{t('healthy')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#f59e0b' }]}>{calculatedStats.expiring}</Text>
-                        <Text style={styles.statLabel}>Expiring</Text>
+                        <Text style={styles.statLabel}>{t('expiring')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#ef4444' }]}>{calculatedStats.expired}</Text>
-                        <Text style={styles.statLabel}>Expired</Text>
+                        <Text style={styles.statLabel}>{t('expired')}</Text>
                     </View>
                 </View>
 
@@ -274,7 +277,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                 {feedInventory.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Ionicons name="nutrition-outline" size={48} color="#9ca3af" />
-                        <Text style={styles.emptyText}>No feed items found</Text>
+                        <Text style={styles.emptyText}>{t('no_feed_items')}</Text>
                     </View>
                 ) : (
                     feedInventory.map((item) => {
@@ -301,7 +304,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                                 )}
 
                                 <View style={styles.cardFooter}>
-                                    <Text style={styles.expiryDate}>Expires: {format(new Date(item.expiryDate), 'MMM dd, yyyy')}</Text>
+                                    <Text style={styles.expiryDate}>{t('expires')}: {format(new Date(item.expiryDate), 'MMM dd, yyyy')}</Text>
                                     <View style={styles.actions}>
                                         <TouchableOpacity onPress={() => handleOpenModal(item)} style={styles.actionButton}>
                                             <Ionicons name="create-outline" size={20} color="#3b82f6" />
@@ -322,9 +325,9 @@ const FeedInventoryScreen = ({ navigation }) => {
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{editingItem ? 'Edit Feed' : 'Add New Feed'}</Text>
+                        <Text style={styles.modalTitle}>{editingItem ? t('edit_item') : t('add_item')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.label}>Feed Name *</Text>
+                            <Text style={styles.label}>{t('feed_name')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.feedName}
@@ -332,13 +335,13 @@ const FeedInventoryScreen = ({ navigation }) => {
                                 placeholder="e.g., Starter Feed"
                             />
 
-                            <Text style={styles.label}>Feed Type *</Text>
+                            <Text style={styles.label}>{t('feed_type')} *</Text>
                             <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('feedType')}>
                                 <Text style={styles.dropdownText}>{form.feedType}</Text>
                                 <Ionicons name="chevron-down" size={20} color="#6b7280" />
                             </TouchableOpacity>
 
-                            <Text style={styles.label}>Manufacturer *</Text>
+                            <Text style={styles.label}>{t('manufacturer')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.manufacturer}
@@ -348,7 +351,7 @@ const FeedInventoryScreen = ({ navigation }) => {
 
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Total Qty *</Text>
+                                    <Text style={styles.label}>{t('total_qty')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.totalQuantity}
@@ -358,7 +361,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Unit *</Text>
+                                    <Text style={styles.label}>{t('unit')} *</Text>
                                     <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('unit')}>
                                         <Text style={styles.dropdownText}>{form.unit}</Text>
                                         <Ionicons name="chevron-down" size={20} color="#6b7280" />
@@ -368,7 +371,7 @@ const FeedInventoryScreen = ({ navigation }) => {
 
                             {editingItem && (
                                 <View style={styles.inputGroup}>
-                                    <Text style={styles.label}>Remaining Qty *</Text>
+                                    <Text style={styles.label}>{t('remaining_qty')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.remainingQuantity}
@@ -380,7 +383,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                             )}
 
                             <View style={styles.switchContainer}>
-                                <Text style={styles.label}>Medicated Feed (Prescription Required)</Text>
+                                <Text style={styles.label}>{t('medicated_feed_label')}</Text>
                                 <Switch
                                     value={form.prescriptionRequired}
                                     onValueChange={(value) => setForm({ ...form, prescriptionRequired: value })}
@@ -391,7 +394,7 @@ const FeedInventoryScreen = ({ navigation }) => {
 
                             {form.prescriptionRequired && (
                                 <View style={styles.medicatedSection}>
-                                    <Text style={styles.label}>Antimicrobial Name *</Text>
+                                    <Text style={styles.label}>{t('antimicrobial_name')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.antimicrobialName}
@@ -400,7 +403,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                                     />
                                     <View style={styles.row}>
                                         <View style={styles.halfInput}>
-                                            <Text style={styles.label}>Concentration (mg/kg) *</Text>
+                                            <Text style={styles.label}>{t('concentration')} *</Text>
                                             <TextInput
                                                 style={styles.input}
                                                 value={form.antimicrobialConcentration}
@@ -410,7 +413,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                                             />
                                         </View>
                                         <View style={styles.halfInput}>
-                                            <Text style={styles.label}>Withdrawal (Days) *</Text>
+                                            <Text style={styles.label}>{t('withdrawal_days')} *</Text>
                                             <TextInput
                                                 style={styles.input}
                                                 value={form.withdrawalPeriodDays}
@@ -423,7 +426,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                                 </View>
                             )}
 
-                            <Text style={styles.label}>Target Species</Text>
+                            <Text style={styles.label}>{t('target_species')}</Text>
                             <View style={styles.speciesGrid}>
                                 {['Poultry', 'Cattle', 'Goat', 'Sheep', 'Pig', 'Other'].map(species => (
                                     <TouchableOpacity
@@ -444,14 +447,14 @@ const FeedInventoryScreen = ({ navigation }) => {
 
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Purchase Date</Text>
+                                    <Text style={styles.label}>{t('purchase_date')}</Text>
                                     <TouchableOpacity onPress={() => setShowPurchaseDate(true)} style={styles.dateButton}>
                                         <Text>{format(form.purchaseDate, 'MMM dd, yyyy')}</Text>
                                         <Ionicons name="calendar-outline" size={20} color="#6b7280" />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Expiry Date</Text>
+                                    <Text style={styles.label}>{t('expiry_date')}</Text>
                                     <TouchableOpacity onPress={() => setShowExpiryDate(true)} style={styles.dateButton}>
                                         <Text>{format(form.expiryDate, 'MMM dd, yyyy')}</Text>
                                         <Ionicons name="calendar-outline" size={20} color="#6b7280" />
@@ -482,22 +485,22 @@ const FeedInventoryScreen = ({ navigation }) => {
                                 />
                             )}
 
-                            <Text style={styles.label}>Notes</Text>
+                            <Text style={styles.label}>{t('notes_label')}</Text>
                             <TextInput
                                 style={[styles.input, styles.textArea]}
                                 value={form.notes}
                                 onChangeText={(text) => setForm({ ...form, notes: text })}
-                                placeholder="Additional notes..."
+                                placeholder={t('notes_placeholder')}
                                 multiline
                                 numberOfLines={3}
                             />
                         </ScrollView>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.buttonText}>Cancel</Text>
+                                <Text style={styles.buttonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSave}>
-                                <Text style={[styles.buttonText, { color: '#fff' }]}>Save</Text>
+                                <Text style={[styles.buttonText, { color: '#fff' }]}>{t('save_changes')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -508,7 +511,7 @@ const FeedInventoryScreen = ({ navigation }) => {
             <Modal visible={pickerVisible} animationType="fade" transparent={true}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
                     <View style={styles.pickerContent}>
-                        <Text style={styles.pickerTitle}>Select {pickerType === 'feedType' ? 'Feed Type' : 'Unit'}</Text>
+                        <Text style={styles.pickerTitle}>{pickerType === 'feedType' ? t('select_feed_type') : t('select_unit')}</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {(pickerType === 'feedType'
                                 ? ['Starter', 'Grower', 'Finisher', 'Layer', 'Breeder', 'Concentrate']

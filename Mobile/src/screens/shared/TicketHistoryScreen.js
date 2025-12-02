@@ -1,3 +1,4 @@
+// Mobile/src/screens/shared/TicketHistoryScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
@@ -13,8 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getMyTickets } from '../../services/ticketService';
 import { useNavigation } from '@react-navigation/native';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TicketHistoryScreen = () => {
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -69,6 +72,38 @@ const TicketHistoryScreen = () => {
         }
     };
 
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'Open': return t('open');
+            case 'In Progress': return t('in_progress');
+            case 'Resolved': return t('resolved');
+            case 'Closed': return t('closed');
+            default: return status;
+        }
+    };
+
+    const getPriorityLabel = (priority) => {
+        switch (priority) {
+            case 'Low': return t('low');
+            case 'Medium': return t('medium');
+            case 'High': return t('high');
+            case 'Urgent': return t('urgent');
+            default: return priority;
+        }
+    };
+
+    const getCategoryLabel = (category) => {
+        switch (category) {
+            case 'Technical Issue': return t('technical_issue');
+            case 'Account Problem': return t('account_problem');
+            case 'Feature Request': return t('feature_request');
+            case 'Bug Report': return t('bug_report');
+            case 'General Inquiry': return t('general_inquiry');
+            case 'Other': return t('other');
+            default: return category;
+        }
+    };
+
     const renderTicket = ({ item }) => (
         <View style={styles.card}>
             <TouchableOpacity
@@ -83,12 +118,12 @@ const TicketHistoryScreen = () => {
                         </View>
                         <View style={[styles.statusBadge, { borderColor: getStatusColor(item.status) }]}>
                             <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                                {item.status}
+                                {getStatusLabel(item.status)}
                             </Text>
                         </View>
                         <View style={[styles.priorityBadge, { backgroundColor: `${getPriorityColor(item.priority)}20` }]}>
                             <Text style={[styles.priorityText, { color: getPriorityColor(item.priority) }]}>
-                                {item.priority}
+                                {getPriorityLabel(item.priority)}
                             </Text>
                         </View>
                     </View>
@@ -108,14 +143,14 @@ const TicketHistoryScreen = () => {
                             {new Date(item.createdAt).toLocaleDateString()}
                         </Text>
                     </View>
-                    <Text style={styles.categoryText}>{item.category}</Text>
+                    <Text style={styles.categoryText}>{getCategoryLabel(item.category)}</Text>
                 </View>
             </TouchableOpacity>
 
             {expandedTicket === item._id && (
                 <View style={styles.detailsContainer}>
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Description:</Text>
+                        <Text style={styles.sectionTitle}>{t('description_label')}:</Text>
                         <View style={styles.descriptionBox}>
                             <Text style={styles.descriptionText}>{item.description}</Text>
                         </View>
@@ -124,7 +159,7 @@ const TicketHistoryScreen = () => {
                     {item.adminResponse && (
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: '#059669' }]}>
-                                <Ionicons name="checkmark-circle" size={14} color="#059669" /> Admin Response:
+                                <Ionicons name="checkmark-circle" size={14} color="#059669" /> {t('admin_response')}:
                             </Text>
                             <View style={styles.responseBox}>
                                 <Text style={styles.responseText}>{item.adminResponse}</Text>
@@ -149,9 +184,9 @@ const TicketHistoryScreen = () => {
                     <View style={styles.headerTextContainer}>
                         <View style={styles.headerTopRow}>
                             <Ionicons name="ticket" size={16} color="#a78bfa" />
-                            <Text style={styles.headerLabel}>Support History</Text>
+                            <Text style={styles.headerLabel}>{t('support_history')}</Text>
                         </View>
-                        <Text style={styles.headerTitle}>My Tickets</Text>
+                        <Text style={styles.headerTitle}>{t('my_tickets')}</Text>
                     </View>
                     <TouchableOpacity
                         style={styles.newTicketBtn}
@@ -177,7 +212,7 @@ const TicketHistoryScreen = () => {
                                 styles.filterText,
                                 filter === status && styles.activeFilterText
                             ]}>
-                                {status === 'all' ? 'All Tickets' : status}
+                                {status === 'all' ? t('all_tickets') : getStatusLabel(status)}
                             </Text>
                         </TouchableOpacity>
                     ))}
@@ -198,12 +233,12 @@ const TicketHistoryScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="ticket-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>No tickets found</Text>
+                            <Text style={styles.emptyText}>{t('no_tickets_found')}</Text>
                             <TouchableOpacity
                                 style={styles.createBtn}
                                 onPress={() => navigation.navigate('RaiseTicket')}
                             >
-                                <Text style={styles.createBtnText}>Create New Ticket</Text>
+                                <Text style={styles.createBtnText}>{t('create_new_ticket')}</Text>
                             </TouchableOpacity>
                         </View>
                     }

@@ -1,3 +1,4 @@
+// Mobile/src/screens/farmer/MRLComplianceScreen.js
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -22,8 +23,10 @@ import {
     submitLabTest,
 } from '../../services/mrlService';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MRLComplianceScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // overview, pending, history
@@ -88,7 +91,7 @@ const MRLComplianceScreen = ({ navigation }) => {
 
         } catch (error) {
             console.error('Error fetching MRL data:', error);
-            Alert.alert('Error', 'Failed to load MRL compliance data');
+            Alert.alert(t('error'), 'Failed to load MRL compliance data');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -124,7 +127,7 @@ const MRLComplianceScreen = ({ navigation }) => {
         // Validation
         if (!testForm.animalId || !testForm.drugName || !testForm.residueLevelDetected ||
             !testForm.labName || !testForm.testReportNumber || !testForm.certificateUrl) {
-            Alert.alert('Error', 'Please fill in all required fields (*)');
+            Alert.alert(t('error'), t('fill_required'));
             return;
         }
 
@@ -140,11 +143,11 @@ const MRLComplianceScreen = ({ navigation }) => {
                 residueLevelDetected: parseFloat(testForm.residueLevelDetected),
                 testDate: testForm.testDate.toISOString(),
             });
-            Alert.alert('Success', 'Lab test submitted successfully');
+            Alert.alert(t('success'), 'Lab test submitted successfully');
             setUploadModalVisible(false);
             fetchData();
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to submit lab test');
+            Alert.alert(t('error'), error.message || 'Failed to submit lab test');
         }
     };
 
@@ -179,15 +182,15 @@ const MRLComplianceScreen = ({ navigation }) => {
     const getStatusBadge = (status) => {
         switch (status?.mrlStatus) {
             case 'SAFE':
-                return { color: '#10b981', bg: '#d1fae5', text: 'Safe for Sale', icon: 'checkmark-circle' };
+                return { color: '#10b981', bg: '#d1fae5', text: t('safe_for_sale'), icon: 'checkmark-circle' };
             case 'PENDING_VERIFICATION':
-                return { color: '#3b82f6', bg: '#dbeafe', text: 'Pending Verification', icon: 'time' };
+                return { color: '#3b82f6', bg: '#dbeafe', text: t('pending_verification'), icon: 'time' };
             case 'TEST_REQUIRED':
-                return { color: '#f59e0b', bg: '#fef3c7', text: 'Test Required', icon: 'alert-circle' };
+                return { color: '#f59e0b', bg: '#fef3c7', text: t('test_required'), icon: 'alert-circle' };
             case 'VIOLATION':
-                return { color: '#ef4444', bg: '#fee2e2', text: 'MRL Violation', icon: 'warning' };
+                return { color: '#ef4444', bg: '#fee2e2', text: t('mrl_violation'), icon: 'warning' };
             case 'WITHDRAWAL_ACTIVE':
-                return { color: '#f97316', bg: '#ffedd5', text: 'Withdrawal Active', icon: 'hand-left' };
+                return { color: '#f97316', bg: '#ffedd5', text: t('withdrawal_active'), icon: 'hand-left' };
             default:
                 return { color: '#6b7280', bg: '#f3f4f6', text: 'No Data', icon: 'help-circle' };
         }
@@ -199,19 +202,19 @@ const MRLComplianceScreen = ({ navigation }) => {
             <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
                     <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'SAFE').length}</Text>
-                    <Text style={styles.statLabel}>Safe</Text>
+                    <Text style={styles.statLabel}>{t('safe')}</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'TEST_REQUIRED').length}</Text>
-                    <Text style={styles.statLabel}>Test Req</Text>
+                    <Text style={styles.statLabel}>{t('test_required')}</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'VIOLATION').length}</Text>
-                    <Text style={styles.statLabel}>Violations</Text>
+                    <Text style={styles.statLabel}>{t('violations')}</Text>
                 </View>
                 <View style={styles.statCard}>
                     <Text style={styles.statValue}>{pendingTests.length}</Text>
-                    <Text style={styles.statLabel}>Pending</Text>
+                    <Text style={styles.statLabel}>{t('pending')}</Text>
                 </View>
             </View>
 
@@ -266,19 +269,19 @@ const MRLComplianceScreen = ({ navigation }) => {
                                 isDisabled && styles.uploadButtonTextDisabled
                             ]}>
                                 {isDisabled
-                                    ? (status?.mrlStatus === 'SAFE' ? 'Safe - No Test Needed' : 'Upload Disabled')
-                                    : 'Upload Test'}
+                                    ? (status?.mrlStatus === 'SAFE' ? t('safe_no_test') : t('upload_disabled'))
+                                    : t('upload_test')}
                             </Text>
                         </TouchableOpacity>
 
                         {isDisabled && status?.mrlStatus === 'WITHDRAWAL_ACTIVE' && (
                             <Text style={styles.statusNote}>
-                                Cannot upload during active withdrawal
+                                {t('cannot_upload_withdrawal')}
                             </Text>
                         )}
                         {isDisabled && isPendingVerification && !isViolationResolved && (
                             <Text style={styles.statusNote}>
-                                Pending verification
+                                {t('pending_verification_msg')}
                             </Text>
                         )}
                     </View>
@@ -292,7 +295,7 @@ const MRLComplianceScreen = ({ navigation }) => {
             {pendingTests.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="checkmark-circle-outline" size={48} color="#10b981" />
-                    <Text style={styles.emptyText}>No pending tests</Text>
+                    <Text style={styles.emptyText}>{t('no_pending_tests')}</Text>
                 </View>
             ) : (
                 pendingTests.map((item) => (
@@ -304,7 +307,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                             style={[styles.uploadButton, { marginTop: 12 }]}
                             onPress={() => handleOpenUpload(item.animalId)}
                         >
-                            <Text style={styles.uploadButtonText}>Upload Test</Text>
+                            <Text style={styles.uploadButtonText}>{t('upload_test')}</Text>
                         </TouchableOpacity>
                     </View>
                 ))
@@ -317,7 +320,7 @@ const MRLComplianceScreen = ({ navigation }) => {
             {testHistory.length === 0 ? (
                 <View style={styles.emptyState}>
                     <Ionicons name="document-text-outline" size={48} color="#9ca3af" />
-                    <Text style={styles.emptyText}>No test history</Text>
+                    <Text style={styles.emptyText}>{t('no_test_history')}</Text>
                 </View>
             ) : (
                 testHistory.map((test) => (
@@ -326,21 +329,21 @@ const MRLComplianceScreen = ({ navigation }) => {
                             <Text style={styles.animalId}>{test.animalId}</Text>
                             <View style={[styles.badge, { backgroundColor: test.isPassed ? '#d1fae5' : '#fee2e2' }]}>
                                 <Text style={{ color: test.isPassed ? '#10b981' : '#ef4444', fontSize: 12, fontWeight: 'bold' }}>
-                                    {test.isPassed ? 'Passed' : 'Failed'}
+                                    {test.isPassed ? t('passed') : t('failed')}
                                 </Text>
                             </View>
                         </View>
                         <View style={styles.grid}>
                             <View>
-                                <Text style={styles.label}>Drug</Text>
+                                <Text style={styles.label}>{t('drug_name_label')}</Text>
                                 <Text style={styles.value}>{test.drugName}</Text>
                             </View>
                             <View>
-                                <Text style={styles.label}>Result</Text>
+                                <Text style={styles.label}>{t('result')}</Text>
                                 <Text style={styles.value}>{test.residueLevelDetected} {test.unit}</Text>
                             </View>
                         </View>
-                        <Text style={[styles.detailText, { marginTop: 8 }]}>Report: {test.testReportNumber}</Text>
+                        <Text style={[styles.detailText, { marginTop: 8 }]}>{t('report')}: {test.testReportNumber}</Text>
                     </View>
                 ))
             )}
@@ -363,8 +366,8 @@ const MRLComplianceScreen = ({ navigation }) => {
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
-                <Text style={styles.headerTitle}>MRL Compliance</Text>
-                <Text style={styles.headerSubtitle}>Monitor residue limits & safety</Text>
+                <Text style={styles.headerTitle}>{t('mrl_title')}</Text>
+                <Text style={styles.headerSubtitle}>{t('mrl_subtitle')}</Text>
             </LinearGradient>
 
             <View style={styles.tabs}>
@@ -375,7 +378,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                         onPress={() => setActiveTab(tab)}
                     >
                         <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {t(tab)}
                         </Text>
                     </TouchableOpacity>
                 ))}
@@ -394,36 +397,36 @@ const MRLComplianceScreen = ({ navigation }) => {
             <Modal visible={uploadModalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Upload Lab Test</Text>
+                        <Text style={styles.modalTitle}>{t('upload_lab_test')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
 
                             {/* Animal Selection */}
-                            <Text style={styles.label}>Animal ID *</Text>
+                            <Text style={styles.label}>{t('animal_id')} *</Text>
                             <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('animal')}>
-                                <Text style={styles.dropdownText}>{testForm.animalId || 'Select Animal'}</Text>
+                                <Text style={styles.dropdownText}>{testForm.animalId || t('select_animal')}</Text>
                                 <Ionicons name="chevron-down" size={20} color="#6b7280" />
                             </TouchableOpacity>
 
                             {/* Drug Name */}
-                            <Text style={styles.label}>Drug Name *</Text>
+                            <Text style={styles.label}>{t('drug_name_label')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.drugName}
                                 onChangeText={(text) => setTestForm({ ...testForm, drugName: text })}
-                                placeholder="e.g., Oxytetracycline"
+                                placeholder={t('drug_name_placeholder')}
                             />
 
                             {/* Sample & Product Type */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Sample Type *</Text>
+                                    <Text style={styles.label}>{t('sample_type')} *</Text>
                                     <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('sample')}>
                                         <Text style={styles.dropdownText}>{testForm.sampleType}</Text>
                                         <Ionicons name="chevron-down" size={20} color="#6b7280" />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Product Type *</Text>
+                                    <Text style={styles.label}>{t('product_type')} *</Text>
                                     <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('product')}>
                                         <Text style={styles.dropdownText}>{testForm.productType}</Text>
                                         <Ionicons name="chevron-down" size={20} color="#6b7280" />
@@ -434,7 +437,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                             {/* Residue & Unit */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Residue Level *</Text>
+                                    <Text style={styles.label}>{t('residue_level')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={testForm.residueLevelDetected}
@@ -444,7 +447,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Unit *</Text>
+                                    <Text style={styles.label}>{t('unit')} *</Text>
                                     <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('unit')}>
                                         <Text style={styles.dropdownText}>{testForm.unit}</Text>
                                         <Ionicons name="chevron-down" size={20} color="#6b7280" />
@@ -453,7 +456,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                             </View>
 
                             {/* Lab Info */}
-                            <Text style={styles.label}>Lab Name *</Text>
+                            <Text style={styles.label}>{t('lab_name')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.labName}
@@ -461,7 +464,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                                 placeholder="e.g., National MRL Testing Lab"
                             />
 
-                            <Text style={styles.label}>Lab Location</Text>
+                            <Text style={styles.label}>{t('lab_location')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.labLocation}
@@ -472,7 +475,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                             {/* Report Info */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Report Number *</Text>
+                                    <Text style={styles.label}>{t('report_number')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={testForm.testReportNumber}
@@ -481,7 +484,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Cert. Number</Text>
+                                    <Text style={styles.label}>{t('cert_number')}</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={testForm.labCertificationNumber}
@@ -494,14 +497,14 @@ const MRLComplianceScreen = ({ navigation }) => {
                             {/* Date & Tester */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Test Date *</Text>
+                                    <Text style={styles.label}>{t('test_date')} *</Text>
                                     <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
                                         <Text>{testForm.testDate.toLocaleDateString()}</Text>
                                         <Ionicons name="calendar-outline" size={16} color="#6b7280" />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Tested By</Text>
+                                    <Text style={styles.label}>{t('tested_by')}</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={testForm.testedBy}
@@ -523,7 +526,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                             )}
 
                             {/* Certificate URL */}
-                            <Text style={styles.label}>Certificate URL *</Text>
+                            <Text style={styles.label}>{t('certificate_url')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={testForm.certificateUrl}
@@ -533,12 +536,12 @@ const MRLComplianceScreen = ({ navigation }) => {
                             />
 
                             {/* Notes */}
-                            <Text style={styles.label}>Notes</Text>
+                            <Text style={styles.label}>{t('notes_label')}</Text>
                             <TextInput
                                 style={[styles.input, styles.textArea]}
                                 value={testForm.notes}
                                 onChangeText={(text) => setTestForm({ ...testForm, notes: text })}
-                                placeholder="Additional notes..."
+                                placeholder={t('notes_placeholder')}
                                 multiline
                                 numberOfLines={3}
                             />
@@ -546,10 +549,10 @@ const MRLComplianceScreen = ({ navigation }) => {
                         </ScrollView>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setUploadModalVisible(false)}>
-                                <Text style={styles.buttonText}>Cancel</Text>
+                                <Text style={styles.buttonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmitTest}>
-                                <Text style={[styles.buttonText, { color: '#fff' }]}>Submit</Text>
+                                <Text style={[styles.buttonText, { color: '#fff' }]}>{t('submit_review')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

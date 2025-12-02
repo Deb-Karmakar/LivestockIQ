@@ -1,3 +1,4 @@
+// Mobile/src/screens/farmer/InventoryScreen.js
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -22,8 +23,10 @@ import {
     updateInventoryItem,
     deleteInventoryItem
 } from '../../services/inventoryService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const InventoryScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [inventory, setInventory] = useState([]);
@@ -52,7 +55,7 @@ const InventoryScreen = ({ navigation }) => {
             setInventory(data || []);
         } catch (error) {
             console.error('Error fetching inventory:', error);
-            Alert.alert('Error', 'Failed to load inventory');
+            Alert.alert(t('error'), 'Failed to load inventory');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -91,7 +94,7 @@ const InventoryScreen = ({ navigation }) => {
 
     const handleSave = async () => {
         if (!form.drugName || !form.quantity || !form.unit) {
-            Alert.alert('Error', 'Please fill in all required fields (*)');
+            Alert.alert(t('error'), t('fill_required'));
             return;
         }
 
@@ -104,33 +107,33 @@ const InventoryScreen = ({ navigation }) => {
 
             if (editingItem) {
                 await updateInventoryItem(editingItem._id, itemData);
-                Alert.alert('Success', 'Item updated successfully');
+                Alert.alert(t('success'), 'Item updated successfully');
             } else {
                 await addInventoryItem(itemData);
-                Alert.alert('Success', 'Item added successfully');
+                Alert.alert(t('success'), 'Item added successfully');
             }
             setModalVisible(false);
             fetchData();
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to save item');
+            Alert.alert(t('error'), error.message || 'Failed to save item');
         }
     };
 
     const handleDelete = (id) => {
         Alert.alert(
-            'Delete Item',
-            'Are you sure you want to delete this item?',
+            t('delete_item'),
+            t('delete_item_confirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await deleteInventoryItem(id);
                             fetchData();
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to delete item');
+                            Alert.alert(t('error'), 'Failed to delete item');
                         }
                     }
                 }
@@ -140,9 +143,9 @@ const InventoryScreen = ({ navigation }) => {
 
     const getExpiryStatus = (expiryDate) => {
         const daysLeft = differenceInDays(new Date(expiryDate), new Date());
-        if (daysLeft < 0) return { label: 'Expired', color: '#ef4444', bg: '#fee2e2' };
-        if (daysLeft <= 30) return { label: `${daysLeft} days left`, color: '#f59e0b', bg: '#fef3c7' };
-        return { label: 'Healthy', color: '#10b981', bg: '#d1fae5' };
+        if (daysLeft < 0) return { label: t('expired'), color: '#ef4444', bg: '#fee2e2' };
+        if (daysLeft <= 30) return { label: `${daysLeft} ${t('days_left')}`, color: '#f59e0b', bg: '#fef3c7' };
+        return { label: t('healthy'), color: '#10b981', bg: '#d1fae5' };
     };
 
     const stats = {
@@ -173,8 +176,8 @@ const InventoryScreen = ({ navigation }) => {
             >
                 <View style={styles.headerRow}>
                     <View>
-                        <Text style={styles.headerTitle}>Drug Inventory</Text>
-                        <Text style={styles.headerSubtitle}>Manage stock & expiry</Text>
+                        <Text style={styles.headerTitle}>{t('drug_inventory_title')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('inventory_subtitle')}</Text>
                     </View>
                     <TouchableOpacity style={styles.addButton} onPress={() => handleOpenModal()}>
                         <Ionicons name="add" size={24} color="#fff" />
@@ -194,15 +197,15 @@ const InventoryScreen = ({ navigation }) => {
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.healthy}</Text>
-                        <Text style={styles.statLabel}>Healthy</Text>
+                        <Text style={styles.statLabel}>{t('healthy')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#f59e0b' }]}>{stats.expiring}</Text>
-                        <Text style={styles.statLabel}>Expiring</Text>
+                        <Text style={styles.statLabel}>{t('expiring')}</Text>
                     </View>
                     <View style={styles.statCard}>
                         <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.expired}</Text>
-                        <Text style={styles.statLabel}>Expired</Text>
+                        <Text style={styles.statLabel}>{t('expired')}</Text>
                     </View>
                 </View>
 
@@ -210,7 +213,7 @@ const InventoryScreen = ({ navigation }) => {
                 {inventory.length === 0 ? (
                     <View style={styles.emptyState}>
                         <Ionicons name="cube-outline" size={48} color="#9ca3af" />
-                        <Text style={styles.emptyText}>No items in inventory</Text>
+                        <Text style={styles.emptyText}>{t('no_inventory')}</Text>
                     </View>
                 ) : (
                     inventory.map((item) => {
@@ -228,7 +231,7 @@ const InventoryScreen = ({ navigation }) => {
                                 </View>
 
                                 <View style={styles.cardFooter}>
-                                    <Text style={styles.expiryDate}>Expires: {format(new Date(item.expiryDate), 'MMM dd, yyyy')}</Text>
+                                    <Text style={styles.expiryDate}>{t('expires')}: {format(new Date(item.expiryDate), 'MMM dd, yyyy')}</Text>
                                     <View style={styles.actions}>
                                         <TouchableOpacity onPress={() => handleOpenModal(item)} style={styles.actionButton}>
                                             <Ionicons name="create-outline" size={20} color="#3b82f6" />
@@ -249,19 +252,19 @@ const InventoryScreen = ({ navigation }) => {
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{editingItem ? 'Edit Item' : 'Add New Item'}</Text>
+                        <Text style={styles.modalTitle}>{editingItem ? t('edit_item') : t('add_item')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.label}>Drug Name *</Text>
+                            <Text style={styles.label}>{t('drug_name_label')} *</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.drugName}
                                 onChangeText={(text) => setForm({ ...form, drugName: text })}
-                                placeholder="e.g., Oxytetracycline"
+                                placeholder={t('drug_name_placeholder')}
                             />
 
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Quantity *</Text>
+                                    <Text style={styles.label}>{t('quantity')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.quantity}
@@ -271,7 +274,7 @@ const InventoryScreen = ({ navigation }) => {
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>Unit *</Text>
+                                    <Text style={styles.label}>{t('unit')} *</Text>
                                     <TextInput
                                         style={styles.input}
                                         value={form.unit}
@@ -281,7 +284,7 @@ const InventoryScreen = ({ navigation }) => {
                                 </View>
                             </View>
 
-                            <Text style={styles.label}>Expiry Date *</Text>
+                            <Text style={styles.label}>{t('expiry_date')} *</Text>
                             <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
                                 <Text>{format(form.expiryDate, 'MMM dd, yyyy')}</Text>
                                 <Ionicons name="calendar-outline" size={20} color="#6b7280" />
@@ -298,7 +301,7 @@ const InventoryScreen = ({ navigation }) => {
                                 />
                             )}
 
-                            <Text style={styles.label}>Supplier</Text>
+                            <Text style={styles.label}>{t('supplier')}</Text>
                             <TextInput
                                 style={styles.input}
                                 value={form.supplier}
@@ -306,22 +309,22 @@ const InventoryScreen = ({ navigation }) => {
                                 placeholder="Supplier Name"
                             />
 
-                            <Text style={styles.label}>Notes</Text>
+                            <Text style={styles.label}>{t('notes_label')}</Text>
                             <TextInput
                                 style={[styles.input, styles.textArea]}
                                 value={form.notes}
                                 onChangeText={(text) => setForm({ ...form, notes: text })}
-                                placeholder="Additional notes..."
+                                placeholder={t('notes_placeholder')}
                                 multiline
                                 numberOfLines={3}
                             />
                         </ScrollView>
                         <View style={styles.modalButtons}>
                             <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.buttonText}>Cancel</Text>
+                                <Text style={styles.buttonText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSave}>
-                                <Text style={[styles.buttonText, { color: '#fff' }]}>Save</Text>
+                                <Text style={[styles.buttonText, { color: '#fff' }]}>{t('save_changes')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
