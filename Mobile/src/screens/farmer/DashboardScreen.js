@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { getAnimals } from '../../services/animalService';
 import { getTreatments } from '../../services/treatmentService';
 
@@ -19,6 +20,7 @@ const { width } = Dimensions.get('window');
 
 const DashboardScreen = ({ navigation }) => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [animals, setAnimals] = useState([]);
@@ -117,27 +119,27 @@ const DashboardScreen = ({ navigation }) => {
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return 'Good morning';
-        if (hour < 18) return 'Good afternoon';
-        return 'Good evening';
+        if (hour < 12) return t('good_morning');
+        if (hour < 18) return t('good_afternoon');
+        return t('good_evening');
     };
 
     const formatTimeAgo = (date) => {
         const seconds = Math.floor((new Date() - new Date(date)) / 1000);
         if (seconds < 60) return 'Just now';
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}m ago`;
+        if (minutes < 60) return `${minutes}m ${t('ago')}`;
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
+        if (hours < 24) return `${hours}h ${t('ago')}`;
         const days = Math.floor(hours / 24);
-        return `${days}d ago`;
+        return `${days}d ${t('ago')}`;
     };
 
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>Loading dashboard...</Text>
+                <Text style={styles.loadingText}>{t('loading_dashboard')}</Text>
             </View>
         );
     }
@@ -155,9 +157,9 @@ const DashboardScreen = ({ navigation }) => {
                     <Text style={styles.greeting}>
                         {getGreeting()}, {user?.farmOwner?.split(' ')[0] || 'Farmer'}!
                     </Text>
-                    <Text style={styles.farmName}>{user?.farmName || 'Your Farm'}</Text>
+                    <Text style={styles.farmName}>{user?.farmName || t('your_farm')}</Text>
                     <Text style={styles.alertsText}>
-                        You have <Text style={styles.alertsCount}>{alerts.length} alerts</Text> that need attention
+                        You have <Text style={styles.alertsCount}>{alerts.length} alerts</Text> {t('alerts_attention')}
                     </Text>
                 </View>
             </View>
@@ -169,7 +171,7 @@ const DashboardScreen = ({ navigation }) => {
                         <Ionicons name="paw" size={20} color="#3b82f6" />
                     </View>
                     <Text style={styles.statValue}>{stats.totalAnimals}</Text>
-                    <Text style={styles.statLabel}>Total Animals</Text>
+                    <Text style={styles.statLabel}>{t('total_animals')}</Text>
                 </View>
 
                 <View style={styles.statCard}>
@@ -177,7 +179,7 @@ const DashboardScreen = ({ navigation }) => {
                         <Ionicons name="checkmark-circle" size={20} color="#10b981" />
                     </View>
                     <Text style={styles.statValue}>{stats.safeForSale}</Text>
-                    <Text style={styles.statLabel}>Safe for Sale</Text>
+                    <Text style={styles.statLabel}>{t('safe_for_sale')}</Text>
                 </View>
 
                 <View style={styles.statCard}>
@@ -185,7 +187,7 @@ const DashboardScreen = ({ navigation }) => {
                         <Ionicons name="medical" size={20} color="#f59e0b" />
                     </View>
                     <Text style={styles.statValue}>{stats.activeTreatments}</Text>
-                    <Text style={styles.statLabel}>Active Treatments</Text>
+                    <Text style={styles.statLabel}>{t('active_treatments')}</Text>
                 </View>
 
                 <View style={styles.statCard}>
@@ -193,7 +195,7 @@ const DashboardScreen = ({ navigation }) => {
                         <Ionicons name="time" size={20} color="#a855f7" />
                     </View>
                     <Text style={styles.statValue}>{stats.pendingApproval}</Text>
-                    <Text style={styles.statLabel}>Pending Approval</Text>
+                    <Text style={styles.statLabel}>{t('pending_approval')}</Text>
                 </View>
             </View>
 
@@ -202,7 +204,7 @@ const DashboardScreen = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Ionicons name="notifications" size={20} color="#ef4444" />
-                        <Text style={styles.sectionTitle}>Urgent Alerts</Text>
+                        <Text style={styles.sectionTitle}>{t('urgent_alerts')}</Text>
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>{alerts.length}</Text>
                         </View>
@@ -232,7 +234,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Ionicons name="pulse" size={20} color="#3b82f6" />
-                    <Text style={styles.sectionTitle}>Recent Activity</Text>
+                    <Text style={styles.sectionTitle}>{t('recent_activity')}</Text>
                 </View>
                 <View style={styles.card}>
                     {recentActivity.length > 0 ? (
@@ -260,7 +262,7 @@ const DashboardScreen = ({ navigation }) => {
                     ) : (
                         <View style={styles.emptyState}>
                             <Ionicons name="pulse-outline" size={48} color="#d1d5db" />
-                            <Text style={styles.emptyStateText}>No recent activity</Text>
+                            <Text style={styles.emptyStateText}>{t('no_recent_activity')}</Text>
                         </View>
                     )}
                 </View>
@@ -270,7 +272,7 @@ const DashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Ionicons name="flash" size={20} color="#10b981" />
-                    <Text style={styles.sectionTitle}>Quick Actions</Text>
+                    <Text style={styles.sectionTitle}>{t('quick_actions')}</Text>
                 </View>
                 <View style={styles.quickActions}>
                     <TouchableOpacity
@@ -278,22 +280,22 @@ const DashboardScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('Animals')}
                     >
                         <Ionicons name="paw" size={24} color="#10b981" />
-                        <Text style={styles.quickActionText}>Manage Animals</Text>
+                        <Text style={styles.quickActionText}>{t('manage_animals')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={styles.quickActionButton}
                         onPress={() => navigation.navigate('Treatments')}
                     >
                         <Ionicons name="medical" size={24} color="#3b82f6" />
-                        <Text style={styles.quickActionText}>Record Treatment</Text>
+                        <Text style={styles.quickActionText}>{t('record_treatment')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.quickActionButton}>
                         <Ionicons name="cube" size={24} color="#a855f7" />
-                        <Text style={styles.quickActionText}>Record Sale</Text>
+                        <Text style={styles.quickActionText}>{t('record_sale')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.quickActionButton}>
                         <Ionicons name="notifications" size={24} color="#f59e0b" />
-                        <Text style={styles.quickActionText}>View Alerts</Text>
+                        <Text style={styles.quickActionText}>{t('view_alerts')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>

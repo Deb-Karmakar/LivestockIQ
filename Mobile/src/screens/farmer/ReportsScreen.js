@@ -20,51 +20,10 @@ import {
     getFarmerTreatmentHistory,
     getFarmerMrlCompliance
 } from '../../services/farmerService';
-
-const REPORT_TYPES = [
-    {
-        value: 'AmuUsage',
-        label: 'AMU Usage',
-        icon: 'medkit',
-        color: '#3b82f6',
-        desc: 'Usage trends & drug breakdown',
-        requiresDateRange: true
-    },
-    {
-        value: 'AnimalHealth',
-        label: 'Animal Health',
-        icon: 'heart',
-        color: '#ef4444',
-        desc: 'Health status & MRL compliance',
-        requiresDateRange: true
-    },
-    {
-        value: 'HerdDemographics',
-        label: 'Demographics',
-        icon: 'people',
-        color: '#10b981',
-        desc: 'Species & age distribution',
-        requiresDateRange: false
-    },
-    {
-        value: 'TreatmentHistory',
-        label: 'Treatments',
-        icon: 'list',
-        color: '#8b5cf6',
-        desc: 'Detailed treatment records',
-        requiresDateRange: true
-    },
-    {
-        value: 'MrlCompliance',
-        label: 'MRL Compliance',
-        icon: 'shield-checkmark',
-        color: '#f59e0b',
-        desc: 'Withdrawal & test tracking',
-        requiresDateRange: true
-    }
-];
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const ReportsScreen = () => {
+    const { t } = useLanguage();
     const [selectedReport, setSelectedReport] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -72,6 +31,49 @@ const ReportsScreen = () => {
     const [showEndPicker, setShowEndPicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState(null);
+
+    const REPORT_TYPES = [
+        {
+            value: 'AmuUsage',
+            label: t('amu_usage'),
+            icon: 'medkit',
+            color: '#3b82f6',
+            desc: t('amu_usage_desc'),
+            requiresDateRange: true
+        },
+        {
+            value: 'AnimalHealth',
+            label: t('animal_health'),
+            icon: 'heart',
+            color: '#ef4444',
+            desc: t('animal_health_desc'),
+            requiresDateRange: true
+        },
+        {
+            value: 'HerdDemographics',
+            label: t('demographics'),
+            icon: 'people',
+            color: '#10b981',
+            desc: t('demographics_desc'),
+            requiresDateRange: false
+        },
+        {
+            value: 'TreatmentHistory',
+            label: t('treatments_report'),
+            icon: 'list',
+            color: '#8b5cf6',
+            desc: t('treatments_report_desc'),
+            requiresDateRange: true
+        },
+        {
+            value: 'MrlCompliance',
+            label: t('mrl_compliance_report'),
+            icon: 'shield-checkmark',
+            color: '#f59e0b',
+            desc: t('mrl_compliance_desc'),
+            requiresDateRange: true
+        }
+    ];
 
     const handleGenerateReport = async () => {
         if (!selectedReport) return;
@@ -129,41 +131,41 @@ const ReportsScreen = () => {
         switch (reportData.reportType) {
             case 'AmuUsage':
                 cards.push(
-                    { label: 'Total Treatments', value: summary.totalTreatments, color: '#3b82f6' },
-                    { label: 'Unique Drugs', value: summary.uniqueDrugs, color: '#10b981' },
-                    { label: 'Active Animals', value: summary.activeAnimals, color: '#f59e0b' },
-                    { label: 'Avg/Month', value: summary.averagePerMonth, color: '#8b5cf6' }
+                    { label: t('total_treatments'), value: summary.totalTreatments, color: '#3b82f6' },
+                    { label: t('unique_drugs'), value: summary.uniqueDrugs, color: '#10b981' },
+                    { label: t('active_animals'), value: summary.activeAnimals, color: '#f59e0b' },
+                    { label: t('avg_month'), value: summary.averagePerMonth, color: '#8b5cf6' }
                 );
                 break;
             case 'AnimalHealth':
                 cards.push(
-                    { label: 'Total Animals', value: summary.totalAnimals, color: '#3b82f6' },
-                    { label: 'Compliance', value: `${summary.complianceRate}%`, color: summary.complianceRate >= 90 ? '#10b981' : '#ef4444' },
-                    { label: 'Violations', value: summary.mrlViolations, color: '#ef4444' },
-                    { label: 'Pass Rate', value: `${((summary.testsPassed / (summary.testsPassed + summary.testsFailed || 1)) * 100).toFixed(1)}%`, color: '#10b981' }
+                    { label: t('total_animals'), value: summary.totalAnimals, color: '#3b82f6' },
+                    { label: t('compliance_rate'), value: `${summary.complianceRate}%`, color: summary.complianceRate >= 90 ? '#10b981' : '#ef4444' },
+                    { label: t('violations'), value: summary.mrlViolations, color: '#ef4444' },
+                    { label: t('pass_rate'), value: `${((summary.testsPassed / (summary.testsPassed + summary.testsFailed || 1)) * 100).toFixed(1)}%`, color: '#10b981' }
                 );
                 break;
             case 'HerdDemographics':
                 cards.push(
-                    { label: 'Total Animals', value: summary.totalAnimals, color: '#3b82f6' },
-                    { label: 'Species', value: summary.speciesCount, color: '#10b981' },
-                    { label: 'Avg Age', value: `${summary.averageAge} yr`, color: '#f59e0b' },
-                    { label: 'M/F', value: `${summary.maleCount}/${summary.femaleCount}`, color: '#8b5cf6' }
+                    { label: t('total_animals'), value: summary.totalAnimals, color: '#3b82f6' },
+                    { label: t('species_count'), value: summary.speciesCount, color: '#10b981' },
+                    { label: t('avg_age'), value: `${summary.averageAge} yr`, color: '#f59e0b' },
+                    { label: t('male_female'), value: `${summary.maleCount}/${summary.femaleCount}`, color: '#8b5cf6' }
                 );
                 break;
             case 'TreatmentHistory':
                 cards.push(
-                    { label: 'Records', value: summary.totalRecords, color: '#3b82f6' },
-                    { label: 'Treatments', value: summary.totalTreatments, color: '#10b981' },
-                    { label: 'Feed Admin', value: summary.totalFeedAdministrations, color: '#f59e0b' }
+                    { label: t('total_records'), value: summary.totalRecords, color: '#3b82f6' },
+                    { label: t('total_treatments'), value: summary.totalTreatments, color: '#10b981' },
+                    { label: t('feed_admin'), value: summary.totalFeedAdministrations, color: '#f59e0b' }
                 );
                 break;
             case 'MrlCompliance':
                 cards.push(
-                    { label: 'Safe', value: summary.safeAnimals, color: '#10b981' },
-                    { label: 'Withdrawal', value: summary.inWithdrawal, color: '#f59e0b' },
-                    { label: 'Violations', value: summary.violations, color: '#ef4444' },
-                    { label: 'Pass Rate', value: `${summary.testPassRate}%`, color: '#3b82f6' }
+                    { label: t('safe'), value: summary.safeAnimals, color: '#10b981' },
+                    { label: t('in_withdrawal'), value: summary.inWithdrawal, color: '#f59e0b' },
+                    { label: t('violations'), value: summary.violations, color: '#ef4444' },
+                    { label: t('pass_rate'), value: `${summary.testPassRate}%`, color: '#3b82f6' }
                 );
                 break;
         }
@@ -184,14 +186,14 @@ const ReportsScreen = () => {
         if (!reportData?.data?.length) {
             return (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>No data available</Text>
+                    <Text style={styles.emptyStateText}>{t('no_data_available')}</Text>
                 </View>
             );
         }
 
         return (
             <View style={styles.dataList}>
-                <Text style={styles.sectionTitle}>Details</Text>
+                <Text style={styles.sectionTitle}>{t('details')}</Text>
                 {reportData.data.slice(0, 50).map((item, index) => (
                     <View key={index} style={styles.dataItem}>
                         <View style={styles.dataItemContent}>
@@ -217,13 +219,13 @@ const ReportsScreen = () => {
         <ScrollView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Reports & Analytics</Text>
-                <Text style={styles.headerSubtitle}>Generate farm insights</Text>
+                <Text style={styles.headerTitle}>{t('reports_title')}</Text>
+                <Text style={styles.headerSubtitle}>{t('reports_subtitle')}</Text>
             </View>
 
             {/* Report Selection */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Select Report Type</Text>
+                <Text style={styles.sectionTitle}>{t('select_report_type')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
                     {REPORT_TYPES.map((type) => (
                         <TouchableOpacity
@@ -247,7 +249,7 @@ const ReportsScreen = () => {
             {/* Date Selection */}
             {selectedReport?.requiresDateRange && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Date Range</Text>
+                    <Text style={styles.sectionTitle}>{t('date_range')}</Text>
                     <View style={styles.dateRow}>
                         <TouchableOpacity
                             style={styles.dateButton}
@@ -283,7 +285,7 @@ const ReportsScreen = () => {
                     ) : (
                         <>
                             <Ionicons name="analytics" size={20} color="#fff" style={{ marginRight: 8 }} />
-                            <Text style={styles.generateButtonText}>Generate Report</Text>
+                            <Text style={styles.generateButtonText}>{t('generate_report')}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -293,7 +295,7 @@ const ReportsScreen = () => {
             {reportData && (
                 <View style={styles.resultsContainer}>
                     <Text style={styles.resultsTitle}>
-                        {REPORT_TYPES.find(r => r.value === reportData.reportType)?.label} Results
+                        {REPORT_TYPES.find(r => r.value === reportData.reportType)?.label} {t('results')}
                     </Text>
                     {renderSummaryCards()}
                     {renderDataList()}

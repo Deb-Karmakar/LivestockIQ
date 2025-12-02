@@ -1,84 +1,80 @@
+// Mobile/src/screens/farmer/AddTreatmentScreen.js
 import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
-    StyleSheet,
     TextInput,
     TouchableOpacity,
+    StyleSheet,
     ScrollView,
     Alert,
     ActivityIndicator,
-    Modal,
-    FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
+import { createTreatment } from '../../services/treatmentService';
 import { getAnimals } from '../../services/animalService';
-import { requestTreatment } from '../../services/treatmentService';
-import { getMyProfile } from '../../services/farmerService';
+import { getFarmerProfile } from '../../services/farmerService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AddTreatmentScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [animals, setAnimals] = useState([]);
     const [vetId, setVetId] = useState(null);
 
-    // Form State
     const [formData, setFormData] = useState({
         animalId: '',
         drugName: '',
         dose: '',
         route: 'Oral',
-        notes: '',
         startDate: new Date(),
+        reason: '',
     });
-
-    // UI State
     const [showDatePicker, setShowDatePicker] = useState(false);
-    const [showAnimalPicker, setShowAnimalPicker] = useState(false);
-    const [showRoutePicker, setShowRoutePicker] = useState(false);
-
-    const routes = ['Oral', 'Injection', 'Subcutaneous', 'Topical'];
 
     useEffect(() => {
-        fetchInitialData();
+        fetchAnimals();
+        fetchFarmerProfile();
     }, []);
 
-    const fetchInitialData = async () => {
+    const fetchAnimals = async () => {
         try {
-            const [animalsData, profileData] = await Promise.all([
-                getAnimals(),
-                getMyProfile(),
-            ]);
-
-            // Filter eligible animals (SAFE or NEW or no status)
-            const eligible = (animalsData || []).filter(a =>
-                !a.mrlStatus || a.mrlStatus === 'SAFE' || a.mrlStatus === 'NEW'
-            );
-            setAnimals(eligible);
-            setVetId(profileData?.vetId);
+            const data = await getAnimals();
+            setAnimals(data);
         } catch (error) {
-            console.error('Error loading data:', error);
-            Alert.alert('Error', 'Failed to load initial data');
+            console.error('Failed to fetch animals', error);
+        }
+    };
+
+    const fetchFarmerProfile = async () => {
+        try {
+            const profile = await getFarmerProfile();
+            if (profile && profile.associatedVetId) {
+                setVetId(profile.associatedVetId);
+            }
+        } catch (error) {
+            console.error('Failed to fetch farmer profile', error);
         }
     };
 
     const handleSubmit = async () => {
-        if (!formData.animalId || !formData.drugName) {
-            Alert.alert('Error', 'Please fill in all required fields');
+        if (!formData.animalId || !formData.drugName || !formData.dose) {
+            Alert.alert(t('error'), t('fill_required'));
             return;
         }
 
         setLoading(true);
         try {
-            const submitData = {
+            await createTreatment({
                 ...formData,
-                vetId: vetId,
-            };
-            await requestTreatment(submitData);
-            Alert.alert('Success', 'Treatment record submitted for review');
+                vetId: vetId, // Associate with the farmer's vet
+            });
+            Alert.alert(t('success'), t('treatment_submitted'));
             navigation.goBack();
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to save treatment');
+            Alert.alert(t('error'), error.response?.data?.message || 'Failed to save treatment');
         } finally {
             setLoading(false);
         }
@@ -91,52 +87,43 @@ const AddTreatmentScreen = ({ navigation }) => {
         }
     };
 
-    const renderAnimalItem = ({ item }) => (
-        <TouchableOpacity
-            style={styles.pickerItem}
-            onPress={() => {
-                setFormData({ ...formData, animalId: item.tagId });
-                setShowAnimalPicker(false);
-            }}
-        >
-            <View style={styles.pickerItemContent}>
-                <Text style={styles.pickerItemTitle}>{item.tagId}</Text>
-                <Text style={styles.pickerItemSubtitle}>{item.name || item.species}</Text>
-            </View>
-            {formData.animalId === item.tagId && (
-                <Ionicons name="checkmark" size={20} color="#10b981" />
-            )}
-        </TouchableOpacity>
-    );
-
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#1f2937" />
                 </TouchableOpacity>
-                <Text style={styles.title}>Add Treatment</Text>
+                <Text style={styles.title}>{t('add_treatment')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
                 {/* Animal Selection */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Animal *</Text>
-                    <TouchableOpacity
-                        style={styles.selectButton}
-                        onPress={() => setShowAnimalPicker(true)}
-                    >
-                        <Text style={[styles.selectButtonText, !formData.animalId && styles.placeholderText]}>
-                            {formData.animalId || 'Select Animal'}
-                        </Text>
-                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
-                    </TouchableOpacity>
+                    <Text style={styles.label}>{t('animal_required')}</Text>
+                    <View style={styles.pickerContainer}>
+                        <Picker
+                            selectedValue={formData.animalId}
+                            onValueChange={(itemValue) => setFormData({ ...formData, animalId: itemValue })}
+                        >
+                            <Picker.Item label={t('select_animal')} value="" />
+                            {animals.map((animal) => (
+                                <Picker.Item
+                                    key={animal._id}
+                                    label={`${animal.tagId} - ${animal.name || 'No Name'}`}
+                                    value={animal.tagId}
+                                />
+                            ))}
+                        </Picker>
+                    </View>
+                    {animals.length === 0 && (
+                        <Text style={styles.helperText}>{t('no_eligible_animals')}</Text>
+                    )}
                 </View>
 
                 {/* Drug Name */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Drug Name *</Text>
+                    <Text style={styles.label}>{t('drug_name_label')}</Text>
                     <TextInput
                         style={styles.input}
                         placeholder="e.g., Amoxicillin"
@@ -145,10 +132,10 @@ const AddTreatmentScreen = ({ navigation }) => {
                     />
                 </View>
 
-                {/* Dose & Route Row */}
+                {/* Dose & Route */}
                 <View style={styles.row}>
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>Dose</Text>
+                        <Text style={styles.label}>{t('dose')}</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="e.g., 10ml"
@@ -156,22 +143,24 @@ const AddTreatmentScreen = ({ navigation }) => {
                             onChangeText={(text) => setFormData({ ...formData, dose: text })}
                         />
                     </View>
-
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>Route</Text>
-                        <TouchableOpacity
-                            style={styles.selectButton}
-                            onPress={() => setShowRoutePicker(true)}
-                        >
-                            <Text style={styles.selectButtonText}>{formData.route}</Text>
-                            <Ionicons name="chevron-down" size={20} color="#6b7280" />
-                        </TouchableOpacity>
+                        <Text style={styles.label}>{t('route')}</Text>
+                        <View style={styles.pickerContainer}>
+                            <Picker
+                                selectedValue={formData.route}
+                                onValueChange={(itemValue) => setFormData({ ...formData, route: itemValue })}
+                            >
+                                <Picker.Item label="Oral" value="Oral" />
+                                <Picker.Item label="Injection" value="Injection" />
+                                <Picker.Item label="Topical" value="Topical" />
+                            </Picker>
+                        </View>
                     </View>
                 </View>
 
                 {/* Start Date */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Start Date</Text>
+                    <Text style={styles.label}>{t('start_date')}</Text>
                     <TouchableOpacity
                         style={styles.dateInput}
                         onPress={() => setShowDatePicker(true)}
@@ -187,18 +176,19 @@ const AddTreatmentScreen = ({ navigation }) => {
                             mode="date"
                             display="default"
                             onChange={onDateChange}
+                            maximumDate={new Date()}
                         />
                     )}
                 </View>
 
-                {/* Notes */}
+                {/* Reason */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Reason / Notes</Text>
+                    <Text style={styles.label}>{t('reason_notes')}</Text>
                     <TextInput
                         style={[styles.input, styles.textArea]}
                         placeholder="e.g., Respiratory infection"
-                        value={formData.notes}
-                        onChangeText={(text) => setFormData({ ...formData, notes: text })}
+                        value={formData.reason}
+                        onChangeText={(text) => setFormData({ ...formData, reason: text })}
                         multiline
                         numberOfLines={4}
                         textAlignVertical="top"
@@ -214,65 +204,10 @@ const AddTreatmentScreen = ({ navigation }) => {
                     {loading ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
-                        <Text style={styles.submitButtonText}>Submit for Review</Text>
+                        <Text style={styles.submitButtonText}>{t('submit_review')}</Text>
                     )}
                 </TouchableOpacity>
             </ScrollView>
-
-            {/* Animal Picker Modal */}
-            <Modal visible={showAnimalPicker} animationType="slide" presentationStyle="pageSheet">
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Select Animal</Text>
-                        <TouchableOpacity onPress={() => setShowAnimalPicker(false)}>
-                            <Text style={styles.closeButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <FlatList
-                        data={animals}
-                        keyExtractor={(item) => item._id}
-                        renderItem={renderAnimalItem}
-                        contentContainerStyle={styles.modalList}
-                        ListEmptyComponent={
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>No eligible animals found</Text>
-                            </View>
-                        }
-                    />
-                </View>
-            </Modal>
-
-            {/* Route Picker Modal */}
-            <Modal visible={showRoutePicker} transparent animationType="fade">
-                <TouchableOpacity
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setShowRoutePicker(false)}
-                >
-                    <View style={styles.pickerModal}>
-                        {routes.map((route) => (
-                            <TouchableOpacity
-                                key={route}
-                                style={styles.pickerModalItem}
-                                onPress={() => {
-                                    setFormData({ ...formData, route });
-                                    setShowRoutePicker(false);
-                                }}
-                            >
-                                <Text style={[
-                                    styles.pickerModalText,
-                                    formData.route === route && styles.pickerModalTextSelected
-                                ]}>
-                                    {route}
-                                </Text>
-                                {formData.route === route && (
-                                    <Ionicons name="checkmark" size={20} color="#10b981" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </TouchableOpacity>
-            </Modal>
         </View>
     );
 };
@@ -319,26 +254,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1f2937',
     },
-    textArea: {
-        height: 100,
-        paddingTop: 12,
-    },
-    selectButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+    pickerContainer: {
         backgroundColor: '#fff',
         borderWidth: 1,
         borderColor: '#d1d5db',
         borderRadius: 12,
-        padding: 12,
-    },
-    selectButtonText: {
-        fontSize: 16,
-        color: '#1f2937',
-    },
-    placeholderText: {
-        color: '#9ca3af',
+        overflow: 'hidden',
     },
     row: {
         flexDirection: 'row',
@@ -361,106 +282,30 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#1f2937',
     },
+    textArea: {
+        height: 100,
+        paddingTop: 12,
+    },
     submitButton: {
         backgroundColor: '#10b981',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        marginTop: 10,
+        marginTop: 20,
         marginBottom: 40,
     },
     submitButtonText: {
-        color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+        color: '#fff',
     },
     buttonDisabled: {
         backgroundColor: '#9ca3af',
     },
-    // Modal Styles
-    modalContainer: {
-        flex: 1,
-        backgroundColor: '#f3f4f6',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1f2937',
-    },
-    closeButtonText: {
-        fontSize: 16,
-        color: '#3b82f6',
-        fontWeight: '600',
-    },
-    modalList: {
-        padding: 20,
-    },
-    pickerItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    pickerItemContent: {
-        flex: 1,
-    },
-    pickerItemTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#1f2937',
-    },
-    pickerItemSubtitle: {
-        fontSize: 14,
-        color: '#6b7280',
-        marginTop: 2,
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        padding: 40,
-    },
-    emptyText: {
-        color: '#6b7280',
-        fontSize: 16,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    pickerModal: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 8,
-    },
-    pickerModalItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        borderRadius: 8,
-    },
-    pickerModalText: {
-        fontSize: 16,
-        color: '#1f2937',
-    },
-    pickerModalTextSelected: {
-        color: '#10b981',
-        fontWeight: '600',
+    helperText: {
+        fontSize: 12,
+        color: '#ef4444',
+        marginTop: 4,
     },
 });
 

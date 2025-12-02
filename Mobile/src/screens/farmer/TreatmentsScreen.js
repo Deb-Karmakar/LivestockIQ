@@ -1,3 +1,4 @@
+// Mobile/src/screens/farmer/TreatmentsScreen.js
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -14,8 +15,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { getTreatments } from '../../services/treatmentService';
 import { differenceInDays } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TreatmentsScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [treatments, setTreatments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -35,7 +38,7 @@ const TreatmentsScreen = ({ navigation }) => {
             const data = await getTreatments();
             setTreatments(Array.isArray(data) ? data : []);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load treatments');
+            Alert.alert(t('error'), t('failed_load_treatments'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -70,13 +73,13 @@ const TreatmentsScreen = ({ navigation }) => {
     const getWithdrawalBadge = (info) => {
         switch (info.status) {
             case 'safe':
-                return { color: '#10b981', bg: '#d1fae5', text: 'Safe for Sale', icon: 'shield-checkmark' };
+                return { color: '#10b981', bg: '#d1fae5', text: t('safe_for_sale'), icon: 'shield-checkmark' };
             case 'ending_soon':
-                return { color: '#f59e0b', bg: '#fef3c7', text: 'Ending Soon', icon: 'alert-circle' };
+                return { color: '#f59e0b', bg: '#fef3c7', text: t('ending_soon'), icon: 'alert-circle' };
             case 'active':
-                return { color: '#ef4444', bg: '#fee2e2', text: 'Active Withdrawal', icon: 'shield' };
+                return { color: '#ef4444', bg: '#fee2e2', text: t('active_withdrawal'), icon: 'shield' };
             default:
-                return { color: '#6b7280', bg: '#f3f4f6', text: 'Pending Vet', icon: 'time' };
+                return { color: '#6b7280', bg: '#f3f4f6', text: t('pending_vet'), icon: 'time' };
         }
     };
 
@@ -108,7 +111,7 @@ const TreatmentsScreen = ({ navigation }) => {
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
                         <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                            {item.status}
+                            {t(item.status.toLowerCase()) || item.status}
                         </Text>
                     </View>
                 </View>
@@ -121,7 +124,7 @@ const TreatmentsScreen = ({ navigation }) => {
                                 {withdrawalInfo.daysLeft === 0 ? '✓' : withdrawalInfo.daysLeft}
                             </Text>
                             <Text style={[styles.daysLabel, { color: badge.color }]}>
-                                {withdrawalInfo.daysLeft === 0 ? 'Withdrawal Complete' : `Day${withdrawalInfo.daysLeft > 1 ? 's' : ''} Left`}
+                                {withdrawalInfo.daysLeft === 0 ? t('withdrawal_complete') : `${t('days_left')}`}
                             </Text>
                         </View>
                         <View style={[styles.badgeContainer, { backgroundColor: badge.color }]}>
@@ -134,15 +137,15 @@ const TreatmentsScreen = ({ navigation }) => {
                 {/* Details Grid */}
                 <View style={styles.detailsGrid}>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Dose</Text>
+                        <Text style={styles.detailLabel}>{t('dose')}</Text>
                         <Text style={styles.detailValue}>{item.dose || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Route</Text>
+                        <Text style={styles.detailLabel}>{t('route')}</Text>
                         <Text style={styles.detailValue}>{item.route || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>Start Date</Text>
+                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
                         <Text style={styles.detailValue}>
                             {new Date(item.startDate).toLocaleDateString()}
                         </Text>
@@ -154,7 +157,7 @@ const TreatmentsScreen = ({ navigation }) => {
                     <View style={styles.vetNotes}>
                         <Ionicons name="chatbubble-ellipses-outline" size={16} color="#3b82f6" />
                         <Text style={styles.vetNotesText}>
-                            <Text style={styles.vetNotesLabel}>Vet: </Text>
+                            <Text style={styles.vetNotesLabel}>{t('vet_label')} </Text>
                             {item.vetNotes}
                         </Text>
                     </View>
@@ -181,14 +184,14 @@ const TreatmentsScreen = ({ navigation }) => {
             >
                 <View style={styles.headerContent}>
                     <View>
-                        <Text style={styles.headerTitle}>Treatment Records</Text>
+                        <Text style={styles.headerTitle}>{t('treatment_records')}</Text>
                         <Text style={styles.headerSubtitle}>
-                            {treatments.length} records • {treatments.filter(t => getWithdrawalInfo(t).status === 'active').length} active withdrawals
+                            {treatments.length} records • {treatments.filter(t => getWithdrawalInfo(t).status === 'active').length} {t('active_withdrawals')}
                         </Text>
                     </View>
                     <TouchableOpacity
                         style={styles.exportButton}
-                        onPress={() => Alert.alert('Export', 'PDF Export feature coming soon!')}
+                        onPress={() => Alert.alert('Export', t('export_pdf'))}
                     >
                         <Ionicons name="download-outline" size={24} color="#fff" />
                     </TouchableOpacity>
@@ -199,9 +202,9 @@ const TreatmentsScreen = ({ navigation }) => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {[
                         { id: 'all', label: 'All' },
-                        { id: 'active', label: 'Active Withdrawal' },
-                        { id: 'safe', label: 'Safe for Sale' },
-                        { id: 'pending', label: 'Pending Approval' }
+                        { id: 'active', label: t('active_withdrawal') },
+                        { id: 'safe', label: t('safe_for_sale') },
+                        { id: 'pending', label: t('pending_approval') }
                     ].map((f) => (
                         <TouchableOpacity
                             key={f.id}
@@ -225,7 +228,7 @@ const TreatmentsScreen = ({ navigation }) => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Ionicons name="medical" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>No treatments found</Text>
+                        <Text style={styles.emptyText}>{t('no_treatments_found')}</Text>
                     </View>
                 }
             />

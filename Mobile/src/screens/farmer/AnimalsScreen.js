@@ -15,8 +15,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getAnimals, deleteAnimal } from '../../services/animalService';
 import AIHealthTipModal from '../../components/AIHealthTipModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AnimalsScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [animals, setAnimals] = useState([]);
     const [filteredAnimals, setFilteredAnimals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -41,7 +43,7 @@ const AnimalsScreen = ({ navigation }) => {
             const data = await getAnimals();
             setAnimals(data);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load animals');
+            Alert.alert(t('error'), t('failed_load_animals'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -73,20 +75,20 @@ const AnimalsScreen = ({ navigation }) => {
 
     const handleDelete = async (animalId) => {
         Alert.alert(
-            'Delete Animal',
-            'Are you sure you want to delete this animal? This action cannot be undone.',
+            t('delete_animal_title'),
+            t('delete_animal_confirm'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
                 {
-                    text: 'Delete',
+                    text: t('delete'),
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await deleteAnimal(animalId);
-                            Alert.alert('Success', 'Animal deleted successfully');
+                            Alert.alert(t('success'), 'Animal deleted successfully');
                             fetchAnimals();
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to delete animal');
+                            Alert.alert(t('error'), 'Failed to delete animal');
                         }
                     },
                 },
@@ -101,19 +103,19 @@ const AnimalsScreen = ({ navigation }) => {
 
     const handleMoreActions = (animal) => {
         Alert.alert(
-            'More Actions',
-            `Actions for ${animal.tagId}`,
+            t('more_actions'),
+            `${t('actions_for')} ${animal.tagId}`,
             [
                 {
-                    text: 'AI Health Tip',
+                    text: t('ai_health_tip'),
                     onPress: () => handleAIHealthTip(animal),
                 },
                 {
-                    text: 'Delete',
+                    text: t('delete'),
                     onPress: () => handleDelete(animal._id),
                     style: 'destructive',
                 },
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('cancel'), style: 'cancel' },
             ]
         );
     };
@@ -126,13 +128,13 @@ const AnimalsScreen = ({ navigation }) => {
     const getMRLBadgeColor = (status) => {
         switch (status) {
             case 'SAFE':
-                return { bg: '#10b98120', text: '#10b981', label: 'Safe for Sale' };
+                return { bg: '#10b98120', text: '#10b981', label: t('safe_for_sale') };
             case 'WITHDRAWAL_ACTIVE':
-                return { bg: '#ef444420', text: '#ef4444', label: 'Under Withdrawal' };
+                return { bg: '#ef444420', text: '#ef4444', label: t('active_treatments') }; // Reusing active_treatments or need new key? 'Under Withdrawal'
             case 'TEST_REQUIRED':
                 return { bg: '#f59e0b20', text: '#f59e0b', label: 'Test Required' };
             case 'PENDING_VERIFICATION':
-                return { bg: '#3b82f620', text: '#3b82f6', label: 'Pending Verification' };
+                return { bg: '#3b82f620', text: '#3b82f6', label: t('pending_approval') };
             case 'VIOLATION':
                 return { bg: '#ef444420', text: '#ef4444', label: 'MRL Violation' };
             default:
@@ -194,7 +196,7 @@ const AnimalsScreen = ({ navigation }) => {
 
                 {item.notes && (
                     <View style={styles.notesContainer}>
-                        <Text style={styles.notesLabel}>Notes:</Text>
+                        <Text style={styles.notesLabel}>{t('notes_label')}</Text>
                         <Text style={styles.notesText} numberOfLines={2}>
                             {item.notes}
                         </Text>
@@ -208,7 +210,7 @@ const AnimalsScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('AddAnimal', { animal: item })}
                     >
                         <Ionicons name="create" size={16} color="#3b82f6" />
-                        <Text style={styles.editButtonText}>Edit</Text>
+                        <Text style={styles.editButtonText}>{t('edit')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -216,7 +218,7 @@ const AnimalsScreen = ({ navigation }) => {
                         onPress={() => handleViewHistory(item)}
                     >
                         <Ionicons name="document-text" size={16} color="#8b5cf6" />
-                        <Text style={styles.historyButtonText}>History</Text>
+                        <Text style={styles.historyButtonText}>{t('history')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -234,7 +236,7 @@ const AnimalsScreen = ({ navigation }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>Loading animals...</Text>
+                <Text style={styles.loadingText}>{t('loading_animals')}</Text>
             </View>
         );
     }
@@ -246,11 +248,11 @@ const AnimalsScreen = ({ navigation }) => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerTextContainer}>
                         <Text style={styles.headerBadge}>
-                            <Ionicons name="sparkles" size={14} color="#10b981" /> Herd Management
+                            <Ionicons name="sparkles" size={14} color="#10b981" /> {t('herd_management')}
                         </Text>
-                        <Text style={styles.headerTitle}>Animals & Livestock</Text>
+                        <Text style={styles.headerTitle}>{t('animals_livestock')}</Text>
                         <Text style={styles.headerSubtitle}>
-                            You have <Text style={styles.highlight}>{animals.length} animals</Text> registered
+                            {t('you_have_registered', { count: animals.length })} <Text style={styles.highlight}>{animals.length} {t('animals_registered')}</Text>
                         </Text>
                     </View>
                 </View>
@@ -262,7 +264,7 @@ const AnimalsScreen = ({ navigation }) => {
                     <Ionicons name="search" size={20} color="#6b7280" />
                     <TextInput
                         style={styles.searchInput}
-                        placeholder="Search by Tag ID or Name..."
+                        placeholder={t('search_placeholder')}
                         value={searchTerm}
                         onChangeText={setSearchTerm}
                     />
@@ -287,7 +289,7 @@ const AnimalsScreen = ({ navigation }) => {
                 </Text>
                 {speciesFilter !== 'All' && (
                     <TouchableOpacity onPress={() => setSpeciesFilter('All')}>
-                        <Text style={styles.clearFilter}>Clear Filter</Text>
+                        <Text style={styles.clearFilter}>{t('clear_filter')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -302,11 +304,11 @@ const AnimalsScreen = ({ navigation }) => {
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Ionicons name="paw" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>No animals found</Text>
+                        <Text style={styles.emptyText}>{t('no_animals_found')}</Text>
                         <Text style={styles.emptySubtext}>
                             {searchTerm || speciesFilter !== 'All'
-                                ? 'Try adjusting your search or filter'
-                                : 'Add your first animal to get started'}
+                                ? t('no_animals_subtext')
+                                : t('add_first_animal')}
                         </Text>
                     </View>
                 }
@@ -330,7 +332,7 @@ const AnimalsScreen = ({ navigation }) => {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Filter by Species</Text>
+                            <Text style={styles.modalTitle}>{t('filter_species')}</Text>
                             <TouchableOpacity onPress={() => setShowFilterModal(false)}>
                                 <Ionicons name="close" size={24} color="#6b7280" />
                             </TouchableOpacity>

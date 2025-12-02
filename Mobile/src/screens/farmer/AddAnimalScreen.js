@@ -14,10 +14,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { createAnimal, updateAnimal } from '../../services/animalService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 import BarcodeScannerModal from '../../components/BarcodeScannerModal';
 
 const AddAnimalScreen = ({ navigation, route }) => {
+    const { t } = useLanguage();
     const { animal } = route.params || {};
     const isEditing = !!animal;
 
@@ -41,11 +43,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
     const handleSubmit = async () => {
         if (!formData.tagId || formData.tagId.length !== 12) {
-            Alert.alert('Error', 'Tag ID must be exactly 12 digits');
+            Alert.alert(t('error'), t('tag_id_error'));
             return;
         }
         if (!formData.species) {
-            Alert.alert('Error', 'Please select a species');
+            Alert.alert(t('error'), t('species_error'));
             return;
         }
 
@@ -58,15 +60,15 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
             if (isEditing) {
                 await updateAnimal(animal._id, submitData);
-                Alert.alert('Success', 'Animal updated successfully!');
+                Alert.alert(t('success'), t('animal_updated_success'));
             } else {
                 await createAnimal(submitData);
-                Alert.alert('Success', 'Animal added successfully!');
+                Alert.alert(t('success'), t('animal_added_success'));
             }
 
             navigation.goBack();
         } catch (error) {
-            Alert.alert('Error', error.response?.data?.message || 'Failed to save animal');
+            Alert.alert(t('error'), error.response?.data?.message || 'Failed to save animal');
         } finally {
             setLoading(false);
         }
@@ -90,18 +92,18 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color="#1f2937" />
                 </TouchableOpacity>
-                <Text style={styles.title}>{isEditing ? 'Edit Animal' : 'Add New Animal'}</Text>
+                <Text style={styles.title}>{isEditing ? t('edit_animal') : t('add_new_animal')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
                 {/* Tag ID */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Official 12-Digit Tag ID *</Text>
+                    <Text style={styles.label}>{t('tag_id_label')}</Text>
                     <View style={styles.inputRow}>
                         <TextInput
                             style={[styles.input, styles.flexInput, isEditing && styles.inputDisabled]}
-                            placeholder="e.g., 342987123456"
+                            placeholder={t('tag_id_placeholder')}
                             value={formData.tagId}
                             onChangeText={(text) => setFormData({ ...formData, tagId: text })}
                             maxLength={12}
@@ -120,10 +122,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Name */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Animal Name (Optional)</Text>
+                    <Text style={styles.label}>{t('animal_name_label')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="e.g., Gauri"
+                        placeholder={t('animal_name_placeholder')}
                         value={formData.name}
                         onChangeText={(text) => setFormData({ ...formData, name: text })}
                     />
@@ -132,7 +134,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 {/* Species & Gender Row */}
                 <View style={styles.row}>
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>Species *</Text>
+                        <Text style={styles.label}>{t('species_label')}</Text>
                         <View style={styles.chipContainer}>
                             {speciesList.slice(0, 4).map((s) => (
                                 <TouchableOpacity
@@ -178,7 +180,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     </View>
 
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>Gender *</Text>
+                        <Text style={styles.label}>{t('gender_label')}</Text>
                         <View style={styles.chipContainer}>
                             {genderList.map((g) => (
                                 <TouchableOpacity
@@ -205,7 +207,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Date of Birth */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Date of Birth</Text>
+                    <Text style={styles.label}>{t('dob_label')}</Text>
                     <TouchableOpacity
                         style={styles.dateInput}
                         onPress={() => setShowDatePicker(true)}
@@ -228,11 +230,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Weight */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Weight</Text>
+                    <Text style={styles.label}>{t('weight_label')}</Text>
                     <View style={styles.inputRow}>
                         <TextInput
                             style={[styles.input, styles.flexInput]}
-                            placeholder="Enter weight"
+                            placeholder={t('weight_placeholder')}
                             value={formData.weight}
                             onChangeText={(text) => setFormData({ ...formData, weight: text })}
                             keyboardType="numeric"
@@ -263,10 +265,10 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Notes */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>Notes</Text>
+                    <Text style={styles.label}>{t('notes_label')}</Text>
                     <TextInput
                         style={[styles.input, styles.textArea]}
-                        placeholder="Any specific details about this animal..."
+                        placeholder={t('notes_placeholder')}
                         value={formData.notes}
                         onChangeText={(text) => setFormData({ ...formData, notes: text })}
                         multiline
@@ -281,7 +283,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                         style={[styles.button, styles.cancelButton]}
                         onPress={() => navigation.goBack()}
                     >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                        <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.button, styles.submitButton, loading && styles.buttonDisabled]}
@@ -292,7 +294,7 @@ const AddAnimalScreen = ({ navigation, route }) => {
                             <ActivityIndicator color="#fff" />
                         ) : (
                             <Text style={styles.submitButtonText}>
-                                {isEditing ? 'Save Changes' : 'Add Animal'}
+                                {isEditing ? t('save_changes') : t('add_animal_btn')}
                             </Text>
                         )}
                     </TouchableOpacity>

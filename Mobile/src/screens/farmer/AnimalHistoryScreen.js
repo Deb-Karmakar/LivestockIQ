@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAnimalHistory } from '../../services/animalService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const AnimalHistoryScreen = ({ route, navigation }) => {
+    const { t } = useLanguage();
     const { animalId } = route.params;
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -122,7 +124,7 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
                                         { color: item.status === 'Approved' ? '#10b981' : '#f59e0b' },
                                     ]}
                                 >
-                                    {item.status}
+                                    {t(item.status.toLowerCase()) || item.status}
                                 </Text>
                             </View>
                         )}
@@ -136,7 +138,7 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>Loading history...</Text>
+                <Text style={styles.loadingText}>{t('loading_history')}</Text>
             </View>
         );
     }
@@ -149,8 +151,8 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
                 <View style={styles.headerText}>
-                    <Text style={styles.title}>Medical History</Text>
-                    <Text style={styles.subtitle}>Animal: {animalId}</Text>
+                    <Text style={styles.title}>{t('medical_history')}</Text>
+                    <Text style={styles.subtitle}>{t('animal_label')}: {animalId}</Text>
                 </View>
             </View>
 
@@ -166,9 +168,9 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
                 ) : (
                     <View style={styles.emptyContainer}>
                         <Ionicons name="document-text-outline" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>No history yet</Text>
+                        <Text style={styles.emptyText}>{t('no_history')}</Text>
                         <Text style={styles.emptySubtext}>
-                            Medical events will appear here once recorded
+                            {t('no_history_subtext')}
                         </Text>
                     </View>
                 )}

@@ -17,12 +17,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Location from 'expo-location';
 import districtsData from '../../data/districts';
 
 const SignupScreen = ({ navigation }) => {
     const { register, registerVet } = useAuth();
+    const { t } = useLanguage();
     const [role, setRole] = useState(null); // 'farmer' or 'veterinarian'
     const [loading, setLoading] = useState(false);
 
@@ -193,16 +195,16 @@ const SignupScreen = ({ navigation }) => {
 
     const renderRoleSelection = () => (
         <View style={styles.roleContainer}>
-            <Text style={styles.headerTitle}>Join LivestockIQ</Text>
-            <Text style={styles.headerSubtitle}>Select your role to get started</Text>
+            <Text style={styles.headerTitle}>{t('join_livestockiq')}</Text>
+            <Text style={styles.headerSubtitle}>{t('select_role')}</Text>
 
             <TouchableOpacity style={styles.roleCard} onPress={() => setRole('farmer')}>
                 <View style={[styles.iconContainer, { backgroundColor: '#dcfce7' }]}>
                     <Ionicons name="leaf" size={32} color="#16a34a" />
                 </View>
                 <View>
-                    <Text style={styles.roleTitle}>I am a Farmer</Text>
-                    <Text style={styles.roleDesc}>Manage your farm and livestock</Text>
+                    <Text style={styles.roleTitle}>{t('iam_farmer')}</Text>
+                    <Text style={styles.roleDesc}>{t('farmer_desc')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#9ca3af" style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
@@ -212,14 +214,14 @@ const SignupScreen = ({ navigation }) => {
                     <Ionicons name="medkit" size={32} color="#2563eb" />
                 </View>
                 <View>
-                    <Text style={styles.roleTitle}>I am a Veterinarian</Text>
-                    <Text style={styles.roleDesc}>Manage treatments and farms</Text>
+                    <Text style={styles.roleTitle}>{t('iam_vet')}</Text>
+                    <Text style={styles.roleDesc}>{t('vet_desc')}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#9ca3af" style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>Back to Login</Text>
+                <Text style={styles.backButtonText}>{t('back_to_login')}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -230,20 +232,20 @@ const SignupScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => setRole(null)} style={styles.backIcon}>
                     <Ionicons name="arrow-back" size={24} color="#1f2937" />
                 </TouchableOpacity>
-                <Text style={styles.formTitle}>{role === 'farmer' ? 'Farmer Registration' : 'Vet Registration'}</Text>
+                <Text style={styles.formTitle}>{role === 'farmer' ? t('farmer_registration') : t('vet_registration')}</Text>
             </View>
 
             <View style={styles.formSection}>
-                <Text style={styles.sectionTitle}>Account Details</Text>
+                <Text style={styles.sectionTitle}>{t('account_details')}</Text>
                 <TextInput
                     style={styles.input}
-                    placeholder="Full Name"
+                    placeholder={t('full_name')}
                     value={fullName}
                     onChangeText={setFullName}
                 />
                 <TextInput
                     style={styles.input}
-                    placeholder="Email"
+                    placeholder={t('email')}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -251,7 +253,7 @@ const SignupScreen = ({ navigation }) => {
                 />
                 <TextInput
                     style={styles.input}
-                    placeholder="Phone Number"
+                    placeholder={t('phone_number')}
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -259,7 +261,7 @@ const SignupScreen = ({ navigation }) => {
                 <View style={styles.passwordContainer}>
                     <TextInput
                         style={styles.passwordInput}
-                        placeholder="Password"
+                        placeholder={t('password')}
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry={!showPassword}
@@ -270,7 +272,7 @@ const SignupScreen = ({ navigation }) => {
                 </View>
                 <TextInput
                     style={styles.input}
-                    placeholder="Confirm Password"
+                    placeholder={t('confirm_password')}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showPassword}
@@ -279,20 +281,20 @@ const SignupScreen = ({ navigation }) => {
 
             {role === 'farmer' ? (
                 <View style={styles.formSection}>
-                    <Text style={styles.sectionTitle}>Farm Details</Text>
+                    <Text style={styles.sectionTitle}>{t('farm_details')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="Farm Name"
+                        placeholder={t('farm_name')}
                         value={farmName}
                         onChangeText={setFarmName}
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Veterinarian ID"
+                        placeholder={t('vet_id')}
                         value={vetId}
                         onChangeText={setVetId}
                     />
-                    <Text style={styles.helperText}>Ask your vet for their ID (e.g., x7b2k1j)</Text>
+                    <Text style={styles.helperText}>{t('vet_id_helper')}</Text>
 
 
                     <TouchableOpacity
@@ -318,33 +320,33 @@ const SignupScreen = ({ navigation }) => {
                 </View>
             ) : (
                 <View style={styles.formSection}>
-                    <Text style={styles.sectionTitle}>Professional Details</Text>
+                    <Text style={styles.sectionTitle}>{t('professional_details')}</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="License Number"
+                        placeholder={t('license_number')}
                         value={licenseNumber}
                         onChangeText={setLicenseNumber}
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="University"
+                        placeholder={t('university')}
                         value={university}
                         onChangeText={setUniversity}
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Degree"
+                        placeholder={t('degree')}
                         value={degree}
                         onChangeText={setDegree}
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Specialization"
+                        placeholder={t('specialization')}
                         value={specialization}
                         onChangeText={setSpecialization}
                     />
                     <TouchableOpacity onPress={() => setShowDobPicker(true)} style={styles.dateButton}>
-                        <Text style={styles.dateButtonText}>DOB: {dob.toLocaleDateString()}</Text>
+                        <Text style={styles.dateButtonText}>{t('dob')}: {dob.toLocaleDateString()}</Text>
                     </TouchableOpacity>
                     {showDobPicker && (
                         <DateTimePicker
@@ -389,7 +391,7 @@ const SignupScreen = ({ navigation }) => {
                                 {infoAccurate && <Ionicons name="checkmark" size={16} color="#fff" />}
                             </View>
                             <Text style={styles.checkboxLabel}>
-                                I confirm that the information provided is accurate.
+                                {t('confirm_accurate')}
                             </Text>
                         </TouchableOpacity>
 
@@ -401,7 +403,7 @@ const SignupScreen = ({ navigation }) => {
                                 {dataConsent && <Ionicons name="checkmark" size={16} color="#fff" />}
                             </View>
                             <Text style={styles.checkboxLabel}>
-                                I consent to share data with farmers and regulatory authorities as per the platform's terms.
+                                {t('consent_share')}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -414,7 +416,7 @@ const SignupScreen = ({ navigation }) => {
                 onPress={handleSignup}
                 disabled={loading}
             >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Create Account</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>{t('create_account')}</Text>}
             </TouchableOpacity>
 
             {/* Picker Modal */}

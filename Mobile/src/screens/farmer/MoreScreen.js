@@ -9,32 +9,34 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MoreScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
+    const { t, language, changeLanguage } = useLanguage();
 
     const menuItems = [
         {
-            section: 'Compliance & Inventory',
+            section: t('compliance_inventory'),
             items: [
-                { name: 'MRL Compliance', icon: 'shield-checkmark', screen: 'MRLCompliance', color: '#10b981' },
-                { name: 'Drug Inventory', icon: 'medkit', screen: 'Inventory', color: '#3b82f6' },
-                { name: 'Feed Inventory', icon: 'nutrition', screen: 'FeedInventory', color: '#f59e0b' },
-                { name: 'Feed Administration', icon: 'clipboard', screen: 'FeedAdmin', color: '#8b5cf6' },
+                { name: t('mrl_compliance'), icon: 'shield-checkmark', screen: 'MRLCompliance', color: '#10b981' },
+                { name: t('drug_inventory'), icon: 'medkit', screen: 'Inventory', color: '#3b82f6' },
+                { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: '#f59e0b' },
+                { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: '#8b5cf6' },
             ],
         },
         {
-            section: 'Reports & Support',
+            section: t('reports_support'),
             items: [
-                { name: 'Reports', icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
-                { name: 'Alerts', icon: 'notifications', screen: 'Alerts', color: '#ef4444' },
-                { name: 'Support', icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
+                { name: t('reports'), icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
+                { name: t('alerts'), icon: 'notifications', screen: 'Alerts', color: '#ef4444' },
+                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
             ],
         },
         {
-            section: 'Account',
+            section: t('account'),
             items: [
-                { name: 'Settings', icon: 'settings', screen: 'Settings', color: '#6b7280' },
+                { name: t('settings'), icon: 'settings', screen: 'Settings', color: '#6b7280' },
             ],
         },
     ];
@@ -78,10 +80,38 @@ const MoreScreen = ({ navigation }) => {
                 </View>
             ))}
 
+            {/* Language Toggle Section */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('language')}</Text>
+                <View style={styles.sectionCard}>
+                    <TouchableOpacity
+                        style={[styles.menuItem, language === 'en' && styles.selectedLang]}
+                        onPress={() => changeLanguage('en')}
+                    >
+                        <View style={[styles.menuIconContainer, { backgroundColor: '#e0f2fe' }]}>
+                            <Text style={{ fontSize: 18 }}>🇺🇸</Text>
+                        </View>
+                        <Text style={styles.menuItemText}>{t('english')}</Text>
+                        {language === 'en' && <Ionicons name="checkmark" size={20} color="#10b981" />}
+                    </TouchableOpacity>
+                    <View style={styles.menuItemBorder} />
+                    <TouchableOpacity
+                        style={[styles.menuItem, language === 'hi' && styles.selectedLang]}
+                        onPress={() => changeLanguage('hi')}
+                    >
+                        <View style={[styles.menuIconContainer, { backgroundColor: '#ffedd5' }]}>
+                            <Text style={{ fontSize: 18 }}>🇮🇳</Text>
+                        </View>
+                        <Text style={styles.menuItemText}>{t('hindi')}</Text>
+                        {language === 'hi' && <Ionicons name="checkmark" size={20} color="#10b981" />}
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             {/* Logout Button */}
             <TouchableOpacity style={styles.logoutButton} onPress={logout}>
                 <Ionicons name="log-out" size={20} color="#ef4444" />
-                <Text style={styles.logoutText}>Logout</Text>
+                <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -203,6 +233,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#9ca3af',
     },
+    selectedLang: {
+        backgroundColor: '#f0fdf4',
+    }
 });
 
 export default MoreScreen;

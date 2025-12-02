@@ -13,10 +13,12 @@ import {
     ScrollView,
 } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const LoginScreen = ({ navigation }) => {
     const { login } = useAuth();
+    const { t } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -52,7 +54,7 @@ const LoginScreen = ({ navigation }) => {
                 <View style={styles.header}>
                     <Ionicons name="paw" size={60} color="#10b981" />
                     <Text style={styles.title}>LivestockIQ</Text>
-                    <Text style={styles.subtitle}>Farm Management System</Text>
+                    <Text style={styles.subtitle}>{t('farm_management_system')}</Text>
                 </View>
 
                 <View style={styles.form}>
@@ -60,7 +62,7 @@ const LoginScreen = ({ navigation }) => {
                         <Ionicons name="mail-outline" size={20} color="#6b7280" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Email"
+                            placeholder={t('email')}
                             value={email}
                             onChangeText={setEmail}
                             keyboardType="email-address"
@@ -73,7 +75,7 @@ const LoginScreen = ({ navigation }) => {
                         <Ionicons name="lock-closed-outline" size={20} color="#6b7280" style={styles.inputIcon} />
                         <TextInput
                             style={styles.input}
-                            placeholder="Password"
+                            placeholder={t('password')}
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
@@ -96,7 +98,7 @@ const LoginScreen = ({ navigation }) => {
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Login</Text>
+                            <Text style={styles.buttonText}>{t('login')}</Text>
                         )}
                     </TouchableOpacity>
 
@@ -105,7 +107,7 @@ const LoginScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('Signup')}
                     >
                         <Text style={styles.signupText}>
-                            Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                            {t('dont_have_account')} <Text style={styles.signupTextBold}>{t('signup')}</Text>
                         </Text>
                     </TouchableOpacity>
 
