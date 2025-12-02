@@ -52,14 +52,14 @@ export const getMapData = async () => {
     }
 };
 
-export const generateComplianceReport = async (dateRange) => {
+export const generateReport = async (dateRange, type) => {
     try {
-        const { data } = await axiosInstance.post('/regulator/reports/compliance', dateRange, {
+        const { data } = await axiosInstance.post('/regulator/reports/generate', { ...dateRange, type }, {
             responseType: 'blob',
         });
         return data;
     } catch (error) {
-        console.error("Error generating compliance report:", error);
+        console.error("Error generating report:", error);
         throw error;
     }
 };

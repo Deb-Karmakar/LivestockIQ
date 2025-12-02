@@ -564,3 +564,280 @@ export const getHighAmuAlerts = async (req, res) => {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
+
+export const generateReport = async (req, res) => {
+    try {
+        const { from, to, type } = req.body;
+        const startDate = new Date(from);
+        const endDate = new Date(to);
+
+        const doc = new PDFDocument({ margin: 50 });
+        const buffers = [];
+        doc.on('data', buffers.push.bind(buffers));
+        doc.on('end', () => {
+            const pdfBuffer = Buffer.concat(buffers);
+            res.writeHead(200, {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="${type}_Report_${format(new Date(), 'yyyy-MM-dd')}.pdf"`,
+                'Content-Length': pdfBuffer.length,
+            });
+            res.end(pdfBuffer);
+        });
+
+        // Common Header
+        doc.fillColor('#228B22').fontSize(24).font('Helvetica-Bold').text('LivestockIQ', 50, 50);
+        doc.fillColor('#000000').fontSize(12).font('Helvetica');
+        doc.moveDown(2);
+        doc.fontSize(20).font('Helvetica-Bold').text(`${type.replace(/([A-Z])/g, ' $1').trim()} Report`, { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(12).font('Helvetica').text(`Report Period: ${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`);
+        doc.moveDown(2);
+
+        switch (type) {
+            case 'Compliance':
+                await generateComplianceReportContent(doc, startDate, endDate);
+                break;
+            case 'AmuTrends':
+                await generateAmuTrendsReportContent(doc, startDate, endDate);
+                break;
+            case 'WhoAware':
+                await generateWhoAwareReportContent(doc, startDate, endDate);
+                break;
+            case 'VetOversight':
+                await generateVetOversightReportContent(doc, startDate, endDate);
+                break;
+            case 'FarmRisk':
+                await generateFarmRiskReportContent(doc, startDate, endDate);
+                break;
+            case 'FeedVsTherapeutic':
+                await generateFeedVsTherapeuticReportContent(doc, startDate, endDate);
+                break;
+            default:
+                doc.text('Invalid Report Type Selected.');
+        }
+
+        doc.end();
+
+    } catch (error) {
+        console.error("Error generating report:", error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+// --- Helper Functions for Report Content ---
+
+const generateComplianceReportContent = async (doc, startDate, endDate) => {
+    const [treatments, alerts] = await Promise.all([
+        Treatment.find({ createdAt: { $gte: startDate, $lte: endDate } }),
+        ComplianceAlert.find({ createdAt: { $gte: startDate, $lte: endDate } })
+            .populate('farmerId', 'farmName farmOwner')
+            .populate('vetId', 'fullName')
+            .sort({ createdAt: -1 })
+    ]);
+
+    const stats = { approved: 0, pending: 0, rejected: 0 };
+    treatments.forEach(t => {
+        if (stats.hasOwnProperty(t.status.toLowerCase())) {
+            stats[t.status.toLowerCase()]++;
+        }
+    });
+    const totalRecords = stats.approved + stats.pending + stats.rejected;
+    const complianceRate = totalRecords > 0 ? ((stats.approved / totalRecords) * 100).toFixed(1) : 100;
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Statistical Summary');
+    doc.fontSize(10).font('Helvetica').list([
+        `Total Treatment Records Submitted: ${totalRecords}`,
+        `Approved Records: ${stats.approved}`,
+        `Pending Vet Review: ${stats.pending}`,
+        `Rejected Records: ${stats.rejected}`,
+        `Overall Compliance Rate: ${complianceRate}%`,
+        `Total Non-Compliance Alerts Filed: ${alerts.length}`,
+    ]);
+    doc.moveDown(2);
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Non-Compliance Alerts Log');
+    doc.moveDown();
+    if (alerts.length > 0) {
+        const tableTop = doc.y;
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Date', 50, tableTop);
+        doc.text('Farm Name', 150, tableTop);
+        doc.text('Reason', 300, tableTop);
+        doc.text('Reporting Vet', 450, tableTop);
+        doc.font('Helvetica');
+
+        let y = tableTop + 20;
+        alerts.forEach(alert => {
+            doc.text(format(new Date(alert.createdAt), 'P'), 50, y);
+            doc.text(alert.farmerId.farmName, 150, y, { width: 140 });
+            doc.text(alert.reason, 300, y, { width: 140 });
+            doc.text(alert.vetId.fullName, 450, y, { width: 100 });
+            y += 30; // Increased spacing for readability
+            if (y > 700) { doc.addPage(); y = 50; }
+        });
+    } else {
+        doc.fontSize(10).font('Helvetica').text('No non-compliance alerts were filed during this period.');
+    }
+};
+
+const generateAmuTrendsReportContent = async (doc, startDate, endDate) => {
+    const treatments = await Treatment.aggregate([
+        { $match: { status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$drugName', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
+    ]);
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Antimicrobial Usage by Drug');
+    doc.moveDown();
+
+    if (treatments.length > 0) {
+        const tableTop = doc.y;
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Drug Name', 50, tableTop);
+        doc.text('Total Treatments', 400, tableTop);
+        doc.font('Helvetica');
+
+        let y = tableTop + 20;
+        treatments.forEach(t => {
+            doc.text(t._id, 50, y);
+            doc.text(t.count.toString(), 400, y);
+            y += 20;
+            if (y > 700) { doc.addPage(); y = 50; }
+        });
+    } else {
+        doc.fontSize(10).font('Helvetica').text('No treatment records found for this period.');
+    }
+};
+
+const generateWhoAwareReportContent = async (doc, startDate, endDate) => {
+    const treatments = await Treatment.aggregate([
+        { $match: { status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+        { $group: { _id: '$drugClass', count: { $sum: 1 } } }
+    ]);
+
+    const stats = { Access: 0, Watch: 0, Reserve: 0, Unclassified: 0 };
+    treatments.forEach(t => {
+        if (stats.hasOwnProperty(t._id)) {
+            stats[t._id] = t.count;
+        }
+    });
+
+    doc.fontSize(14).font('Helvetica-Bold').text('WHO AWaRe Classification Summary');
+    doc.moveDown();
+    doc.fontSize(10).font('Helvetica').list([
+        `Access Group (Low Risk): ${stats.Access}`,
+        `Watch Group (High Risk): ${stats.Watch}`,
+        `Reserve Group (Last Resort): ${stats.Reserve}`,
+        `Unclassified: ${stats.Unclassified}`,
+    ]);
+
+    doc.moveDown();
+    doc.fontSize(10).font('Helvetica-Oblique').text('Note: "Watch" and "Reserve" categories require strict monitoring to prevent antimicrobial resistance.');
+};
+
+const generateVetOversightReportContent = async (doc, startDate, endDate) => {
+    const vetStats = await Treatment.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        {
+            $group: {
+                _id: '$vetId',
+                approved: { $sum: { $cond: [{ $eq: ['$status', 'Approved'] }, 1, 0] } },
+                rejected: { $sum: { $cond: [{ $eq: ['$status', 'Rejected'] }, 1, 0] } },
+                total: { $sum: 1 }
+            }
+        },
+        { $lookup: { from: 'veterinarians', localField: '_id', foreignField: 'licenseNumber', as: 'vetInfo' } }, // Assuming vetId matches licenseNumber or similar unique ID
+        { $unwind: { path: '$vetInfo', preserveNullAndEmptyArrays: true } }
+    ]);
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Veterinarian Oversight Performance');
+    doc.moveDown();
+
+    if (vetStats.length > 0) {
+        const tableTop = doc.y;
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('Veterinarian', 50, tableTop);
+        doc.text('Approved', 250, tableTop);
+        doc.text('Rejected', 350, tableTop);
+        doc.text('Total', 450, tableTop);
+        doc.font('Helvetica');
+
+        let y = tableTop + 20;
+        vetStats.forEach(v => {
+            const vetName = v.vetInfo ? v.vetInfo.fullName : `Unknown (${v._id})`;
+            doc.text(vetName, 50, y, { width: 180 });
+            doc.text(v.approved.toString(), 250, y);
+            doc.text(v.rejected.toString(), 350, y);
+            doc.text(v.total.toString(), 450, y);
+            y += 20;
+            if (y > 700) { doc.addPage(); y = 50; }
+        });
+    } else {
+        doc.fontSize(10).font('Helvetica').text('No veterinarian activity recorded for this period.');
+    }
+};
+
+const generateFarmRiskReportContent = async (doc, startDate, endDate) => {
+    // Identify farms with high AMU intensity or frequent alerts
+    const [highAmuFarms, alertCounts] = await Promise.all([
+        Treatment.aggregate([
+            { $match: { status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+            { $group: { _id: '$farmerId', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'farmers', localField: '_id', foreignField: '_id', as: 'farmerInfo' } },
+            { $unwind: '$farmerInfo' }
+        ]),
+        ComplianceAlert.aggregate([
+            { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+            { $group: { _id: '$farmerId', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+            { $lookup: { from: 'farmers', localField: '_id', foreignField: '_id', as: 'farmerInfo' } },
+            { $unwind: '$farmerInfo' }
+        ])
+    ]);
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Top 10 Farms by AMU Intensity');
+    doc.moveDown();
+    if (highAmuFarms.length > 0) {
+        highAmuFarms.forEach((f, i) => {
+            doc.fontSize(10).font('Helvetica').text(`${i + 1}. ${f.farmerInfo.farmName} - ${f.count} Treatments`);
+        });
+    } else {
+        doc.text('No data available.');
+    }
+
+    doc.moveDown(2);
+    doc.fontSize(14).font('Helvetica-Bold').text('Top 10 Farms by Compliance Alerts');
+    doc.moveDown();
+    if (alertCounts.length > 0) {
+        alertCounts.forEach((f, i) => {
+            doc.fontSize(10).font('Helvetica').text(`${i + 1}. ${f.farmerInfo.farmName} - ${f.count} Alerts`);
+        });
+    } else {
+        doc.text('No data available.');
+    }
+};
+
+const generateFeedVsTherapeuticReportContent = async (doc, startDate, endDate) => {
+    const [treatmentCount, feedCount] = await Promise.all([
+        Treatment.countDocuments({ status: 'Approved', startDate: { $gte: startDate, $lte: endDate } }),
+        FeedAdministration.aggregate([
+            { $match: { vetApproved: true, administrationDate: { $gte: startDate, $lte: endDate } } },
+            { $group: { _id: null, totalAnimals: { $sum: '$numberOfAnimals' } } }
+        ])
+    ]);
+
+    const totalFeedAnimals = feedCount.length > 0 ? feedCount[0].totalAnimals : 0;
+
+    doc.fontSize(14).font('Helvetica-Bold').text('Route of Administration Comparison');
+    doc.moveDown();
+    doc.fontSize(10).font('Helvetica').list([
+        `Individual Treatments (Therapeutic): ${treatmentCount} animals treated`,
+        `Medicated Feed (Prophylactic/Metaphylactic): ${totalFeedAnimals} animals treated`
+    ]);
+
+    doc.moveDown();
+    doc.text('High usage of medicated feed may indicate routine prophylactic use, which should be minimized under stewardship guidelines.');
+};
