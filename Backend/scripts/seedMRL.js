@@ -7,11 +7,17 @@
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import MRL from '../models/mrl.model.js';
 import mrlSeedData from '../seedData/mrlData.js';
 
-// Load environment variables
-dotenv.config();
+// Get directory name in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from Backend directory
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedMRL = async () => {
     try {

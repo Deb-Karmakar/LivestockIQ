@@ -1,10 +1,15 @@
 /**
  * Seed data for MRL (Maximum Residue Limits) thresholds
  * Based on FSSAI and Codex Alimentarius standards for India
+ * 
+ * WHO AWaRe Classification added for antimic stewardship:
+ * - Access: First-line antibiotics, lower resistance risk
+ * - Watch: Second-line, higher resistance potential 
+ * - Reserve: Last resort, critically important for human medicine
  */
 
 const mrlSeedData = [
-    // ANTIBIOTICS - TETRACYCLINES
+    // ANTIBIOTICS - TETRACYCLINES (Access Group)
     {
         drugName: 'Oxytetracycline',
         species: 'Cattle',
@@ -12,6 +17,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI',
         referenceDocument: 'FSSAI Food Safety Standards (Contaminants, Toxins and Residues) Regulations, 2011',
         notes: 'Commonly used for respiratory infections and mastitis'
@@ -23,6 +29,7 @@ const mrlSeedData = [
         mrlLimit: 200,
         unit: 'µg/kg',
         withdrawalPeriodDays: 14,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI',
         notes: 'Muscle tissue limit'
     },
@@ -33,6 +40,7 @@ const mrlSeedData = [
         mrlLimit: 200,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'Codex Alimentarius'
     },
     {
@@ -42,10 +50,11 @@ const mrlSeedData = [
         mrlLimit: 200,
         unit: 'µg/kg',
         withdrawalPeriodDays: 10,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIBIOTICS - PENICILLINS
+    // ANTIBIOTICS - PENICILLINS (Access Group)
     {
         drugName: 'Penicillin',
         species: 'Cattle',
@@ -53,6 +62,7 @@ const mrlSeedData = [
         mrlLimit: 4,
         unit: 'µg/kg',
         withdrawalPeriodDays: 4,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI',
         notes: 'Very low MRL - highly sensitive'
     },
@@ -63,6 +73,7 @@ const mrlSeedData = [
         mrlLimit: 4,
         unit: 'µg/kg',
         withdrawalPeriodDays: 4,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -72,10 +83,11 @@ const mrlSeedData = [
         mrlLimit: 50,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIBIOTICS - SULFONAMIDES
+    // ANTIBIOTICS - SULFONAMIDES (Access Group)
     {
         drugName: 'Sulfamethazine',
         species: 'Cattle',
@@ -83,6 +95,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 5,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -92,10 +105,11 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 15,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIBIOTICS - QUINOLONES
+    // ANTIBIOTICS - FLUOROQUINOLONES (Watch Group - Critically Important!)
     {
         drugName: 'Enrofloxacin',
         species: 'Cattle',
@@ -103,8 +117,9 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 5,
+        whoAWaReClass: 'Watch',
         regulatoryAuthority: 'FSSAI',
-        notes: 'Fluoroquinolone - restricted use'
+        notes: 'Fluoroquinolone - restricted use, WHO Watch group'
     },
     {
         drugName: 'Enrofloxacin',
@@ -113,10 +128,11 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 10,
+        whoAWaReClass: 'Watch',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIBIOTICS - MACROLIDES
+    // ANTIBIOTICS - MACROLIDES (Watch Group)
     {
         drugName: 'Tylosin',
         species: 'Cattle',
@@ -124,6 +140,7 @@ const mrlSeedData = [
         mrlLimit: 50,
         unit: 'µg/kg',
         withdrawalPeriodDays: 4,
+        whoAWaReClass: 'Watch',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -133,10 +150,11 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 14,
+        whoAWaReClass: 'Watch',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIBIOTICS - AMINOGLYCOSIDES
+    // ANTIBIOTICS - AMINOGLYCOSIDES (Watch Group)
     {
         drugName: 'Gentamicin',
         species: 'Cattle',
@@ -144,6 +162,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Watch',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -153,10 +172,11 @@ const mrlSeedData = [
         mrlLimit: 200,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Access',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // ANTIPARASITICS - AVERMECTINS
+    // ANTIPARASITICS (Not antibiotics - Unclassified for AWaRe)
     {
         drugName: 'Ivermectin',
         species: 'Cattle',
@@ -164,8 +184,9 @@ const mrlSeedData = [
         mrlLimit: 10,
         unit: 'µg/kg',
         withdrawalPeriodDays: 28,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI',
-        notes: 'Long withdrawal period required'
+        notes: 'Long withdrawal period required - Antiparasitic, not antibiotic'
     },
     {
         drugName: 'Ivermectin',
@@ -174,6 +195,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 35,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -183,6 +205,7 @@ const mrlSeedData = [
         mrlLimit: 50,
         unit: 'µg/kg',
         withdrawalPeriodDays: 28,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI'
     },
 
@@ -194,6 +217,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 5,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI'
     },
     {
@@ -203,10 +227,11 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 14,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI'
     },
 
-    // HORMONES
+    // HORMONES (Not antibiotics)
     {
         drugName: 'Oxytocin',
         species: 'Cattle',
@@ -214,11 +239,12 @@ const mrlSeedData = [
         mrlLimit: 0,
         unit: 'µg/kg',
         withdrawalPeriodDays: 1,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'FSSAI',
-        notes: 'Zero tolerance - use strictly controlled'
+        notes: 'Zero tolerance - use strictly controlled. Hormone, not antibiotic'
     },
 
-    // ANTI-INFLAMMATORIES
+    // ANTI-INFLAMMATORIES (Not antibiotics)
     {
         drugName: 'Meloxicam',
         species: 'Cattle',
@@ -226,6 +252,7 @@ const mrlSeedData = [
         mrlLimit: 15,
         unit: 'µg/kg',
         withdrawalPeriodDays: 5,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'EU'
     },
     {
@@ -235,6 +262,7 @@ const mrlSeedData = [
         mrlLimit: 20,
         unit: 'µg/kg',
         withdrawalPeriodDays: 15,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'EU'
     },
 
@@ -246,6 +274,7 @@ const mrlSeedData = [
         mrlLimit: 50,
         unit: 'µg/kg',
         withdrawalPeriodDays: 7,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'Custom',
         notes: 'Default conservative limit for unspecified antibiotics'
     },
@@ -256,6 +285,7 @@ const mrlSeedData = [
         mrlLimit: 100,
         unit: 'µg/kg',
         withdrawalPeriodDays: 14,
+        whoAWaReClass: 'Unclassified',
         regulatoryAuthority: 'Custom',
         notes: 'Default conservative limit for unspecified antibiotics'
     }

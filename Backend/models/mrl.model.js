@@ -33,6 +33,15 @@ const mrlSchema = new mongoose.Schema({
         required: true,
         // Recommended minimum withdrawal period in days
     },
+    whoAWaReClass: {
+        type: String,
+        enum: ['Access', 'Watch', 'Reserve', 'Unclassified'],
+        default: 'Unclassified',
+        // WHO AWaRe Classification for antimicrobial stewardship
+        // Access: First-line, lower resistance risk
+        // Watch: Second-line, higher resistance potential
+        // Reserve: Last resort, critically important for human medicine
+    },
     regulatoryAuthority: {
         type: String,
         enum: ['FSSAI', 'Codex Alimentarius', 'EU', 'USDA', 'WHO', 'Custom'],
