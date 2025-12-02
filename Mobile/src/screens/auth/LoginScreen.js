@@ -15,7 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
     const { login } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -100,9 +100,15 @@ const LoginScreen = () => {
                         )}
                     </TouchableOpacity>
 
-                    <Text style={styles.infoText}>
-                        For Farmers & Veterinarians Only
-                    </Text>
+                    <TouchableOpacity
+                        style={styles.signupLink}
+                        onPress={() => navigation.navigate('Signup')}
+                    >
+                        <Text style={styles.signupText}>
+                            Don't have an account? <Text style={styles.signupTextBold}>Sign Up</Text>
+                        </Text>
+                    </TouchableOpacity>
+
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -183,6 +189,18 @@ const styles = StyleSheet.create({
         color: '#6b7280',
         marginTop: 20,
         fontSize: 14,
+    },
+    signupLink: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    signupText: {
+        color: '#6b7280',
+        fontSize: 16,
+    },
+    signupTextBold: {
+        color: '#10b981',
+        fontWeight: 'bold',
     },
 });
 

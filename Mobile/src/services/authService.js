@@ -30,10 +30,19 @@ export const login = async (email, password) => {
 
 export const register = async (userData) => {
     try {
-        const response = await api.post('/auth/register', userData);
+        const response = await api.post('/auth/register/farmer', userData);
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Registration failed' };
+    }
+};
+
+export const registerVet = async (userData) => {
+    try {
+        const response = await api.post('/auth/register/vet', userData);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Vet registration failed' };
     }
 };
 

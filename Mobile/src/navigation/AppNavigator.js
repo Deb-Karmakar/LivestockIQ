@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 // Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
+import SignupScreen from '../screens/auth/SignupScreen';
 import FarmerTabNavigator from './FarmerTabNavigator';
 import VetTabNavigator from './VetTabNavigator';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
@@ -27,7 +28,10 @@ const AppNavigator = () => {
         <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
                 {!isAuth ? (
-                    <Stack.Screen name="Login" component={LoginScreen} />
+                    <>
+                        <Stack.Screen name="Login" component={LoginScreen} />
+                        <Stack.Screen name="Signup" component={SignupScreen} />
+                    </>
                 ) : user?.role === 'veterinarian' ? (
                     <Stack.Screen name="VetTabs" component={VetTabNavigator} />
                 ) : (
