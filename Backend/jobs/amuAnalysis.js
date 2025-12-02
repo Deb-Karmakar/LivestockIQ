@@ -37,12 +37,16 @@ const getAmuConfig = async () => {
 export const runHistoricalSpikeAnalysis = async () => {
     console.log('Starting daily historical spike analysis...');
     const config = await getAmuConfig();
-    const allFarmers = await Farmer.find().select('_id herdSize');
+    const allFarmers = await Farmer.find().select('_id'); // Removed static herdSize
 
     for (const farmer of allFarmers) {
         const now = new Date();
         const last7Days = subDays(now, 7);
         const last6Months = subMonths(now, 6);
+
+        // Dynamic Herd Size
+        const herdSize = await Animal.countDocuments({ farmerId: farmer._id, status: 'Active' });
+        if (herdSize === 0) continue; // Skip if no active animals
 
         // 1. Fetch Treatments (Direct Injection)
         const [currentWeekTreatments, historicalTreatments] = await Promise.all([
@@ -125,7 +129,30 @@ export const runPeerComparisonAnalysis = async () => {
 
     // 1. Calculate the average AMU Intensity for different peer groups
     const peerGroupStats = await Farmer.aggregate([
-        { $match: { herdSize: { $exists: true, $gt: 0 }, speciesReared: { $exists: true } } },
+        { $match: { speciesReared: { $exists: true } } },
+        // Dynamic Herd Size Calculation
+        {
+            $lookup: {
+                from: 'animals',
+                localField: '_id',
+                foreignField: 'farmerId',
+                as: 'animals'
+            }
+        },
+        {
+            $addFields: {
+                herdSize: {
+                    $size: {
+                        $filter: {
+                            input: '$animals',
+                            as: 'animal',
+                            cond: { $eq: ['$$animal.status', 'Active'] }
+                        }
+                    }
+                }
+            }
+        },
+        { $match: { herdSize: { $gt: 0 } } },
         {
             $lookup: { from: 'treatments', localField: '_id', foreignField: 'farmerId', as: 'treatments' }
         },
@@ -203,13 +230,16 @@ export const runPeerComparisonAnalysis = async () => {
     const averageMap = new Map(peerGroupStats.map(item => [`${item._id.species}-${item._id.size}`, item.avgIntensity]));
 
     // 2. Check each farm against peer average
-    const allFarms = await Farmer.find({ herdSize: { $exists: true, $gt: 0 }, speciesReared: { $exists: true } });
+    const allFarms = await Farmer.find({ speciesReared: { $exists: true } });
 
     for (const farm of allFarms) {
         const intensityData = await amuStats.calculateAmuIntensity(farm._id, oneMonthAgo, now);
         const farmIntensity = intensityData.intensity;
+        const herdSize = intensityData.herdSize; // Use dynamic herd size from service
 
-        const sizeBucket = farm.herdSize <= 50 ? 'Small' : farm.herdSize <= 200 ? 'Medium' : 'Large';
+        if (herdSize === 0) continue;
+
+        const sizeBucket = herdSize <= 50 ? 'Small' : herdSize <= 200 ? 'Medium' : 'Large';
         const peerKey = `${farm.speciesReared}-${sizeBucket}`;
         const peerAverage = averageMap.get(peerKey) || 0;
 
@@ -257,7 +287,7 @@ export const runAbsoluteThresholdAnalysis = async () => {
     const config = await getAmuConfig();
     const oneMonthAgo = subMonths(new Date(), 1);
     const now = new Date();
-    const allFarmers = await Farmer.find({ herdSize: { $exists: true, $gt: 0 } }).select('_id herdSize');
+    const allFarmers = await Farmer.find().select('_id'); // Removed static herdSize filter
 
     for (const farmer of allFarmers) {
         const intensityData = await amuStats.calculateAmuIntensity(farmer._id, oneMonthAgo, now);
@@ -303,7 +333,7 @@ export const runAbsoluteThresholdAnalysis = async () => {
 export const runTrendAnalysis = async () => {
     console.log('Starting monthly trend analysis...');
     const config = await getAmuConfig();
-    const allFarmers = await Farmer.find({ herdSize: { $exists: true, $gt: 0 } }).select('_id herdSize');
+    const allFarmers = await Farmer.find().select('_id'); // Removed static herdSize filter
 
     for (const farmer of allFarmers) {
         // Get 3-month trend
@@ -413,7 +443,7 @@ export const runCriticalDrugMonitoring = async () => {
 export const runSustainedHighUsageAnalysis = async () => {
     console.log('Starting weekly sustained high usage analysis...');
     const config = await getAmuConfig();
-    const allFarmers = await Farmer.find({ herdSize: { $exists: true, $gt: 0 } }).select('_id herdSize');
+    const allFarmers = await Farmer.find().select('_id'); // Removed static herdSize filter
     const weeksToCheck = config.sustainedHighUsageDuration;
 
     for (const farmer of allFarmers) {

@@ -11,6 +11,7 @@ import AmuConfig from '../models/amuConfig.model.js';
 import { subMonths, format, subDays } from 'date-fns';
 import PDFDocument from 'pdfkit';
 import * as amuStats from '../services/amuStatistics.service.js';
+import FeedAdministration from '../models/feedAdministration.model.js';
 
 export const getDashboardStats = async (req, res) => {
     try {
@@ -297,9 +298,9 @@ export const getDemographicsData = async (req, res) => {
                 speciesGenderMap[species][gender] += count;
             }
         });
+
         const speciesGenderBreakdown = Object.values(speciesGenderMap).sort((a, b) => b.total - a.total);
 
-        // UPDATED: Add the new data to the response
         res.json({ herdComposition, ageDistribution, speciesGenderBreakdown });
 
     } catch (error) {
@@ -312,12 +313,13 @@ export const getMapData = async (req, res) => {
     try {
         const sixMonthsAgo = subMonths(new Date(), 6);
 
-        // 1. Fetch farms and vets with location data
-        const [farms, vets, openComplianceAlerts, activeAmuAlerts, amuCounts, mrlViolations] = await Promise.all([
+        // 1. Fetch Config and Data
+        const [config, farms, vets, openComplianceAlerts, activeAmuAlerts, treatmentCounts, feedCounts, mrlViolations, herdSizeCounts] = await Promise.all([
+            AmuConfig.findOne({ isActive: true }),
             Farmer.find({
                 'location.latitude': { $exists: true, $ne: null },
                 'location.longitude': { $exists: true, $ne: null }
-            }).select('farmName farmOwner location contactNumber'),
+            }).select('farmName farmOwner location phoneNumber'), // Removed static herdSize
 
             Veterinarian.find({
                 'location.latitude': { $exists: true, $ne: null },
@@ -336,31 +338,80 @@ export const getMapData = async (req, res) => {
                 { $group: { _id: '$farmerId', count: { $sum: 1 } } }
             ]),
 
-            // 5. Fetch Active MRL Violations
-            Animal.find({ mrlStatus: 'VIOLATION' }).select('farmerId tagId')
+            // 5. Calculate Feed AMU (Animals on medicated feed in last 6 months)
+            FeedAdministration.aggregate([
+                {
+                    $match: {
+                        vetApproved: true,
+                        administrationDate: { $gte: sixMonthsAgo }
+                    }
+                },
+                {
+                    $group: {
+                        _id: '$farmerId',
+                        count: { $sum: '$numberOfAnimals' }
+                    }
+                }
+            ]),
+
+            // 6. Fetch Active MRL Violations
+            Animal.find({ mrlStatus: 'VIOLATION' }).select('farmerId tagId'),
+
+            // 7. Calculate Dynamic Herd Size (Active Animals)
+            Animal.aggregate([
+                { $match: { status: 'Active' } },
+                { $group: { _id: '$farmerId', count: { $sum: 1 } } }
+            ])
         ]);
+
+        const amuThreshold = config?.absoluteIntensityThreshold || 0.5;
 
         // --- Process and Merge Data for Farms ---
         const enhancedFarms = farms.map(farm => {
             const farmIdStr = farm._id.toString();
 
-            // Check for Compliance Alerts (Critical)
+            // Check for Alerts
             const farmComplianceAlerts = openComplianceAlerts.filter(a => a.farmerId.toString() === farmIdStr);
-
-            // Check for MRL Violations (Critical)
+            const farmAmuAlerts = activeAmuAlerts.filter(a => a.farmerId.toString() === farmIdStr);
             const farmMrlViolations = mrlViolations.filter(a => a.farmerId.toString() === farmIdStr);
 
-            const hasCriticalIssues = farmComplianceAlerts.length > 0 || farmMrlViolations.length > 0;
-            // Determine Latest Issue Text
+            // Get Dynamic Herd Size
+            const activeAnimalCount = herdSizeCounts.find(h => h._id.toString() === farmIdStr)?.count || 0;
+            const herdSize = activeAnimalCount > 0 ? activeAnimalCount : 1; // Prevent division by zero, default to 1 if no animals
+
+            // Calculate AMU Intensity
+            const tCount = treatmentCounts.find(t => t._id.toString() === farmIdStr)?.count || 0;
+            const fCount = feedCounts.find(f => f._id.toString() === farmIdStr)?.count || 0;
+            const totalEvents = tCount + fCount;
+            const amuIntensity = parseFloat((totalEvents / herdSize).toFixed(2));
+
+            // Determine Status
+            let status = 'Good';
             let latestIssue = null;
-            if (farmMrlViolations.length > 0) latestIssue = 'Active MRL Violation';
-            else if (farmComplianceAlerts.length > 0) latestIssue = farmComplianceAlerts[0].reason;
-            else if (hasWarnings) latestIssue = 'High Antimicrobial Usage';
+
+            if (farmMrlViolations.length > 0) {
+                status = 'Critical';
+                latestIssue = 'Active MRL Violation';
+            } else if (farmComplianceAlerts.length > 0) {
+                status = 'Critical';
+                latestIssue = farmComplianceAlerts[0].reason;
+            } else if (farmAmuAlerts.length > 0) {
+                status = 'Warning';
+                latestIssue = 'High Antimicrobial Usage (Alert)';
+            } else if (amuIntensity > amuThreshold) {
+                status = 'Warning';
+                latestIssue = `High AMU Intensity (> ${amuThreshold})`;
+            }
 
             return {
                 ...farm.toObject(),
                 status,
                 amuIntensity,
+                herdSize,
+                amuBreakdown: {
+                    treatments: tCount,
+                    feed: fCount
+                },
                 activeAlerts: {
                     compliance: farmComplianceAlerts.length,
                     amu: farmAmuAlerts.length,
@@ -370,7 +421,7 @@ export const getMapData = async (req, res) => {
             };
         });
 
-        res.json({ farms: enhancedFarms, vets });
+        res.json({ farms: enhancedFarms, vets, meta: { amuThreshold } });
 
     } catch (error) {
         console.error("Error in getMapData:", error);

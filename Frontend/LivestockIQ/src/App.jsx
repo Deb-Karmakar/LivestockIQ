@@ -56,7 +56,7 @@ import VetSettingsPage from "./pages/vet/VetSettingsPage";
 import RegulatorAppLayout from "./components/layout/RegulatorAppLayout";
 import RegulatorDashboardPage from "./pages/regulator/DashboardPage";
 import CompliancePage from "./pages/regulator/CompliancePage";
-import MapViewPage from "./pages/regulator/MapViewPage";
+import MapViewPage from "./pages/regulator/MapViewPageEnhanced";
 import RegulatorReportsPage from "./pages/regulator/ReportsPage";
 import RegulatorSettingsPage from "./pages/regulator/SettingsPage";
 import TrendsPage from "./pages/regulator/TrendsPage";

@@ -3,6 +3,7 @@ import Treatment from '../models/treatment.model.js';
 import FeedAdministration from '../models/feedAdministration.model.js';
 import Feed from '../models/feed.model.js';
 import Farmer from '../models/farmer.model.js';
+import Animal from '../models/animal.model.js';
 import { subDays, subMonths } from 'date-fns';
 
 /**
@@ -21,14 +22,19 @@ import { subDays, subMonths } from 'date-fns';
  */
 export const calculateAmuIntensity = async (farmerId, startDate, endDate) => {
     try {
-        const farmer = await Farmer.findById(farmerId).select('herdSize');
-        if (!farmer || !farmer.herdSize || farmer.herdSize === 0) {
+        // Calculate dynamic herd size (Active animals)
+        const herdSize = await Animal.countDocuments({
+            farmerId: farmerId,
+            status: 'Active'
+        });
+
+        if (herdSize === 0) {
             return {
                 intensity: 0,
                 totalEvents: 0,
                 treatments: 0,
                 feedAnimals: 0,
-                error: 'Invalid herd size'
+                error: 'No active animals found (Herd Size = 0)'
             };
         }
 
@@ -58,14 +64,14 @@ export const calculateAmuIntensity = async (farmerId, startDate, endDate) => {
 
         const feedAnimals = feedStats[0]?.totalAnimals || 0;
         const totalEvents = treatmentCount + feedAnimals;
-        const intensity = totalEvents / farmer.herdSize;
+        const intensity = totalEvents / herdSize;
 
         return {
             intensity: parseFloat(intensity.toFixed(4)),
             totalEvents,
             treatments: treatmentCount,
             feedAnimals,
-            herdSize: farmer.herdSize
+            herdSize: herdSize
         };
     } catch (error) {
         console.error('Error calculating AMU intensity:', error);
@@ -208,8 +214,34 @@ export const getPeerGroupStats = async (species, herdSizeBucket, startDate, endD
         const peerStats = await Farmer.aggregate([
             {
                 $match: {
-                    speciesReared: species,
-                    herdSize: { $exists: true, $gt: 0 }
+                    speciesReared: species
+                }
+            },
+            // Dynamic Herd Size Calculation
+            {
+                $lookup: {
+                    from: 'animals',
+                    localField: '_id',
+                    foreignField: 'farmerId',
+                    as: 'animals'
+                }
+            },
+            {
+                $addFields: {
+                    herdSize: {
+                        $size: {
+                            $filter: {
+                                input: '$animals',
+                                as: 'animal',
+                                cond: { $eq: ['$$animal.status', 'Active'] }
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    herdSize: { $gt: 0 }
                 }
             },
             {
