@@ -265,18 +265,17 @@ const DashboardPage = () => {
             .slice(0, 5);
 
         // Calculate Quick Stats & Herd Health
-        const animalsUnderWithdrawal = new Set(
-            treatments.filter(t => t.withdrawalEndDate && new Date(t.withdrawalEndDate) > now).map(t => t.animalId)
-        );
-        const animalsPendingApproval = new Set(
-            treatments.filter(t => t.status === 'Pending').map(t => t.animalId)
+        const safeAnimals = animals.filter(a => a.mrlStatus === 'SAFE');
+        const withdrawalActive = animals.filter(a => a.mrlStatus === 'WITHDRAWAL_ACTIVE');
+        const needingTests = animals.filter(a =>
+            a.mrlStatus === 'TEST_REQUIRED' || a.mrlStatus === 'PENDING_VERIFICATION'
         );
 
         const stats = {
             totalAnimals: animals.length,
-            activeTreatments: animalsUnderWithdrawal.size,
-            animalsSafeForSale: Math.max(0, animals.length - animalsUnderWithdrawal.size),
-            pendingApproval: animalsPendingApproval.size,
+            activeTreatments: withdrawalActive.length,
+            animalsSafeForSale: safeAnimals.length,
+            pendingApproval: needingTests.length,
             totalSales: sales.length,
         };
 

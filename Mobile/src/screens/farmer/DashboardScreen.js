@@ -48,24 +48,21 @@ const DashboardScreen = ({ navigation }) => {
         fetchData();
     }, [fetchData]);
 
-    // Calculate statistics
+    // Calculate statistics based on mrlStatus
     const stats = React.useMemo(() => {
-        const now = new Date();
-        const animalsUnderWithdrawal = new Set(
-            treatments
-                .filter((t) => t.withdrawalEndDate && new Date(t.withdrawalEndDate) > now)
-                .map((t) => t.animalId)
+        const safeAnimals = animals.filter(a => a.mrlStatus === 'SAFE');
+        const withdrawalActive = animals.filter(a => a.mrlStatus === 'WITHDRAWAL_ACTIVE');
+        const needingTests = animals.filter(a =>
+            a.mrlStatus === 'TEST_REQUIRED' || a.mrlStatus === 'PENDING_VERIFICATION'
         );
-
-        const pendingTreatments = treatments.filter((t) => t.status === 'Pending');
 
         return {
             totalAnimals: animals.length,
-            activeTreatments: animalsUnderWithdrawal.size,
-            safeForSale: Math.max(0, animals.length - animalsUnderWithdrawal.size),
-            pendingApproval: pendingTreatments.length,
+            activeTreatments: withdrawalActive.length,
+            safeForSale: safeAnimals.length,
+            pendingApproval: needingTests.length,
         };
-    }, [animals, treatments]);
+    }, [animals]);
 
     // Calculate urgent alerts
     const alerts = React.useMemo(() => {
