@@ -174,25 +174,24 @@ export const getVetDashboardData = async (req, res) => {
         const allTreatments = await Treatment.find({ farmerId: { $in: farmerIds } })
             .populate('farmerId', 'farmOwner');
 
-        // This query will now work correctly
-        const highAmuAlerts = await HighAmuAlert.find({ farmerId: { $in: farmerIds }, status: 'New' });
-
         const pendingReviews = allTreatments.filter(t => t.status === 'Pending');
+        const approvedTreatments = allTreatments.filter(t => t.status === 'Approved');
 
         const stats = {
             pendingReviewCount: pendingReviews.length,
-            activeFarmAlertsCount: highAmuAlerts.length,
-            assignedFarmersCount: supervisedFarmers.length
+            totalPrescriptions: approvedTreatments.length,
+            supervisedFarmsCount: supervisedFarmers.length
         };
 
-        const complianceRate = allTreatments.length > 0
-            ? ((allTreatments.filter(t => t.status === 'Approved').length / allTreatments.length) * 100).toFixed(0)
+        // Approval rate based on vet's prescription decisions
+        const approvalRate = allTreatments.length > 0
+            ? ((approvedTreatments.length / allTreatments.length) * 100).toFixed(0)
             : 100;
 
         res.json({
             stats,
             highPriorityRequests: pendingReviews.slice(0, 5),
-            complianceRate: parseInt(complianceRate)
+            approvalRate: parseInt(approvalRate)
         });
 
     } catch (error) {

@@ -137,9 +137,9 @@ const VetDashboardPage = () => {
                             Welcome, {user?.fullName || 'Doctor'}!
                         </h1>
                         <p className="text-slate-400 max-w-md">
-                            Here's a summary of your key tasks and farm compliance. You have{' '}
+                            Here's a summary of your key tasks. You have{' '}
                             <span className="text-orange-400 font-semibold">{data.stats.pendingReviewCount} pending reviews</span> from{' '}
-                            <span className="text-blue-400 font-semibold">{data.stats.assignedFarmersCount} assigned farmers</span>.
+                            <span className="text-blue-400 font-semibold">{data.stats.supervisedFarmsCount} supervised farms</span>.
                         </p>
                     </div>
                 </div>
@@ -181,16 +181,16 @@ const VetDashboardPage = () => {
                     subtitle="Awaiting approval"
                 />
                 <StatCard
-                    title="Active Alerts"
-                    value={data.stats.activeFarmAlertsCount}
-                    color="red"
-                    subtitle="Farm compliance issues"
+                    title="Total Prescriptions"
+                    value={data.stats.totalPrescriptions}
+                    color="green"
+                    subtitle="Approved treatments"
                 />
                 <StatCard
-                    title="Assigned Farmers"
-                    value={data.stats.assignedFarmersCount}
+                    title="Supervised Farms"
+                    value={data.stats.supervisedFarmsCount}
                     color="blue"
-                    subtitle="Under supervision"
+                    subtitle="Active farms"
                 />
             </div>
 
@@ -251,19 +251,19 @@ const VetDashboardPage = () => {
                                 <Stethoscope className="w-5 h-5 text-green-600" />
                             </div>
                             <div>
-                                <CardTitle>Overall Farm Compliance</CardTitle>
-                                <CardDescription>Approval rate across all your assigned farms</CardDescription>
+                                <CardTitle>Approval Rate</CardTitle>
+                                <CardDescription>Your treatment approval statistics</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="p-6 space-y-4">
                         <div className="flex items-center justify-between">
-                            <span className="text-4xl font-bold text-green-600">{data.complianceRate}%</span>
+                            <span className="text-4xl font-bold text-green-600">{data.approvalRate}%</span>
                             <CheckCircle2 className="w-12 h-12 text-green-200" />
                         </div>
-                        <Progress value={data.complianceRate} className="w-full" />
+                        <Progress value={data.approvalRate} className="w-full" />
                         <p className="text-xs text-gray-500">
-                            Based on the percentage of treatment records you have approved.
+                            Based on your prescription approval decisions.
                         </p>
                     </CardContent>
                 </Card>

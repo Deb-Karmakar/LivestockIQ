@@ -92,7 +92,7 @@ const VetDashboardScreen = ({ navigation }) => {
                         </View>
                         <Text style={styles.welcomeText}>Welcome, {user?.fullName || 'Doctor'}!</Text>
                         <Text style={styles.subText}>
-                            You have <Text style={styles.highlightText}>{data.stats.pendingReviewCount} pending reviews</Text> from <Text style={styles.highlightTextBlue}>{data.stats.assignedFarmersCount} assigned farmers</Text>.
+                            You have <Text style={styles.highlightText}>{data.stats.pendingReviewCount} pending reviews</Text> from <Text style={styles.highlightTextBlue}>{data.stats.supervisedFarmsCount} supervised farms</Text>.
                         </Text>
                     </View>
                 </View>
@@ -132,18 +132,18 @@ const VetDashboardScreen = ({ navigation }) => {
                         icon="clipboard"
                     />
                     <StatCard
-                        title="Active Alerts"
-                        value={data.stats.activeFarmAlertsCount}
-                        color="#ef4444"
-                        subtitle="Compliance issues"
-                        icon="alert-circle"
+                        title="Total Prescriptions"
+                        value={data.stats.totalPrescriptions}
+                        color="#10b981"
+                        subtitle="Approved treatments"
+                        icon="medical"
                     />
                     <StatCard
-                        title="Assigned Farmers"
-                        value={data.stats.assignedFarmersCount}
+                        title="Supervised Farms"
+                        value={data.stats.supervisedFarmsCount}
                         color="#3b82f6"
-                        subtitle="Under supervision"
-                        icon="people"
+                        subtitle="Active farms"
+                        icon="business"
                     />
                 </View>
 
@@ -190,19 +190,19 @@ const VetDashboardScreen = ({ navigation }) => {
                             <Ionicons name="shield-checkmark" size={20} color="#16a34a" />
                         </View>
                         <View>
-                            <Text style={styles.sectionTitle}>Overall Farm Compliance</Text>
-                            <Text style={styles.sectionSubtitle}>Approval rate across assigned farms</Text>
+                            <Text style={styles.sectionTitle}>Approval Rate</Text>
+                            <Text style={styles.sectionSubtitle}>Your treatment approval statistics</Text>
                         </View>
                     </View>
                     <View style={styles.complianceContent}>
                         <View style={styles.complianceRow}>
-                            <Text style={styles.complianceValue}>{data.complianceRate}%</Text>
+                            <Text style={styles.complianceValue}>{data.approvalRate}%</Text>
                             <Ionicons name="checkmark-circle" size={32} color="#bbf7d0" />
                         </View>
                         <View style={styles.progressBarBg}>
-                            <View style={[styles.progressBarFill, { width: `${data.complianceRate}%` }]} />
+                            <View style={[styles.progressBarFill, { width: `${data.approvalRate}%` }]} />
                         </View>
-                        <Text style={styles.complianceNote}>Based on approved treatment records.</Text>
+                        <Text style={styles.complianceNote}>Based on your prescription decisions.</Text>
                     </View>
                 </View>
 
