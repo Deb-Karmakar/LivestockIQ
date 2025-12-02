@@ -7,13 +7,44 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     TrendingUp, Activity, AlertTriangle, Shield, Bell, Eye,
-    ChevronRight, Sparkles, AlertCircle, FileSignature, ShieldAlert
+    ChevronRight, Sparkles, AlertCircle, FileSignature, ShieldAlert,
+    Calendar, Info
 } from 'lucide-react';
 import { useToast } from '../../hooks/use-toast';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { getTreatments } from '../../services/treatmentService';
 import { getMyHighAmuAlerts } from '../../services/farmerService';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
+
+// Animated counter component (matching Dashboard)
+const AnimatedCounter = ({ value, duration = 1000 }) => {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        let startTime;
+        let animationFrame;
+        const animate = (currentTime) => {
+            if (!startTime) startTime = currentTime;
+            const progress = Math.min((currentTime - startTime) / duration, 1);
+            setCount(Math.floor(progress * value));
+            if (progress < 1) {
+                animationFrame = requestAnimationFrame(animate);
+            }
+        };
+        animationFrame = requestAnimationFrame(animate);
+        return () => cancelAnimationFrame(animationFrame);
+    }, [value, duration]);
+
+    return <span>{count}</span>;
+};
 
 // Alert Type Configuration
 const AMU_ALERT_CONFIG = {
@@ -138,28 +169,121 @@ const AmuAlertCard = ({ alert, onClick }) => {
 };
 
 // Stat Card Component
-const StatCard = ({ title, value, icon: Icon, color }) => {
+const StatCard = ({ title, value, color, subtitle }) => {
     const colorClasses = {
-        red: 'bg-gradient-to-br from-red-500 to-red-600',
-        orange: 'bg-gradient-to-br from-orange-500 to-orange-600',
-        blue: 'bg-gradient-to-br from-blue-500 to-blue-600',
-        green: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+        red: 'from-red-500 to-red-600 shadow-red-500/25',
+        orange: 'from-orange-500 to-orange-600 shadow-orange-500/25',
+        blue: 'from-blue-500 to-blue-600 shadow-blue-500/25',
+        green: 'from-emerald-500 to-emerald-600 shadow-emerald-500/25',
     };
 
     return (
-        <Card className="border-0 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1">
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500 uppercase">{title}</p>
-                        <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]} opacity-[0.03]`} />
+            <CardContent className="p-4 sm:p-6">
+                <div className="space-y-2">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wide truncate">{title}</p>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                        <span className="text-2xl sm:text-3xl font-bold text-gray-900">
+                            <AnimatedCounter value={value} />
+                        </span>
                     </div>
-                    <div className={`p-3 rounded-xl ${colorClasses[color]}`}>
-                        <Icon className="w-6 h-6 text-white" />
-                    </div>
+                    {subtitle && <p className="text-xs text-gray-400 truncate">{subtitle}</p>}
                 </div>
             </CardContent>
         </Card>
+    );
+};
+
+// Alert Details Dialog Component
+const AlertDetailsDialog = ({ open, onOpenChange, alert }) => {
+    if (!alert) return null;
+
+    const alertConfig = AMU_ALERT_CONFIG[alert.alertType] || {};
+    const Icon = alertConfig.icon || AlertCircle;
+    const iconColorClass = `text-${alertConfig.color}-600`;
+    const bgColorClass = `bg-${alertConfig.color}-100`;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className={`p-3 rounded-xl ${bgColorClass}`}>
+                            <Icon className={`w-6 h-6 ${iconColorClass}`} />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-xl">{alertConfig.label}</DialogTitle>
+                            <DialogDescription>
+                                {new Date(alert.createdAt).toLocaleDateString()} at {new Date(alert.createdAt).toLocaleTimeString()}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                    {/* Main Message */}
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                        <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold text-slate-900">Alert Details</h4>
+                            <SeverityBadge severity={alert.severity} />
+                        </div>
+                        <p className="text-slate-700">{alert.message}</p>
+                        <p className="text-sm text-slate-500 mt-1">{alertConfig.description}</p>
+                    </div>
+
+                    {/* Drug Class Breakdown */}
+                    {alert.details?.drugClassBreakdown && (
+                        <div>
+                            <h4 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                                <Activity className="w-4 h-4 text-slate-500" />
+                                Drug Class Breakdown
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-3 bg-green-50 border border-green-100 rounded-lg">
+                                    <div className="text-xs text-green-600 font-medium uppercase mb-1">Access</div>
+                                    <div className="text-2xl font-bold text-green-700">
+                                        {alert.details.drugClassBreakdown.access || 0}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                                    <div className="text-xs text-orange-600 font-medium uppercase mb-1">Watch</div>
+                                    <div className="text-2xl font-bold text-orange-700">
+                                        {alert.details.drugClassBreakdown.watch || 0}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                                    <div className="text-xs text-red-600 font-medium uppercase mb-1">Reserve</div>
+                                    <div className="text-2xl font-bold text-red-700">
+                                        {alert.details.drugClassBreakdown.reserve || 0}
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-gray-50 border border-gray-100 rounded-lg">
+                                    <div className="text-xs text-gray-600 font-medium uppercase mb-1">Unclassified</div>
+                                    <div className="text-2xl font-bold text-gray-700">
+                                        {alert.details.drugClassBreakdown.unclassified || 0}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Additional Context if available */}
+                    {alert.details?.threshold && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                            <Info className="w-4 h-4 text-blue-500" />
+                            <span>
+                                Threshold exceeded: <strong>{alert.details.threshold}</strong> (Current: {alert.details.currentValue})
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <DialogFooter>
+                    <Button onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -168,6 +292,8 @@ const AlertsPage = () => {
     const [amuAlerts, setAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('amu');
+    const [selectedAlert, setSelectedAlert] = useState(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
 
@@ -211,10 +337,8 @@ const AlertsPage = () => {
     };
 
     const handleAmuAlertClick = (alert) => {
-        toast({
-            title: AMU_ALERT_CONFIG[alert.alertType]?.label || 'AMU Alert',
-            description: alert.message,
-        });
+        setSelectedAlert(alert);
+        setIsDialogOpen(true);
     };
 
     if (loading) {
@@ -232,9 +356,10 @@ const AlertsPage = () => {
     return (
         <div className="space-y-6 pb-8">
             {/* Header */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 rounded-3xl p-8 text-white">
+            <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl p-8 text-white">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
 
                 <div className="relative space-y-2">
                     <div className="flex items-center gap-2 text-blue-300 text-sm font-medium">
@@ -249,30 +374,25 @@ const AlertsPage = () => {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <StatCard
                     title="AMU Alerts"
                     value={stats.totalAmuAlerts}
-                    icon={AlertCircle}
                     color="red"
+                    subtitle="Active notifications"
                 />
                 <StatCard
                     title="Critical"
                     value={stats.criticalAmu}
-                    icon={AlertTriangle}
                     color="orange"
+                    subtitle="High severity alerts"
                 />
-                <StatCard
-                    title="Pending Approvals"
-                    value={stats.pendingApprovals}
-                    icon={FileSignature}
-                    color="blue"
-                />
+
                 <StatCard
                     title="Withdrawal Ending"
                     value={stats.withdrawalEnding}
-                    icon={ShieldAlert}
                     color="green"
+                    subtitle="Within 7 days"
                 />
             </div>
 
@@ -428,6 +548,12 @@ const AlertsPage = () => {
                     )}
                 </TabsContent>
             </Tabs>
+
+            <AlertDetailsDialog
+                open={isDialogOpen}
+                onOpenChange={setIsDialogOpen}
+                alert={selectedAlert}
+            />
         </div>
     );
 };
