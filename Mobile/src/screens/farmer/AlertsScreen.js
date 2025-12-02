@@ -16,47 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { getTreatments } from '../../services/treatmentService';
 import { getMyHighAmuAlerts } from '../../services/farmerService';
 import { differenceInDays, format } from 'date-fns';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const { width } = Dimensions.get('window');
-
-const AMU_ALERT_CONFIG = {
-    HISTORICAL_SPIKE: {
-        icon: 'trending-up',
-        color: '#f97316', // orange-500
-        label: 'Historical Spike',
-        description: 'Higher than your farm average'
-    },
-    PEER_COMPARISON_SPIKE: {
-        icon: 'pulse',
-        color: '#eab308', // yellow-500
-        label: 'Peer Comparison',
-        description: 'Higher than similar farms'
-    },
-    ABSOLUTE_THRESHOLD: {
-        icon: 'warning',
-        color: '#ef4444', // red-500
-        label: 'Absolute Limit',
-        description: 'Exceeds recommended limit'
-    },
-    TREND_INCREASE: {
-        icon: 'trending-up',
-        color: '#3b82f6', // blue-500
-        label: 'Upward Trend',
-        description: 'Increasing over time'
-    },
-    CRITICAL_DRUG_USAGE: {
-        icon: 'shield',
-        color: '#a855f7', // purple-500
-        label: 'Critical Drugs',
-        description: 'Overusing important antibiotics'
-    },
-    SUSTAINED_HIGH_USAGE: {
-        icon: 'notifications',
-        color: '#ef4444', // red-500
-        label: 'Sustained High Use',
-        description: 'Persistent high usage'
-    }
-};
 
 const SeverityBadge = ({ severity }) => {
     let bg, text, border;
@@ -81,6 +43,7 @@ const SeverityBadge = ({ severity }) => {
 };
 
 const AlertsScreen = ({ navigation }) => {
+    const { t } = useLanguage();
     const [treatments, setTreatments] = useState([]);
     const [amuAlerts, setAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -88,6 +51,48 @@ const AlertsScreen = ({ navigation }) => {
     const [activeTab, setActiveTab] = useState('amu');
     const [selectedAlert, setSelectedAlert] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
+
+    const getAmuAlertConfig = (type) => {
+        const configs = {
+            HISTORICAL_SPIKE: {
+                icon: 'trending-up',
+                color: '#f97316', // orange-500
+                label: t('historical_spike'),
+                description: t('historical_spike_desc')
+            },
+            PEER_COMPARISON_SPIKE: {
+                icon: 'pulse',
+                color: '#eab308', // yellow-500
+                label: t('peer_comparison'),
+                description: t('peer_comparison_desc')
+            },
+            ABSOLUTE_THRESHOLD: {
+                icon: 'warning',
+                color: '#ef4444', // red-500
+                label: t('absolute_limit'),
+                description: t('absolute_limit_desc')
+            },
+            TREND_INCREASE: {
+                icon: 'trending-up',
+                color: '#3b82f6', // blue-500
+                label: t('upward_trend'),
+                description: t('upward_trend_desc')
+            },
+            CRITICAL_DRUG_USAGE: {
+                icon: 'shield',
+                color: '#a855f7', // purple-500
+                label: t('critical_drugs'),
+                description: t('critical_drugs_desc')
+            },
+            SUSTAINED_HIGH_USAGE: {
+                icon: 'notifications',
+                color: '#ef4444', // red-500
+                label: t('sustained_high_use'),
+                description: t('sustained_high_use_desc')
+            }
+        };
+        return configs[type] || configs.ABSOLUTE_THRESHOLD;
+    };
 
     const fetchData = useCallback(async (isRefresh = false) => {
         try {
@@ -136,7 +141,7 @@ const AlertsScreen = ({ navigation }) => {
     };
 
     const renderAmuAlert = (alert) => {
-        const config = AMU_ALERT_CONFIG[alert.alertType] || AMU_ALERT_CONFIG.ABSOLUTE_THRESHOLD;
+        const config = getAmuAlertConfig(alert.alertType);
         return (
             <TouchableOpacity
                 key={alert._id}
@@ -168,18 +173,18 @@ const AlertsScreen = ({ navigation }) => {
         <View style={styles.listContainer}>
             {pendingTreatments.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Pending Approvals ({pendingTreatments.length})</Text>
-                    {pendingTreatments.map(t => (
-                        <View key={t._id} style={styles.operationalCard}>
+                    <Text style={styles.sectionTitle}>{t('pending_approvals')} ({pendingTreatments.length})</Text>
+                    {pendingTreatments.map(treatment => (
+                        <View key={treatment._id} style={styles.operationalCard}>
                             <View>
-                                <Text style={styles.operationalTitle}>Animal {t.animalId}</Text>
-                                <Text style={styles.operationalSubtitle}>Drug: {t.drugName}</Text>
+                                <Text style={styles.operationalTitle}>{t('animal_label')} {treatment.animalId}</Text>
+                                <Text style={styles.operationalSubtitle}>{t('drug_name_label')}: {treatment.drugName}</Text>
                             </View>
                             <TouchableOpacity
                                 style={styles.viewButton}
                                 onPress={() => navigation.navigate('Treatments')}
                             >
-                                <Text style={styles.viewButtonText}>View</Text>
+                                <Text style={styles.viewButtonText}>{t('view')}</Text>
                             </TouchableOpacity>
                         </View>
                     ))}
@@ -188,15 +193,15 @@ const AlertsScreen = ({ navigation }) => {
 
             {withdrawalAlerts.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Withdrawal Ending ({withdrawalAlerts.length})</Text>
-                    {withdrawalAlerts.map(t => {
-                        const daysLeft = differenceInDays(new Date(t.withdrawalEndDate), new Date());
+                    <Text style={styles.sectionTitle}>{t('withdrawal_ending')} ({withdrawalAlerts.length})</Text>
+                    {withdrawalAlerts.map(treatment => {
+                        const daysLeft = differenceInDays(new Date(treatment.withdrawalEndDate), new Date());
                         return (
-                            <View key={t._id} style={styles.operationalCard}>
+                            <View key={treatment._id} style={styles.operationalCard}>
                                 <View>
-                                    <Text style={styles.operationalTitle}>Animal {t.animalId}</Text>
+                                    <Text style={styles.operationalTitle}>{t('animal_label')} {treatment.animalId}</Text>
                                     <Text style={styles.operationalSubtitle}>
-                                        {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining
+                                        {daysLeft} {daysLeft !== 1 ? t('days_remaining') : t('day_remaining')}
                                     </Text>
                                 </View>
                                 <View style={[
@@ -207,7 +212,7 @@ const AlertsScreen = ({ navigation }) => {
                                         styles.statusText,
                                         { color: daysLeft <= 2 ? '#991b1b' : '#374151' }
                                     ]}>
-                                        {daysLeft <= 2 ? 'Critical' : 'Warning'}
+                                        {daysLeft <= 2 ? t('critical') : t('warning')}
                                     </Text>
                                 </View>
                             </View>
@@ -219,8 +224,8 @@ const AlertsScreen = ({ navigation }) => {
             {pendingTreatments.length === 0 && withdrawalAlerts.length === 0 && (
                 <View style={styles.emptyState}>
                     <Ionicons name="shield-checkmark" size={48} color="#10b981" />
-                    <Text style={styles.emptyStateTitle}>All Clear</Text>
-                    <Text style={styles.emptyStateText}>No pending operational tasks</Text>
+                    <Text style={styles.emptyStateTitle}>{t('all_clear')}</Text>
+                    <Text style={styles.emptyStateText}>{t('no_operational_tasks')}</Text>
                 </View>
             )}
         </View>
@@ -230,7 +235,7 @@ const AlertsScreen = ({ navigation }) => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>Loading alerts...</Text>
+                <Text style={styles.loadingText}>{t('loading_alerts')}</Text>
             </View>
         );
     }
@@ -244,22 +249,22 @@ const AlertsScreen = ({ navigation }) => {
             >
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}>Alerts & Notifications</Text>
-                    <Text style={styles.headerSubtitle}>Monitor farm compliance</Text>
+                    <Text style={styles.headerTitle}>{t('alerts_title')}</Text>
+                    <Text style={styles.headerSubtitle}>{t('alerts_subtitle')}</Text>
                 </View>
 
                 {/* Stats Cards */}
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>AMU Alerts</Text>
+                        <Text style={styles.statLabel}>{t('amu_alerts')}</Text>
                         <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.totalAmuAlerts}</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Critical</Text>
+                        <Text style={styles.statLabel}>{t('critical')}</Text>
                         <Text style={[styles.statValue, { color: '#f97316' }]}>{stats.criticalAmu}</Text>
                     </View>
                     <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>Withdrawal</Text>
+                        <Text style={styles.statLabel}>{t('withdrawal')}</Text>
                         <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.withdrawalEnding}</Text>
                     </View>
                 </View>
@@ -271,7 +276,7 @@ const AlertsScreen = ({ navigation }) => {
                         onPress={() => setActiveTab('amu')}
                     >
                         <Text style={[styles.tabText, activeTab === 'amu' && styles.activeTabText]}>
-                            AMU Alerts
+                            {t('amu_alerts')}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -279,7 +284,7 @@ const AlertsScreen = ({ navigation }) => {
                         onPress={() => setActiveTab('operational')}
                     >
                         <Text style={[styles.tabText, activeTab === 'operational' && styles.activeTabText]}>
-                            Operational
+                            {t('operational')}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -292,8 +297,8 @@ const AlertsScreen = ({ navigation }) => {
                         ) : (
                             <View style={styles.emptyState}>
                                 <Ionicons name="checkmark-circle" size={48} color="#10b981" />
-                                <Text style={styles.emptyStateTitle}>No AMU Alerts</Text>
-                                <Text style={styles.emptyStateText}>Your usage is within normal ranges</Text>
+                                <Text style={styles.emptyStateTitle}>{t('no_amu_alerts')}</Text>
+                                <Text style={styles.emptyStateText}>{t('no_amu_alerts_desc')}</Text>
                             </View>
                         )}
                     </View>
@@ -315,7 +320,7 @@ const AlertsScreen = ({ navigation }) => {
                             <>
                                 <View style={styles.modalHeader}>
                                     <Text style={styles.modalTitle}>
-                                        {AMU_ALERT_CONFIG[selectedAlert.alertType]?.label || 'Alert Details'}
+                                        {getAmuAlertConfig(selectedAlert.alertType)?.label || t('alert_details')}
                                     </Text>
                                     <TouchableOpacity onPress={() => setModalVisible(false)}>
                                         <Ionicons name="close" size={24} color="#6b7280" />
@@ -325,7 +330,7 @@ const AlertsScreen = ({ navigation }) => {
                                 <ScrollView style={styles.modalBody}>
                                     <View style={styles.modalSection}>
                                         <View style={styles.flexRow}>
-                                            <Text style={styles.modalLabel}>Severity:</Text>
+                                            <Text style={styles.modalLabel}>{t('severity')}:</Text>
                                             <SeverityBadge severity={selectedAlert.severity} />
                                         </View>
                                         <Text style={styles.modalMessage}>{selectedAlert.message}</Text>
@@ -336,22 +341,22 @@ const AlertsScreen = ({ navigation }) => {
 
                                     {selectedAlert.details?.drugClassBreakdown && (
                                         <View style={styles.modalSection}>
-                                            <Text style={styles.modalSectionTitle}>Drug Class Breakdown</Text>
+                                            <Text style={styles.modalSectionTitle}>{t('drug_class_breakdown')}</Text>
                                             <View style={styles.breakdownGrid}>
                                                 <View style={[styles.breakdownItem, { backgroundColor: '#dcfce7' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#166534' }]}>Access</Text>
+                                                    <Text style={[styles.breakdownLabel, { color: '#166534' }]}>{t('access')}</Text>
                                                     <Text style={[styles.breakdownValue, { color: '#14532d' }]}>
                                                         {selectedAlert.details.drugClassBreakdown.access || 0}
                                                     </Text>
                                                 </View>
                                                 <View style={[styles.breakdownItem, { backgroundColor: '#ffedd5' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#9a3412' }]}>Watch</Text>
+                                                    <Text style={[styles.breakdownLabel, { color: '#9a3412' }]}>{t('watch')}</Text>
                                                     <Text style={[styles.breakdownValue, { color: '#7c2d12' }]}>
                                                         {selectedAlert.details.drugClassBreakdown.watch || 0}
                                                     </Text>
                                                 </View>
                                                 <View style={[styles.breakdownItem, { backgroundColor: '#fee2e2' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#991b1b' }]}>Reserve</Text>
+                                                    <Text style={[styles.breakdownLabel, { color: '#991b1b' }]}>{t('reserve')}</Text>
                                                     <Text style={[styles.breakdownValue, { color: '#7f1d1d' }]}>
                                                         {selectedAlert.details.drugClassBreakdown.reserve || 0}
                                                     </Text>
