@@ -13,7 +13,7 @@ import {
     getVetPracticeOverviewData,
     getVetPrescriptionAnalyticsData,
     getVetFarmSupervisionData,
-    getVetComplianceMonitoringData,
+    getVetMonthlyActivityData,
     getVetWhoAwareStewardshipData
 } from '../controllers/vet.reports.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
@@ -36,7 +36,7 @@ router.get('/farmer/mrl-compliance-data', protect, getFarmerMrlComplianceData);
 router.get('/vet/practice-overview-data', protect, getVetPracticeOverviewData);
 router.get('/vet/prescription-analytics-data', protect, getVetPrescriptionAnalyticsData);
 router.get('/vet/farm-supervision-data', protect, getVetFarmSupervisionData);
-router.get('/vet/compliance-monitoring-data', protect, getVetComplianceMonitoringData);
+router.get('/vet/monthly-activity-data', protect, getVetMonthlyActivityData);
 router.get('/vet/who-aware-stewardship-data', protect, getVetWhoAwareStewardshipData);
 
 export default router;

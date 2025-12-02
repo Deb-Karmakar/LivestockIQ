@@ -17,15 +17,16 @@ export const getVetPracticeOverviewData = async (req, res) => {
         const startDate = new Date(from);
         const endDate = new Date(to);
 
-        const [supervisedFarms, monthlyActivity, overallStats] = await Promise.all([
-            // Farms supervised by this vet
-            Farmer.find({ vetId }).select('farmName farmOwner').lean(),
+        // Get all supervised farms first
+        const supervisedFarms = await Farmer.find({ vetId }).select('_id farmName farmOwner').lean();
+        const farmIds = supervisedFarms.map(f => f._id);
 
+        const [monthlyActivity, overallStats] = await Promise.all([
             // Monthly prescription activity
             Treatment.aggregate([
                 {
                     $match: {
-                        vetId,
+                        farmerId: { $in: farmIds },
                         createdAt: { $gte: startDate, $lte: endDate }
                     }
                 },
@@ -43,9 +44,9 @@ export const getVetPracticeOverviewData = async (req, res) => {
 
             // Overall statistics
             Promise.all([
-                Treatment.countDocuments({ vetId, createdAt: { $gte: startDate, $lte: endDate } }),
-                Treatment.countDocuments({ vetId, status: 'Approved', createdAt: { $gte: startDate, $lte: endDate } }),
-                Treatment.countDocuments({ vetId, status: 'Rejected', createdAt: { $gte: startDate, $lte: endDate } }),
+                Treatment.countDocuments({ farmerId: { $in: farmIds }, createdAt: { $gte: startDate, $lte: endDate } }),
+                Treatment.countDocuments({ farmerId: { $in: farmIds }, status: 'Approved', createdAt: { $gte: startDate, $lte: endDate } }),
+                Treatment.countDocuments({ farmerId: { $in: farmIds }, status: 'Rejected', createdAt: { $gte: startDate, $lte: endDate } }),
                 FeedAdministration.countDocuments({ prescribedByVet: vetId, vetApproved: true, administrationDate: { $gte: startDate, $lte: endDate } })
             ])
         ]);
@@ -91,10 +92,14 @@ export const getVetPrescriptionAnalyticsData = async (req, res) => {
         const startDate = new Date(from);
         const endDate = new Date(to);
 
+        // Get all supervised farms first
+        const supervisedFarms = await Farmer.find({ vetId }).select('_id').lean();
+        const farmIds = supervisedFarms.map(f => f._id);
+
         const [topDrugs, speciesBreakdown, drugClassBreakdown] = await Promise.all([
             // Top drugs prescribed
             Treatment.aggregate([
-                { $match: { vetId, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
                 { $group: { _id: '$drugName', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 10 }
@@ -102,7 +107,7 @@ export const getVetPrescriptionAnalyticsData = async (req, res) => {
 
             // Prescriptions by species
             Treatment.aggregate([
-                { $match: { vetId, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
                 {
                     $lookup: {
                         from: 'animals',
@@ -123,7 +128,7 @@ export const getVetPrescriptionAnalyticsData = async (req, res) => {
 
             // Drug class distribution (WHO AWaRe)
             Treatment.aggregate([
-                { $match: { vetId, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
                 { $group: { _id: '$drugClass', count: { $sum: 1 } } }
             ])
         ]);
@@ -258,32 +263,29 @@ export const getVetFarmSupervisionData = async (req, res) => {
     }
 };
 
-// @desc    Get Vet Compliance Monitoring Data
-// @route   GET /api/reports/vet/compliance-monitoring-data
+// @desc    Get Vet Monthly Activity Summary Data
+// @route   GET /api/reports/vet/monthly-activity-data
 // @access  Private (Vet)
-export const getVetComplianceMonitoringData = async (req, res) => {
+export const getVetMonthlyActivityData = async (req, res) => {
     try {
         const { from, to } = req.query;
         const vetId = req.user.vetId;
         const startDate = new Date(from);
         const endDate = new Date(to);
 
-        const [statusBreakdown, monthlyTrend, recentAlerts] = await Promise.all([
-            // Treatment approval status breakdown
-            Treatment.aggregate([
-                { $match: { vetId, createdAt: { $gte: startDate, $lte: endDate } } },
-                { $group: { _id: '$status', count: { $sum: 1 } } }
-            ]),
+        // Get all supervised farms first
+        const supervisedFarms = await Farmer.find({ vetId }).select('_id farmName').lean();
+        const farmIds = supervisedFarms.map(f => f._id);
 
-            // Monthly trend of approvals/rejections
+        const [monthlyTreatments, monthlyFeed, statusBreakdown] = await Promise.all([
+            // Monthly treatment activity
             Treatment.aggregate([
-                { $match: { vetId, createdAt: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, createdAt: { $gte: startDate, $lte: endDate } } },
                 {
                     $group: {
                         _id: {
                             year: { $year: '$createdAt' },
-                            month: { $month: '$createdAt' },
-                            status: '$status'
+                            month: { $month: '$createdAt' }
                         },
                         count: { $sum: 1 }
                     }
@@ -291,41 +293,52 @@ export const getVetComplianceMonitoringData = async (req, res) => {
                 { $sort: { '_id.year': 1, '_id.month': 1 } }
             ]),
 
-            // Recent compliance alerts for supervised farms
-            ComplianceAlert.find({
-                vetId,
-                createdAt: { $gte: startDate, $lte: endDate }
-            })
-                .populate('farmerId', 'farmName')
-                .sort({ createdAt: -1 })
-                .limit(10)
-                .lean()
+            // Monthly feed prescriptions
+            FeedAdministration.aggregate([
+                { $match: { prescribedByVet: vetId, administrationDate: { $gte: startDate, $lte: endDate } } },
+                {
+                    $group: {
+                        _id: {
+                            year: { $year: '$administrationDate' },
+                            month: { $month: '$administrationDate' }
+                        },
+                        count: { $sum: 1 }
+                    }
+                },
+                { $sort: { '_id.year': 1, '_id.month': 1 } }
+            ]),
+
+            // Overall status breakdown
+            Treatment.aggregate([
+                { $match: { farmerId: { $in: farmIds }, createdAt: { $gte: startDate, $lte: endDate } } },
+                { $group: { _id: '$status', count: { $sum: 1 } } }
+            ])
         ]);
 
-        // Process status breakdown
-        const statusData = statusBreakdown.map(item => ({
-            name: item._id,
-            value: item.count
-        }));
+        // Combine monthly data
+        const monthlyMap = new Map();
 
-        // Process monthly trend
-        const trendMap = new Map();
-        monthlyTrend.forEach(item => {
+        monthlyTreatments.forEach(item => {
             const key = `${item._id.year}-${item._id.month}`;
             const monthName = format(new Date(item._id.year, item._id.month - 1), 'MMM yyyy');
-
-            if (!trendMap.has(key)) {
-                trendMap.set(key, { name: monthName, approved: 0, rejected: 0, pending: 0 });
+            if (!monthlyMap.has(key)) {
+                monthlyMap.set(key, { name: monthName, treatments: 0, feedPrescriptions: 0 });
             }
-
-            const status = item._id.status.toLowerCase();
-            if (trendMap.get(key).hasOwnProperty(status)) {
-                trendMap.get(key)[status] = item.count;
-            }
+            monthlyMap.get(key).treatments = item.count;
         });
 
-        const trendData = Array.from(trendMap.values());
+        monthlyFeed.forEach(item => {
+            const key = `${item._id.year}-${item._id.month}`;
+            const monthName = format(new Date(item._id.year, item._id.month - 1), 'MMM yyyy');
+            if (!monthlyMap.has(key)) {
+                monthlyMap.set(key, { name: monthName, treatments: 0, feedPrescriptions: 0 });
+            }
+            monthlyMap.get(key).feedPrescriptions = item.count;
+        });
 
+        const activityData = Array.from(monthlyMap.values());
+
+        // Process status breakdown
         const stats = { approved: 0, pending: 0, rejected: 0 };
         statusBreakdown.forEach(item => {
             const key = item._id?.toLowerCase();
@@ -337,28 +350,22 @@ export const getVetComplianceMonitoringData = async (req, res) => {
         const total = stats.approved + stats.pending + stats.rejected;
 
         res.json({
-            reportType: 'ComplianceMonitoring',
-            data: statusData,
-            trend: trendData,
-            recentAlerts: recentAlerts.map(alert => ({
-                farmName: alert.farmerId?.farmName || 'Unknown',
-                reason: alert.reason,
-                date: format(new Date(alert.createdAt), 'MMM dd, yyyy'),
-                severity: alert.severity || 'Medium'
-            })),
+            reportType: 'MonthlyActivity',
+            data: activityData,
             summary: {
+                supervisedFarms: supervisedFarms.length,
                 totalReviews: total,
                 approved: stats.approved,
                 pending: stats.pending,
                 rejected: stats.rejected,
                 approvalRate: total > 0 ? ((stats.approved / total) * 100).toFixed(1) : 0,
-                totalAlerts: recentAlerts.length
+                totalMonths: activityData.length
             },
             generatedAt: new Date().toISOString()
         });
 
     } catch (error) {
-        console.error("Error in getVetComplianceMonitoringData:", error);
+        console.error("Error in getVetMonthlyActivityData:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
@@ -373,16 +380,20 @@ export const getVetWhoAwareStewardshipData = async (req, res) => {
         const startDate = new Date(from);
         const endDate = new Date(to);
 
+        // Get all supervised farms first
+        const supervisedFarms = await Farmer.find({ vetId }).select('_id').lean();
+        const farmIds = supervisedFarms.map(f => f._id);
+
         const [drugClassData, monthlyClassTrend] = await Promise.all([
             // Drug class distribution
             Treatment.aggregate([
-                { $match: { vetId, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
                 { $group: { _id: '$drugClass', count: { $sum: 1 } } }
             ]),
 
             // Monthly trend by drug class
             Treatment.aggregate([
-                { $match: { vetId, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
+                { $match: { farmerId: { $in: farmIds }, status: 'Approved', startDate: { $gte: startDate, $lte: endDate } } },
                 {
                     $group: {
                         _id: {

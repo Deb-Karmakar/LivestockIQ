@@ -112,12 +112,6 @@ export default function VetReportsPage() {
             desc: 'Status and statistics of supervised farms'
         },
         {
-            value: 'ComplianceMonitoring',
-            label: 'Compliance Monitoring',
-            icon: ShieldCheck,
-            desc: 'Treatment approvals and compliance overview'
-        },
-        {
             value: 'WhoAwareStewardship',
             label: 'WHO AWaRe Stewardship',
             icon: Activity,
