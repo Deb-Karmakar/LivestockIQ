@@ -33,6 +33,15 @@ const feedSchema = new mongoose.Schema({
             message: 'Antimicrobial name is required for medicated feeds'
         }
     },
+    // WHO AWaRe classification for antimicrobial stewardship
+    antimicrobialClass: {
+        type: String,
+        enum: ['Access', 'Watch', 'Reserve', 'Unclassified'],
+        default: 'Unclassified',
+        // Access: First-line antibiotics with low resistance potential
+        // Watch: Second-line antibiotics, higher resistance risk
+        // Reserve: Last-resort antibiotics for multi-drug resistant infections
+    },
     antimicrobialConcentration: {
         type: Number,
         min: [0, 'Concentration cannot be negative'],

@@ -41,6 +41,7 @@ const secondaryNavLinks = [
     { name: 'User Oversight', path: '/regulator/users', icon: UserCog },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
     { name: 'MRL Verifications', path: '/regulator/mrl-verifications', icon: FileCheck },
+    { name: 'AMU Management', path: '/regulator/amu-management', icon: ShieldCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
     { name: 'Support', path: '/regulator/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/regulator/settings', icon: Settings },

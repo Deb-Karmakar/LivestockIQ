@@ -3,6 +3,7 @@
 import express from 'express';
 import { getDashboardStats, getComplianceData, getTrendAnalysisData, getDemographicsData, getMapData, generateComplianceReport, getRegulatorProfile, updateRegulatorProfile, getHighAmuAlerts } from '../controllers/regulator.controller.js';
 import { getDemographicsDataEnhanced } from '../controllers/demographicsEnhanced.controller.js';
+import { getHighAmuAlertsEnhanced, getAmuConfiguration, updateAmuConfiguration, getAmuStatistics } from '../controllers/amuEnhanced.controller.js';
 import { protect, protectRegulator } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -19,6 +20,11 @@ router.route('/profile')
     .get(protect, protectRegulator, getRegulatorProfile)
     .put(protect, protectRegulator, updateRegulatorProfile);
 
+// Enhanced AMU Management Routes
 router.get('/high-amu-alerts', protect, protectRegulator, getHighAmuAlerts);
+router.get('/amu-alerts-enhanced', protect, protectRegulator, getHighAmuAlertsEnhanced);
+router.get('/amu-config', protect, protectRegulator, getAmuConfiguration);
+router.put('/amu-config', protect, protectRegulator, updateAmuConfiguration);
+router.get('/amu-statistics', protect, protectRegulator, getAmuStatistics);
 
 export default router;

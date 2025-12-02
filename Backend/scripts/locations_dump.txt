@@ -1,0 +1,14 @@
+
+--- Checking Farmers ---
+Total Farmers: 6
+FARMER: Happy Farm | Lat: 18.5204 | Lng: 73.8567
+FARMER: Mahadev Farm | Lat: 22.7196 | Lng: 75.8577
+FARMER: Rajnigandha Farm | Lat: 31.1471 | Lng: 75.3412
+FARMER: Green Valley | Lat: 22.3651118 | Lng: 88.4312811
+FARMER: Happy Farm | Lat: 22.3936512 | Lng: 88.4146176
+FARMER: Peak Farm | Lat: 22.3936512 | Lng: 88.4146176
+
+--- Checking Veterinarians ---
+Total Vets: 2
+VET: Aditya Sharma | Lat: 22.462738 | Lng: 88.32
+VET: Rohit Trivedi | Lat: 22.464007093148435 | Lng: 88.31963604561626

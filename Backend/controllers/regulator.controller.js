@@ -7,8 +7,10 @@ import Treatment from '../models/treatment.model.js';
 import ComplianceAlert from '../models/complianceAlert.model.js';
 import HighAmuAlert from '../models/highAmuAlert.model.js';
 import Animal from '../models/animal.model.js';
+import AmuConfig from '../models/amuConfig.model.js';
 import { subMonths, format, subDays } from 'date-fns';
 import PDFDocument from 'pdfkit';
+import * as amuStats from '../services/amuStatistics.service.js';
 
 export const getDashboardStats = async (req, res) => {
     try {
@@ -19,7 +21,7 @@ export const getDashboardStats = async (req, res) => {
         ] = await Promise.all([
             Farmer.countDocuments(),
             Veterinarian.countDocuments(),
-            Treatment.aggregate([ { $group: { _id: '$status', count: { $sum: 1 } } } ]),
+            Treatment.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
             Treatment.aggregate([
                 { $match: { status: 'Approved', startDate: { $gte: sixMonthsAgo } } },
                 { $group: { _id: { month: { $month: '$startDate' }, year: { $year: '$startDate' } }, count: { $sum: 1 } } },
@@ -31,11 +33,11 @@ export const getDashboardStats = async (req, res) => {
                 { $lookup: { from: 'farmers', localField: '_id', foreignField: '_id', as: 'farmerInfo' } },
                 { $unwind: '$farmerInfo' },
                 // UPDATED: This now checks for BOTH latitude and longitude
-                { 
+                {
                     $match: {
                         'farmerInfo.location.latitude': { $exists: true, $ne: null },
                         'farmerInfo.location.longitude': { $exists: true, $ne: null }
-                    } 
+                    }
                 },
                 {
                     $project: {
@@ -83,7 +85,7 @@ export const getDashboardStats = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Error in getDashboardStats:", error); 
+        console.error("Error in getDashboardStats:", error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
@@ -101,7 +103,7 @@ export const getComplianceData = async (req, res) => {
             alerts
         ] = await Promise.all([
             // This query already fetches all statuses, including 'Rejected'
-            Treatment.aggregate([ { $group: { _id: '$status', count: { $sum: 1 } } } ]),
+            Treatment.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
             Treatment.countDocuments({ status: 'Pending', createdAt: { $lte: sevenDaysAgo } }),
             ComplianceAlert.distinct('farmerId', { status: 'Open' }),
             Treatment.aggregate([
@@ -130,7 +132,7 @@ export const getComplianceData = async (req, res) => {
         // UPDATED: The denominator now includes all three statuses
         const total = complianceStats.approved + complianceStats.pending + complianceStats.rejected;
         const complianceRate = total > 0 ? ((totalVerified / total) * 100).toFixed(1) : 100;
-        
+
         const complianceTrend = [];
         for (let i = 5; i >= 0; i--) {
             const date = subMonths(new Date(), i);
@@ -245,7 +247,7 @@ export const getDemographicsData = async (req, res) => {
     try {
         // UPDATED: Added speciesGenderRaw to the Promise.all call
         const [
-            herdCompositionRaw, 
+            herdCompositionRaw,
             ageDistributionRaw,
             speciesGenderRaw // NEW: Query for the new table
         ] = await Promise.all([
@@ -256,7 +258,7 @@ export const getDemographicsData = async (req, res) => {
             ]),
             // Query 2: Group animals into age buckets (unchanged)
             Animal.aggregate([
-                { $project: { age: { $divide: [ { $subtract: [new Date(), '$dob'] }, (365 * 24 * 60 * 60 * 1000) ] } } },
+                { $project: { age: { $divide: [{ $subtract: [new Date(), '$dob'] }, (365 * 24 * 60 * 60 * 1000)] } } },
                 { $bucket: { groupBy: "$age", boundaries: [0, 1, 3, 5, 10, Infinity], default: "Unknown", output: { "count": { $sum: 1 } } } }
             ]),
             // NEW: Query 3: Group animals by both species and gender
@@ -271,7 +273,7 @@ export const getDemographicsData = async (req, res) => {
             name: item._id,
             value: item.count
         }));
-        
+
         // Process age distribution for the bar chart (unchanged)
         const ageLabels = ['0-1 Years', '1-3 Years', '3-5 Years', '5-10 Years', '10+ Years'];
         const ageDistribution = ageDistributionRaw.map((bucket, index) => ({
@@ -288,7 +290,7 @@ export const getDemographicsData = async (req, res) => {
             if (!speciesGenderMap[species]) {
                 speciesGenderMap[species] = { species: species, total: 0, Male: 0, Female: 0 };
             }
-            
+
             speciesGenderMap[species].total += count;
             // Ensure we only count recognized genders to avoid extra columns
             if (gender === 'Male' || gender === 'Female') {
@@ -308,19 +310,67 @@ export const getDemographicsData = async (req, res) => {
 
 export const getMapData = async (req, res) => {
     try {
-        // Fetch farms with location data
-        const farms = await Farmer.find({ 
-            'location.latitude': { $exists: true, $ne: null },
-            'location.longitude': { $exists: true, $ne: null } 
-        }).select('farmName farmOwner location');
+        const sixMonthsAgo = subMonths(new Date(), 6);
 
-        // FIXED: Now actually fetching vets with location data
-        const vets = await Veterinarian.find({
-            'location.latitude': { $exists: true, $ne: null },
-            'location.longitude': { $exists: true, $ne: null }
-        }).select('fullName specialization licenseNumber location');
+        // 1. Fetch farms and vets with location data
+        const [farms, vets, openComplianceAlerts, activeAmuAlerts, amuCounts, mrlViolations] = await Promise.all([
+            Farmer.find({
+                'location.latitude': { $exists: true, $ne: null },
+                'location.longitude': { $exists: true, $ne: null }
+            }).select('farmName farmOwner location contactNumber'),
 
-        res.json({ farms, vets });
+            Veterinarian.find({
+                'location.latitude': { $exists: true, $ne: null },
+                'location.longitude': { $exists: true, $ne: null }
+            }).select('fullName specialization licenseNumber location phoneNumber'),
+
+            // 2. Fetch Open Compliance Alerts
+            ComplianceAlert.find({ status: 'Open' }).select('farmerId reason severity'),
+
+            // 3. Fetch Active High AMU Alerts
+            HighAmuAlert.find({ status: 'New' }).select('farmerId alertDate'),
+
+            // 4. Calculate AMU Intensity (Treatments in last 6 months)
+            Treatment.aggregate([
+                { $match: { status: 'Approved', startDate: { $gte: sixMonthsAgo } } },
+                { $group: { _id: '$farmerId', count: { $sum: 1 } } }
+            ]),
+
+            // 5. Fetch Active MRL Violations
+            Animal.find({ mrlStatus: 'VIOLATION' }).select('farmerId tagId')
+        ]);
+
+        // --- Process and Merge Data for Farms ---
+        const enhancedFarms = farms.map(farm => {
+            const farmIdStr = farm._id.toString();
+
+            // Check for Compliance Alerts (Critical)
+            const farmComplianceAlerts = openComplianceAlerts.filter(a => a.farmerId.toString() === farmIdStr);
+
+            // Check for MRL Violations (Critical)
+            const farmMrlViolations = mrlViolations.filter(a => a.farmerId.toString() === farmIdStr);
+
+            const hasCriticalIssues = farmComplianceAlerts.length > 0 || farmMrlViolations.length > 0;
+            // Determine Latest Issue Text
+            let latestIssue = null;
+            if (farmMrlViolations.length > 0) latestIssue = 'Active MRL Violation';
+            else if (farmComplianceAlerts.length > 0) latestIssue = farmComplianceAlerts[0].reason;
+            else if (hasWarnings) latestIssue = 'High Antimicrobial Usage';
+
+            return {
+                ...farm.toObject(),
+                status,
+                amuIntensity,
+                activeAlerts: {
+                    compliance: farmComplianceAlerts.length,
+                    amu: farmAmuAlerts.length,
+                    mrlViolations: farmMrlViolations.length
+                },
+                latestIssue
+            };
+        });
+
+        res.json({ farms: enhancedFarms, vets });
 
     } catch (error) {
         console.error("Error in getMapData:", error);
@@ -399,7 +449,7 @@ export const generateComplianceReport = async (req, res) => {
             doc.text('Reason', 300, tableTop);
             doc.text('Reporting Vet', 450, tableTop);
             doc.font('Helvetica');
-            
+
             let y = tableTop + 20;
             alerts.forEach(alert => {
                 doc.text(format(new Date(alert.createdAt), 'P'), 50, y);
@@ -438,7 +488,7 @@ export const updateRegulatorProfile = async (req, res) => {
         if (regulator) {
             // Only allow specific fields to be updated
             regulator.phoneNumber = req.body.phoneNumber ?? regulator.phoneNumber;
-            
+
             if (req.body.notificationPrefs) {
                 regulator.notificationPrefs = { ...regulator.notificationPrefs, ...req.body.notificationPrefs };
             }

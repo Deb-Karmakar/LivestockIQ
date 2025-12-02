@@ -63,6 +63,7 @@ import TrendsPage from "./pages/regulator/TrendsPage";
 import DemographicsPageEnhanced from "./pages/regulator/DemographicsPageEnhanced";
 import RegulatorAlertsPage from "./pages/regulator/RegulatorAlertsPage";
 import MRLVerificationsPage from "./pages/regulator/MRLVerificationsPage";
+import AmuManagementPage from "./pages/regulator/AmuManagementPage";
 import FarmsPage from "./pages/regulator/FarmsPage";
 import FarmDetailsPage from "./pages/regulator/FarmDetailsPage";
 import VetsPage from "./pages/regulator/VetsPage";
@@ -244,6 +245,7 @@ function App() {
                 <Route index element={<Navigate to="dashboard" replace />} />
                 <Route path="dashboard" element={<RegulatorDashboardPage />} />
                 <Route path="alerts" element={<RegulatorAlertsPage />} />
+                <Route path="amu-management" element={<AmuManagementPage />} />
                 <Route path="compliance" element={<CompliancePage />} />
                 <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
                 <Route path="support/history" element={<TicketHistoryPage />} />

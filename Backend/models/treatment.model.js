@@ -16,6 +16,15 @@ const treatmentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    // WHO AWaRe classification for antimicrobial stewardship
+    drugClass: {
+        type: String,
+        enum: ['Access', 'Watch', 'Reserve', 'Unclassified'],
+        default: 'Unclassified',
+        // Access: First-line antibiotics with low resistance potential
+        // Watch: Second-line antibiotics, higher resistance risk
+        // Reserve: Last-resort antibiotics for multi-drug resistant infections
+    },
     dose: { type: String },
     route: { type: String },
     startDate: {

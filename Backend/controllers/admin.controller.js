@@ -1,5 +1,5 @@
 // backend/controllers/admin.controller.js
-import { runAmuAnalysis, runPeerComparisonAnalysis } from '../jobs/amuAnalysis.js';
+import { runHistoricalSpikeAnalysis, runPeerComparisonAnalysis, runAllAmuAnalysis } from '../jobs/amuAnalysis.js';
 import { runDiseasePrediction } from '../jobs/diseaseAlertJob.js';
 import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
@@ -11,7 +11,7 @@ import AuditLog from '../models/auditLog.model.js';
 export const triggerAmuAnalysis = async (req, res) => {
     try {
         console.log('Manual AMU analysis trigger received.');
-        await runAmuAnalysis(); // Manually run the job
+        await runHistoricalSpikeAnalysis(); // Run historical spike analysis
         res.status(200).json({ message: 'AMU analysis job completed successfully.' });
     } catch (error) {
         console.error("Manual AMU analysis trigger failed:", error);
