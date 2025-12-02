@@ -44,3 +44,28 @@ export const reportFarmer = async (reportData) => {
     const response = await api.post('/vets/report-farmer', reportData);
     return response.data;
 };
+
+export const getVetPracticeOverviewData = async (from, to) => {
+    const response = await api.get('/reports/vet/practice-overview-data', { params: { from, to } });
+    return response.data;
+};
+
+export const getVetPrescriptionAnalyticsData = async (from, to) => {
+    const response = await api.get('/reports/vet/prescription-analytics-data', { params: { from, to } });
+    return response.data;
+};
+
+export const getVetFarmSupervisionData = async (from, to) => {
+    const response = await api.get('/reports/vet/farm-supervision-data', { params: { from, to } });
+    return response.data;
+};
+
+export const getVetComplianceMonitoringData = async (from, to) => {
+    const response = await api.get('/reports/vet/compliance-monitoring-data', { params: { from, to } });
+    return response.data;
+};
+
+export const getVetWhoAwareStewardshipData = async (from, to) => {
+    const response = await api.get('/reports/vet/who-aware-stewardship-data', { params: { from, to } });
+    return response.data;
+};

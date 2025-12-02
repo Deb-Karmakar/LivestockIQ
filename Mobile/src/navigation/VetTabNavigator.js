@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'; // Fixed duplicate import
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
 import FeedAdministrationRequestsScreen from '../screens/vet/FeedAdministrationRequestsScreen';
 import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
 import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
+import VetReportsScreen from '../screens/vet/VetReportsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -36,7 +37,7 @@ const MoreStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="VetMore" component={VetMoreScreen} />
         <Stack.Screen name="Settings" component={VetSettingsScreen} />
-        <Stack.Screen name="Reports" component={VetPlaceholderScreen} />
+        <Stack.Screen name="Reports" component={VetReportsScreen} />
         <Stack.Screen name="FeedRequests" component={VetPlaceholderScreen} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
