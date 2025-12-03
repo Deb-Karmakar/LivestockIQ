@@ -365,13 +365,13 @@ const MRLComplianceScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={[theme.primary, theme.secondary || theme.primary]} // Use theme colors
+                colors={['#1e293b', '#0f172a']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
             >
-                <Text style={styles.headerTitle}>{t('mrl_title')}</Text>
-                <Text style={styles.headerSubtitle}>{t('mrl_subtitle')}</Text>
+                <Text style={[styles.headerTitle, { color: '#fff' }]}>{t('mrl_title')}</Text>
+                <Text style={[styles.headerSubtitle, { color: '#94a3b8' }]}>{t('mrl_subtitle')}</Text>
             </LinearGradient>
 
             <View style={[styles.tabs, { backgroundColor: theme.card }]}>

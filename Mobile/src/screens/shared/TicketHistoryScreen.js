@@ -176,7 +176,7 @@ const TicketHistoryScreen = () => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={[theme.primary, theme.secondary || theme.primary]}
+                colors={['#1e293b', '#0f172a']}
                 style={styles.header}
             >
                 <View style={styles.headerContent}>

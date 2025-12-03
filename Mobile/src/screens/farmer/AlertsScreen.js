@@ -14,6 +14,7 @@ import {
     FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getTreatments } from '../../services/treatmentService';
 import { getMyHighAmuAlerts } from '../../services/farmerService';
 import { differenceInDays, format } from 'date-fns';
@@ -251,10 +252,13 @@ const AlertsScreen = ({ navigation }) => {
                 }
             >
                 {/* Header */}
-                <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>{t('alerts_title')}</Text>
-                    <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>{t('alerts_subtitle')}</Text>
-                </View>
+                <LinearGradient
+                    colors={['#1e293b', '#0f172a']}
+                    style={styles.header}
+                >
+                    <Text style={[styles.headerTitle, { color: '#fff' }]}>{t('alerts_title')}</Text>
+                    <Text style={[styles.headerSubtitle, { color: '#94a3b8' }]}>{t('alerts_subtitle')}</Text>
+                </LinearGradient>
 
                 {/* Stats Cards */}
                 <View style={styles.statsContainer}>

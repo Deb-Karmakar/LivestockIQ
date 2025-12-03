@@ -235,7 +235,7 @@ const FeedInventoryScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={[theme.primary, theme.secondary || theme.primary]} // Use theme colors
+                colors={['#1e293b', '#0f172a']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -243,7 +243,7 @@ const FeedInventoryScreen = ({ navigation }) => {
                 <View style={styles.headerRow}>
                     <View>
                         <Text style={styles.headerTitle}>{t('feed_inventory_title')}</Text>
-                        <Text style={styles.headerSubtitle}>{t('feed_subtitle')}</Text>
+                        <Text style={[styles.headerSubtitle, { color: '#94a3b8' }]}>{t('feed_subtitle')}</Text>
                     </View>
                     <TouchableOpacity style={styles.addButton} onPress={() => handleOpenModal()}>
                         <Ionicons name="add" size={24} color="#fff" />

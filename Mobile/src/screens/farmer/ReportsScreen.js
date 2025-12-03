@@ -11,6 +11,7 @@ import {
     Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import {
@@ -220,10 +221,13 @@ const ReportsScreen = () => {
     return (
         <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
-                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('reports_title')}</Text>
-                <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>{t('reports_subtitle')}</Text>
-            </View>
+            <LinearGradient
+                colors={['#1e293b', '#0f172a']}
+                style={styles.header}
+            >
+                <Text style={[styles.headerTitle, { color: '#fff' }]}>{t('reports_title')}</Text>
+                <Text style={[styles.headerSubtitle, { color: '#94a3b8' }]}>{t('reports_subtitle')}</Text>
+            </LinearGradient>
 
             {/* Report Selection */}
             <View style={styles.section}>

@@ -13,6 +13,7 @@ import {
     Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getAnimals, deleteAnimal } from '../../services/animalService';
 import AIHealthTipModal from '../../components/AIHealthTipModal';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -246,19 +247,22 @@ const AnimalsScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header Banner (now rendered at the TOP) */}
-            <View style={[styles.headerBanner, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
+            <LinearGradient
+                colors={['#1e293b', '#0f172a']}
+                style={styles.headerBanner}
+            >
                 <View style={styles.headerContent}>
                     <View style={styles.headerTextContainer}>
-                        <Text style={[styles.headerBadge, { color: theme.success }]}>
-                            <Ionicons name="sparkles" size={14} color={theme.success} /> {t('herd_management')}
+                        <Text style={[styles.headerBadge, { color: '#4ade80' }]}>
+                            <Ionicons name="sparkles" size={14} color="#4ade80" /> {t('herd_management')}
                         </Text>
-                        <Text style={[styles.headerTitle, { color: theme.text }]}>{t('animals_livestock')}</Text>
-                        <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>
-                            {t('you_have_registered', { count: animals.length })} <Text style={[styles.highlight, { color: theme.success }]}>{animals.length} {t('animals_registered')}</Text>
+                        <Text style={[styles.headerTitle, { color: '#fff' }]}>{t('animals_livestock')}</Text>
+                        <Text style={[styles.headerSubtitle, { color: '#94a3b8' }]}>
+                            {t('you_have_registered', { count: animals.length })} <Text style={[styles.highlight, { color: '#4ade80' }]}>{animals.length} {t('animals_registered')}</Text>
                         </Text>
                     </View>
                 </View>
-            </View>
+            </LinearGradient>
 
             {/* Search and Filter (moved BELOW the header) */}
             <View style={[styles.searchContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>

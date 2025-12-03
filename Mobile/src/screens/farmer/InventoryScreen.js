@@ -171,7 +171,7 @@ const InventoryScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={[theme.primary, theme.secondary || theme.primary]} // Use theme colors
+                colors={['#1e293b', '#0f172a']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}

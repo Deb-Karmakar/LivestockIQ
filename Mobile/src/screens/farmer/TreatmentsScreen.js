@@ -179,7 +179,7 @@ const TreatmentsScreen = ({ navigation }) => {
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={[theme.mode === 'dark' ? '#0f172a' : '#1e293b', theme.mode === 'dark' ? '#1e293b' : '#334155']}
+                colors={['#1e293b', '#0f172a']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
