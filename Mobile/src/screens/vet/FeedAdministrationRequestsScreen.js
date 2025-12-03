@@ -21,9 +21,11 @@ import {
     rejectFeedAdministration
 } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const FeedAdministrationRequestsScreen = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -102,9 +104,9 @@ const FeedAdministrationRequestsScreen = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Active': return '#10b981';
-            case 'Rejected': return '#ef4444';
-            default: return '#f59e0b';
+            case 'Active': return theme.success;
+            case 'Rejected': return theme.error;
+            default: return theme.warning;
         }
     };
 
@@ -118,18 +120,18 @@ const FeedAdministrationRequestsScreen = () => {
         const animalCount = item.animalIds?.length || 0;
 
         return (
-            <View style={styles.card}>
+            <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                 <View style={styles.cardHeader}>
                     <View style={styles.farmerInfo}>
-                        <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>
+                        <View style={[styles.avatar, { backgroundColor: `${theme.primary}20` }]}>
+                            <Text style={[styles.avatarText, { color: theme.primary }]}>
                                 {item.farmerId?.farmOwner?.charAt(0) || 'F'}
                             </Text>
                         </View>
                         <View>
-                            <Text style={styles.farmerName}>{item.farmerId?.farmOwner || 'Unknown Farmer'}</Text>
-                            <Text style={styles.farmName}>
-                                <Ionicons name="location" size={12} color="#6b7280" /> {item.farmerId?.farmName || 'Unknown Farm'}
+                            <Text style={[styles.farmerName, { color: theme.text }]}>{item.farmerId?.farmOwner || 'Unknown Farmer'}</Text>
+                            <Text style={[styles.farmName, { color: theme.subtext }]}>
+                                <Ionicons name="location" size={12} color={theme.subtext} /> {item.farmerId?.farmName || 'Unknown Farm'}
                             </Text>
                         </View>
                     </View>
@@ -140,55 +142,55 @@ const FeedAdministrationRequestsScreen = () => {
                     </View>
                 </View>
 
-                <View style={styles.detailsSection}>
+                <View style={[styles.detailsSection, { backgroundColor: theme.background }]}>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('feed')}</Text>
-                        <Text style={styles.detailValue}>{item.feedId?.feedName || 'N/A'}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('feed')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.feedId?.feedName || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('antimicrobial')}</Text>
-                        <Text style={styles.detailValue}>{item.feedId?.antimicrobialName || 'N/A'}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('antimicrobial')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.feedId?.antimicrobialName || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('group_animals')}</Text>
-                        <Text style={styles.detailValue}>{item.groupName || `${animalCount} animal(s)`}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('group_animals')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.groupName || `${animalCount} animal(s)`}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('quantity')}</Text>
-                        <Text style={styles.detailValue}>{item.feedQuantityUsed} {item.feedId?.unit || 'kg'}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('quantity')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.feedQuantityUsed} {item.feedId?.unit || 'kg'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
-                        <Text style={styles.detailValue}>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('start_date')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>
                             {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'N/A'}
                         </Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>{t('withdrawal_end_short')}</Text>
-                        <Text style={styles.detailValue}>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('withdrawal_end_short')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>
                             {item.withdrawalEndDate ? new Date(item.withdrawalEndDate).toLocaleDateString() : 'TBD'}
                         </Text>
                     </View>
                 </View>
 
                 {item.notes && (
-                    <View style={styles.notesBox}>
-                        <Text style={styles.notesLabel}>{t('farmer_notes')}</Text>
-                        <Text style={styles.notesText}>{item.notes}</Text>
+                    <View style={[styles.notesBox, { backgroundColor: `${theme.warning}10` }]}>
+                        <Text style={[styles.notesLabel, { color: theme.warning }]}>{t('farmer_notes')}</Text>
+                        <Text style={[styles.notesText, { color: theme.text }]}>{item.notes}</Text>
                     </View>
                 )}
 
                 {item.animals && item.animals.length > 0 && (
                     <View style={styles.animalsList}>
-                        <Text style={styles.animalsLabel}>{t('animals_in_request')}</Text>
+                        <Text style={[styles.animalsLabel, { color: theme.subtext }]}>{t('animals_in_request')}</Text>
                         <View style={styles.tagsContainer}>
                             {item.animals.map(animal => (
                                 <TouchableOpacity
                                     key={animal.tagId}
-                                    style={styles.animalTag}
+                                    style={[styles.animalTag, { backgroundColor: `${theme.info}10`, borderColor: `${theme.info}30` }]}
                                     onPress={() => navigation.navigate('AnimalHistory', { animalId: animal.tagId })}
                                 >
-                                    <Text style={styles.animalTagText}>{animal.tagId}</Text>
+                                    <Text style={[styles.animalTagText, { color: theme.info }]}>{animal.tagId}</Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -196,16 +198,16 @@ const FeedAdministrationRequestsScreen = () => {
                 )}
 
                 {isPending && (
-                    <View style={styles.actionFooter}>
+                    <View style={[styles.actionFooter, { borderTopColor: theme.border }]}>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.approveBtn]}
+                            style={[styles.actionBtn, styles.approveBtn, { backgroundColor: theme.success }]}
                             onPress={() => openApproveModal(item)}
                         >
                             <Ionicons name="checkmark-circle" size={18} color="#fff" />
                             <Text style={styles.actionBtnText}>{t('approve')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
-                            style={[styles.actionBtn, styles.rejectBtn]}
+                            style={[styles.actionBtn, styles.rejectBtn, { backgroundColor: theme.error }]}
                             onPress={() => openRejectModal(item)}
                         >
                             <Ionicons name="close-circle" size={18} color="#fff" />
@@ -218,7 +220,7 @@ const FeedAdministrationRequestsScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
                 colors={['#1e293b', '#0f172a']}
                 style={styles.header}
@@ -238,7 +240,7 @@ const FeedAdministrationRequestsScreen = () => {
                 </View>
             </LinearGradient>
 
-            <View style={styles.tabBar}>
+            <View style={[styles.tabBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 {[
                     { key: 'all', label: t('tab_all') },
                     { key: 'Pending Approval', label: t('tab_pending') },
@@ -250,17 +252,21 @@ const FeedAdministrationRequestsScreen = () => {
                         style={[styles.tab, activeTab === tab.key && styles.activeTab]}
                         onPress={() => setActiveTab(tab.key)}
                     >
-                        <Text style={[styles.tabText, activeTab === tab.key && styles.activeTabText]}>
+                        <Text style={[
+                            styles.tabText,
+                            { color: theme.subtext },
+                            activeTab === tab.key && { color: theme.primary, fontWeight: '600' }
+                        ]}>
                             {tab.label}
                         </Text>
-                        {activeTab === tab.key && <View style={styles.activeIndicator} />}
+                        {activeTab === tab.key && <View style={[styles.activeIndicator, { backgroundColor: theme.primary }]} />}
                     </TouchableOpacity>
                 ))}
             </View>
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#8b5cf6" />
+                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -268,11 +274,11 @@ const FeedAdministrationRequestsScreen = () => {
                     keyExtractor={(item) => item._id}
                     renderItem={renderRequest}
                     contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Ionicons name="nutrition-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>{t('no_requests', { status: '' })}</Text>
+                            <Ionicons name="nutrition-outline" size={64} color={theme.border} />
+                            <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_requests', { status: '' })}</Text>
                         </View>
                     }
                 />
@@ -286,27 +292,28 @@ const FeedAdministrationRequestsScreen = () => {
                 onRequestClose={() => setApproveModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('approve_feed')}</Text>
-                        <Text style={styles.modalSubtitle}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('approve_feed')}</Text>
+                        <Text style={[styles.modalSubtitle, { color: theme.subtext }]}>
                             {t('add_optional_notes')}
                         </Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
                             placeholder={t('vet_notes')}
+                            placeholderTextColor={theme.subtext}
                             value={vetNotes}
                             onChangeText={setVetNotes}
                             multiline
                         />
                         <View style={styles.modalActions}>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.cancelBtn]}
+                                style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: theme.background }]}
                                 onPress={() => setApproveModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+                                <Text style={[styles.cancelBtnText, { color: theme.subtext }]}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.confirmApproveBtn]}
+                                style={[styles.modalBtn, styles.confirmApproveBtn, { backgroundColor: theme.success }]}
                                 onPress={handleApprove}
                             >
                                 <Text style={styles.confirmApproveBtnText}>{t('approve')}</Text>
@@ -324,27 +331,28 @@ const FeedAdministrationRequestsScreen = () => {
                 onRequestClose={() => setRejectModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('reject_request')}</Text>
-                        <Text style={styles.modalSubtitle}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('reject_request')}</Text>
+                        <Text style={[styles.modalSubtitle, { color: theme.subtext }]}>
                             {t('restore_inventory_note')}
                         </Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { borderColor: theme.border, color: theme.text }]}
                             placeholder={t('reason_placeholder')}
+                            placeholderTextColor={theme.subtext}
                             value={rejectionReason}
                             onChangeText={setRejectionReason}
                             multiline
                         />
                         <View style={styles.modalActions}>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.cancelBtn]}
+                                style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: theme.background }]}
                                 onPress={() => setRejectModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+                                <Text style={[styles.cancelBtnText, { color: theme.subtext }]}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.confirmRejectBtn]}
+                                style={[styles.modalBtn, styles.confirmRejectBtn, { backgroundColor: theme.error }]}
                                 onPress={handleReject}
                             >
                                 <Text style={styles.confirmRejectBtnText}>{t('reject')}</Text>
@@ -358,7 +366,7 @@ const FeedAdministrationRequestsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
     headerContent: {},
     headerTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
@@ -366,55 +374,54 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
     headerSubtitle: { color: '#94a3b8', fontSize: 14, lineHeight: 20 },
     highlightText: { color: '#fb923c', fontWeight: '600' },
-    tabBar: { flexDirection: 'row', backgroundColor: '#fff', paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+    tabBar: { flexDirection: 'row', paddingHorizontal: 10, borderBottomWidth: 1 },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
     activeTab: {},
-    tabText: { fontSize: 14, color: '#6b7280', fontWeight: '500' },
-    activeTabText: { color: '#8b5cf6', fontWeight: '600' },
-    activeIndicator: { position: 'absolute', bottom: 0, width: '100%', height: 2, backgroundColor: '#8b5cf6' },
+    tabText: { fontSize: 14, fontWeight: '500' },
+    activeIndicator: { position: 'absolute', bottom: 0, width: '100%', height: 2 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     list: { padding: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+    card: { borderRadius: 12, padding: 16, marginBottom: 16, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
     farmerInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-    avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#f3e8ff', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    avatarText: { fontSize: 16, fontWeight: 'bold', color: '#7e22ce' },
-    farmerName: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
-    farmName: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+    avatar: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    avatarText: { fontSize: 16, fontWeight: 'bold' },
+    farmerName: { fontSize: 16, fontWeight: '600' },
+    farmName: { fontSize: 12, marginTop: 2 },
     statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
     statusText: { fontSize: 10, fontWeight: '600' },
-    detailsSection: { backgroundColor: '#f9fafb', borderRadius: 8, padding: 12, marginBottom: 12 },
+    detailsSection: { borderRadius: 8, padding: 12, marginBottom: 12 },
     detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-    detailLabel: { fontSize: 13, color: '#6b7280' },
-    detailValue: { fontSize: 13, fontWeight: '500', color: '#1f2937' },
-    notesBox: { backgroundColor: '#fff7ed', padding: 12, borderRadius: 8, marginBottom: 12 },
-    notesLabel: { fontSize: 12, fontWeight: '600', color: '#c2410c', marginBottom: 4 },
-    notesText: { fontSize: 13, color: '#9a3412' },
+    detailLabel: { fontSize: 13 },
+    detailValue: { fontSize: 13, fontWeight: '500' },
+    notesBox: { padding: 12, borderRadius: 8, marginBottom: 12 },
+    notesLabel: { fontSize: 12, fontWeight: '600', marginBottom: 4 },
+    notesText: { fontSize: 13 },
     animalsList: { marginBottom: 16 },
-    animalsLabel: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginBottom: 8 },
+    animalsLabel: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
     tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    animalTag: { backgroundColor: '#eff6ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1, borderColor: '#dbeafe' },
-    animalTagText: { fontSize: 12, color: '#2563eb', fontWeight: '500' },
-    actionFooter: { flexDirection: 'row', gap: 8, paddingTop: 16, borderTopWidth: 1, borderTopColor: '#f3f4f6' },
+    animalTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, borderWidth: 1 },
+    animalTagText: { fontSize: 12, fontWeight: '500' },
+    actionFooter: { flexDirection: 'row', gap: 8, paddingTop: 16, borderTopWidth: 1 },
     actionBtn: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, borderRadius: 8, gap: 6 },
-    approveBtn: { backgroundColor: '#10b981' },
-    rejectBtn: { backgroundColor: '#ef4444' },
+    approveBtn: {},
+    rejectBtn: {},
     actionBtnText: { fontSize: 13, fontWeight: '600', color: '#fff' },
     emptyState: { alignItems: 'center', marginTop: 60 },
-    emptyText: { marginTop: 16, fontSize: 16, color: '#9ca3af' },
+    emptyText: { marginTop: 16, fontSize: 16 },
 
     // Modal Styles
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20 },
-    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937', marginBottom: 8 },
-    modalSubtitle: { fontSize: 14, color: '#6b7280', marginBottom: 16 },
-    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, height: 100, textAlignVertical: 'top', marginBottom: 16, fontSize: 14 },
+    modalContent: { borderRadius: 12, padding: 20 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
+    modalSubtitle: { fontSize: 14, marginBottom: 16 },
+    input: { borderWidth: 1, borderRadius: 8, padding: 12, height: 100, textAlignVertical: 'top', marginBottom: 16, fontSize: 14 },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
     modalBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
-    cancelBtn: { backgroundColor: '#f3f4f6' },
-    confirmApproveBtn: { backgroundColor: '#10b981' },
-    confirmRejectBtn: { backgroundColor: '#ef4444' },
-    cancelBtnText: { color: '#4b5563', fontWeight: '600' },
+    cancelBtn: {},
+    confirmApproveBtn: {},
+    confirmRejectBtn: {},
+    cancelBtnText: { fontWeight: '600' },
     confirmApproveBtnText: { color: '#fff', fontWeight: '600' },
     confirmRejectBtnText: { color: '#fff', fontWeight: '600' },
 });

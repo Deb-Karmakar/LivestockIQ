@@ -20,37 +20,54 @@ import {
     getVetWhoAwareStewardshipData
 } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
-const ReportTypeCard = ({ title, description, icon, isSelected, onPress }) => (
+const ReportTypeCard = ({ title, description, icon, isSelected, onPress, theme }) => (
     <TouchableOpacity
-        style={[styles.reportTypeCard, isSelected && styles.reportTypeCardSelected]}
+        style={[
+            styles.reportTypeCard,
+            { backgroundColor: theme.card, borderColor: theme.border },
+            isSelected && { backgroundColor: `${theme.primary}10`, borderColor: theme.primary }
+        ]}
         onPress={onPress}
     >
-        <View style={[styles.reportIconContainer, isSelected && styles.reportIconContainerSelected]}>
-            <Ionicons name={icon} size={24} color={isSelected ? '#fff' : '#3b82f6'} />
+        <View style={[
+            styles.reportIconContainer,
+            { backgroundColor: `${theme.primary}10` },
+            isSelected && { backgroundColor: theme.primary }
+        ]}>
+            <Ionicons name={icon} size={24} color={isSelected ? '#fff' : theme.primary} />
         </View>
         <View style={styles.reportTextContainer}>
-            <Text style={[styles.reportTypeTitle, isSelected && styles.reportTypeTitleSelected]}>{title}</Text>
-            <Text style={[styles.reportTypeDesc, isSelected && styles.reportTypeDescSelected]}>{description}</Text>
+            <Text style={[
+                styles.reportTypeTitle,
+                { color: theme.text },
+                isSelected && { color: theme.primary }
+            ]}>{title}</Text>
+            <Text style={[
+                styles.reportTypeDesc,
+                { color: theme.subtext },
+                isSelected && { color: theme.primary }
+            ]}>{description}</Text>
         </View>
     </TouchableOpacity>
 );
 
-const SummaryCard = ({ label, value, icon, trend, t }) => (
-    <View style={styles.summaryCard}>
+const SummaryCard = ({ label, value, icon, trend, t, theme }) => (
+    <View style={[styles.summaryCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
         <View style={styles.summaryHeader}>
-            <Text style={styles.summaryLabel}>{label}</Text>
-            {icon && <Ionicons name={icon} size={16} color="#64748b" />}
+            <Text style={[styles.summaryLabel, { color: theme.subtext }]}>{label}</Text>
+            {icon && <Ionicons name={icon} size={16} color={theme.subtext} />}
         </View>
-        <Text style={styles.summaryValue}>{value}</Text>
+        <Text style={[styles.summaryValue, { color: theme.text }]}>{value}</Text>
         {trend && (
-            <View style={[styles.trendBadge, { backgroundColor: trend === 'up' ? '#dcfce7' : '#fee2e2' }]}>
+            <View style={[styles.trendBadge, { backgroundColor: trend === 'up' ? `${theme.success}20` : `${theme.error}20` }]}>
                 <Ionicons
                     name={trend === 'up' ? 'trending-up' : 'trending-down'}
                     size={12}
-                    color={trend === 'up' ? '#16a34a' : '#ef4444'}
+                    color={trend === 'up' ? theme.success : theme.error}
                 />
-                <Text style={[styles.trendText, { color: trend === 'up' ? '#16a34a' : '#ef4444' }]}>
+                <Text style={[styles.trendText, { color: trend === 'up' ? theme.success : theme.error }]}>
                     {trend === 'up' ? t('positive') : t('negative')}
                 </Text>
             </View>
@@ -60,6 +77,7 @@ const SummaryCard = ({ label, value, icon, trend, t }) => (
 
 const VetReportsScreen = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [selectedReportType, setSelectedReportType] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -173,7 +191,7 @@ const VetReportsScreen = () => {
         return (
             <View style={styles.summaryGrid}>
                 {cards.map((card, index) => (
-                    <SummaryCard key={index} {...card} t={t} />
+                    <SummaryCard key={index} {...card} t={t} theme={theme} />
                 ))}
             </View>
         );
@@ -182,28 +200,28 @@ const VetReportsScreen = () => {
     const renderDataList = () => {
         if (!reportData?.data?.length) return (
             <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>{t('no_data')}</Text>
+                <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_data')}</Text>
             </View>
         );
 
         return (
             <View style={styles.dataList}>
-                <Text style={styles.sectionTitle}>{t('detailed_data')}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('detailed_data')}</Text>
                 {reportData.data.slice(0, 10).map((item, index) => (
-                    <View key={index} style={styles.dataItem}>
+                    <View key={index} style={[styles.dataItem, { borderBottomColor: theme.border }]}>
                         <View>
-                            <Text style={styles.dataItemTitle}>{item.name || item.farmName || 'Unknown'}</Text>
-                            <Text style={styles.dataItemSubtitle}>
+                            <Text style={[styles.dataItemTitle, { color: theme.text }]}>{item.name || item.farmName || 'Unknown'}</Text>
+                            <Text style={[styles.dataItemSubtitle, { color: theme.subtext }]}>
                                 {item.farmOwner ? `Owner: ${item.farmOwner}` : ''}
                             </Text>
                         </View>
-                        <Text style={styles.dataItemValue}>
+                        <Text style={[styles.dataItemValue, { color: theme.primary }]}>
                             {item.value || item.count || item.treatments || item.prescriptions || 0}
                         </Text>
                     </View>
                 ))}
                 {reportData.data.length > 10 && (
-                    <Text style={styles.moreText}>{t('more_items', { count: reportData.data.length - 10 })}</Text>
+                    <Text style={[styles.moreText, { color: theme.subtext }]}>{t('more_items', { count: reportData.data.length - 10 })}</Text>
                 )}
             </View>
         );
@@ -220,7 +238,7 @@ const VetReportsScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient colors={['#1e293b', '#0f172a']} style={styles.header}>
                 <View style={styles.headerContent}>
                     <View style={styles.headerTopRow}>
@@ -234,7 +252,7 @@ const VetReportsScreen = () => {
 
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Report Type Selection */}
-                <Text style={styles.sectionHeader}>{t('select_report_type')}</Text>
+                <Text style={[styles.sectionHeader, { color: theme.text }]}>{t('select_report_type')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
                     {reportTypes.map((type) => (
                         <ReportTypeCard
@@ -244,6 +262,7 @@ const VetReportsScreen = () => {
                             icon={type.icon}
                             isSelected={selectedReportType === type.value}
                             onPress={() => setSelectedReportType(type.value)}
+                            theme={theme}
                         />
                     ))}
                 </ScrollView>
@@ -251,10 +270,10 @@ const VetReportsScreen = () => {
                 {/* Date Selection */}
                 <View style={styles.dateSection}>
                     <View style={styles.datePickerContainer}>
-                        <Text style={styles.dateLabel}>{t('from')}</Text>
-                        <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.dateButton}>
-                            <Ionicons name="calendar-outline" size={20} color="#64748b" />
-                            <Text style={styles.dateText}>{startDate.toLocaleDateString()}</Text>
+                        <Text style={[styles.dateLabel, { color: theme.subtext }]}>{t('from')}</Text>
+                        <TouchableOpacity onPress={() => setShowStartPicker(true)} style={[styles.dateButton, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            <Ionicons name="calendar-outline" size={20} color={theme.subtext} />
+                            <Text style={[styles.dateText, { color: theme.text }]}>{startDate.toLocaleDateString()}</Text>
                         </TouchableOpacity>
                         {showStartPicker && (
                             <DateTimePicker
@@ -267,10 +286,10 @@ const VetReportsScreen = () => {
                         )}
                     </View>
                     <View style={styles.datePickerContainer}>
-                        <Text style={styles.dateLabel}>{t('to')}</Text>
-                        <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.dateButton}>
-                            <Ionicons name="calendar-outline" size={20} color="#64748b" />
-                            <Text style={styles.dateText}>{endDate.toLocaleDateString()}</Text>
+                        <Text style={[styles.dateLabel, { color: theme.subtext }]}>{t('to')}</Text>
+                        <TouchableOpacity onPress={() => setShowEndPicker(true)} style={[styles.dateButton, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                            <Ionicons name="calendar-outline" size={20} color={theme.subtext} />
+                            <Text style={[styles.dateText, { color: theme.text }]}>{endDate.toLocaleDateString()}</Text>
                         </TouchableOpacity>
                         {showEndPicker && (
                             <DateTimePicker
@@ -286,7 +305,11 @@ const VetReportsScreen = () => {
                 </View>
 
                 <TouchableOpacity
-                    style={[styles.generateButton, (!selectedReportType || loading) && styles.generateButtonDisabled]}
+                    style={[
+                        styles.generateButton,
+                        { backgroundColor: theme.primary },
+                        (!selectedReportType || loading) && { backgroundColor: theme.subtext }
+                    ]}
                     onPress={handleGenerateReport}
                     disabled={!selectedReportType || loading}
                 >
@@ -302,9 +325,9 @@ const VetReportsScreen = () => {
 
                 {/* Results */}
                 {reportData && (
-                    <View style={styles.resultsContainer}>
-                        <Text style={styles.sectionHeader}>{t('report_summary')}</Text>
-                        <Text style={styles.resultDate}>{t('generated_on', { date: new Date().toLocaleString() })}</Text>
+                    <View style={[styles.resultsContainer, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.sectionHeader, { color: theme.text }]}>{t('report_summary')}</Text>
+                        <Text style={[styles.resultDate, { color: theme.subtext }]}>{t('generated_on', { date: new Date().toLocaleString() })}</Text>
                         {renderSummary()}
                         {renderDataList()}
                     </View>
@@ -315,57 +338,47 @@ const VetReportsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
     headerTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
     headerLabel: { color: '#60a5fa', fontSize: 14, fontWeight: '600' },
     welcomeText: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
     subText: { color: '#94a3b8', fontSize: 14 },
     content: { flex: 1, padding: 16 },
-    sectionHeader: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 12, marginTop: 8 },
+    sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, marginTop: 8 },
     typeScroll: { marginBottom: 20 },
     reportTypeCard: {
-        backgroundColor: '#fff',
         padding: 16,
         borderRadius: 12,
         marginRight: 12,
         width: 160,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         height: 140,
         justifyContent: 'space-between'
     },
-    reportTypeCardSelected: { backgroundColor: '#eff6ff', borderColor: '#3b82f6' },
     reportIconContainer: {
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#f1f5f9',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12
     },
-    reportIconContainerSelected: { backgroundColor: '#3b82f6' },
-    reportTypeTitle: { fontSize: 14, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 },
-    reportTypeTitleSelected: { color: '#1e40af' },
-    reportTypeDesc: { fontSize: 11, color: '#64748b' },
-    reportTypeDescSelected: { color: '#3b82f6' },
+    reportTypeTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 4 },
+    reportTypeDesc: { fontSize: 11 },
     dateSection: { flexDirection: 'row', gap: 12, marginBottom: 20 },
     datePickerContainer: { flex: 1 },
-    dateLabel: { fontSize: 12, fontWeight: '600', color: '#64748b', marginBottom: 6 },
+    dateLabel: { fontSize: 12, fontWeight: '600', marginBottom: 6 },
     dateButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e2e8f0',
         gap: 8
     },
-    dateText: { fontSize: 14, color: '#1e293b' },
+    dateText: { fontSize: 14 },
     generateButton: {
-        backgroundColor: '#3b82f6',
         padding: 16,
         borderRadius: 12,
         flexDirection: 'row',
@@ -374,40 +387,36 @@ const styles = StyleSheet.create({
         gap: 8,
         marginBottom: 24
     },
-    generateButtonDisabled: { backgroundColor: '#94a3b8' },
     generateButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    resultsContainer: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 20 },
-    resultDate: { fontSize: 12, color: '#64748b', marginBottom: 16 },
+    resultsContainer: { borderRadius: 16, padding: 16, marginBottom: 20 },
+    resultDate: { fontSize: 12, marginBottom: 16 },
     summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
     summaryCard: {
         width: '48%',
-        backgroundColor: '#f8fafc',
         padding: 12,
         borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#e2e8f0'
+        borderWidth: 1
     },
     summaryHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-    summaryLabel: { fontSize: 11, color: '#64748b', fontWeight: '600' },
-    summaryValue: { fontSize: 18, fontWeight: 'bold', color: '#1e293b' },
+    summaryLabel: { fontSize: 11, fontWeight: '600' },
+    summaryValue: { fontSize: 18, fontWeight: 'bold' },
     trendBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, alignSelf: 'flex-start', marginTop: 4, gap: 4 },
     trendText: { fontSize: 10, fontWeight: '600' },
     dataList: { marginTop: 16 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1e293b', marginBottom: 12 },
+    sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
     dataItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f1f5f9'
+        borderBottomWidth: 1
     },
-    dataItemTitle: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
-    dataItemSubtitle: { fontSize: 12, color: '#64748b' },
-    dataItemValue: { fontSize: 14, fontWeight: 'bold', color: '#3b82f6' },
-    moreText: { textAlign: 'center', color: '#64748b', fontSize: 12, marginTop: 12, fontStyle: 'italic' },
+    dataItemTitle: { fontSize: 14, fontWeight: '600' },
+    dataItemSubtitle: { fontSize: 12 },
+    dataItemValue: { fontSize: 14, fontWeight: 'bold' },
+    moreText: { textAlign: 'center', fontSize: 12, marginTop: 12, fontStyle: 'italic' },
     emptyState: { padding: 24, alignItems: 'center' },
-    emptyText: { color: '#94a3b8', fontSize: 14 }
+    emptyText: { fontSize: 14 }
 });
 
 export default VetReportsScreen;

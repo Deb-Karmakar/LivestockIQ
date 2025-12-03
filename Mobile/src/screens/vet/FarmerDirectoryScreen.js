@@ -10,16 +10,17 @@ import {
     Alert,
     Modal,
     Linking,
-    ScrollView,
     RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getMyFarmers, getAnimalsForFarmer, reportFarmer } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const FarmerDirectoryScreen = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [farmers, setFarmers] = useState([]);
     const [filteredFarmers, setFilteredFarmers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -141,45 +142,45 @@ const FarmerDirectoryScreen = () => {
     };
 
     const renderFarmer = ({ item }) => (
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.text }]}>
             <View style={styles.cardHeader}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>
+                <View style={[styles.avatar, { backgroundColor: `${theme.primary}20` }]}>
+                    <Text style={[styles.avatarText, { color: theme.primary }]}>
                         {item.farmOwner?.charAt(0) || 'F'}
                     </Text>
                 </View>
                 <View style={styles.headerInfo}>
-                    <Text style={styles.farmerName}>{item.farmOwner}</Text>
-                    <Text style={styles.farmName}>{item.farmName}</Text>
+                    <Text style={[styles.farmerName, { color: theme.text }]}>{item.farmOwner}</Text>
+                    <Text style={[styles.farmName, { color: theme.subtext }]}>{item.farmName}</Text>
                 </View>
                 <TouchableOpacity
                     style={styles.moreBtn}
                     onPress={() => handleReportPress(item)}
                 >
-                    <Ionicons name="alert-circle-outline" size={24} color="#ef4444" />
+                    <Ionicons name="alert-circle-outline" size={24} color={theme.error} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.cardActions}>
+            <View style={[styles.cardActions, { borderTopColor: theme.border }]}>
                 <TouchableOpacity
-                    style={[styles.actionBtn, styles.primaryBtn]}
+                    style={[styles.actionBtn, styles.primaryBtn, { backgroundColor: `${theme.primary}10` }]}
                     onPress={() => handleViewAnimals(item)}
                 >
-                    <Ionicons name="paw" size={16} color="#2563eb" />
-                    <Text style={styles.primaryBtnText}>{t('view_animals')}</Text>
+                    <Ionicons name="paw" size={16} color={theme.primary} />
+                    <Text style={[styles.primaryBtnText, { color: theme.primary }]}>{t('view_animals')}</Text>
                 </TouchableOpacity>
                 <View style={styles.contactActions}>
                     <TouchableOpacity
-                        style={styles.iconBtn}
+                        style={[styles.iconBtn, { borderColor: theme.border }]}
                         onPress={() => handleCall(item.phoneNumber)}
                     >
-                        <Ionicons name="call-outline" size={20} color="#4b5563" />
+                        <Ionicons name="call-outline" size={20} color={theme.subtext} />
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.iconBtn}
+                        style={[styles.iconBtn, { borderColor: theme.border }]}
                         onPress={() => handleEmail(item.email)}
                     >
-                        <Ionicons name="mail-outline" size={20} color="#4b5563" />
+                        <Ionicons name="mail-outline" size={20} color={theme.subtext} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -187,7 +188,7 @@ const FarmerDirectoryScreen = () => {
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
                 colors={['#1e293b', '#0f172a']}
                 style={styles.header}
@@ -219,8 +220,8 @@ const FarmerDirectoryScreen = () => {
             </LinearGradient>
 
             {loading ? (
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#2563eb" />
+                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                    <ActivityIndicator size="large" color={theme.primary} />
                 </View>
             ) : (
                 <FlatList
@@ -228,11 +229,11 @@ const FarmerDirectoryScreen = () => {
                     keyExtractor={(item) => item._id}
                     renderItem={renderFarmer}
                     contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
-                            <Ionicons name="people-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>{t('no_farmers')}</Text>
+                            <Ionicons name="people-outline" size={64} color={theme.border} />
+                            <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_farmers')}</Text>
                         </View>
                     }
                 />
@@ -245,22 +246,22 @@ const FarmerDirectoryScreen = () => {
                 presentationStyle="pageSheet"
                 onRequestClose={() => setAnimalsModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>{t('livestock_registry')}</Text>
+                <View style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+                    <View style={[styles.modalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('livestock_registry')}</Text>
                         <TouchableOpacity onPress={() => setAnimalsModalVisible(false)}>
-                            <Text style={styles.closeBtnText}>{t('close')}</Text>
+                            <Text style={[styles.closeBtnText, { color: theme.primary }]}>{t('close')}</Text>
                         </TouchableOpacity>
                     </View>
-                    <View style={styles.modalSubHeader}>
-                        <Text style={styles.modalSubtitle}>
+                    <View style={[styles.modalSubHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                        <Text style={[styles.modalSubtitle, { color: theme.subtext }]}>
                             {t('animals_for', { farm: selectedFarmer?.farmName })}
                         </Text>
                     </View>
 
                     {animalsLoading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="large" color="#2563eb" />
+                        <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                            <ActivityIndicator size="large" color={theme.primary} />
                         </View>
                     ) : (
                         <FlatList
@@ -268,20 +269,20 @@ const FarmerDirectoryScreen = () => {
                             keyExtractor={(item) => item._id}
                             contentContainerStyle={styles.animalsList}
                             renderItem={({ item }) => (
-                                <View style={styles.animalRow}>
+                                <View style={[styles.animalRow, { backgroundColor: theme.card }]}>
                                     <View>
-                                        <Text style={styles.animalId}>{item.tagId}</Text>
-                                        <Text style={styles.animalSpecies}>{item.species} • {item.gender}</Text>
+                                        <Text style={[styles.animalId, { color: theme.text }]}>{item.tagId}</Text>
+                                        <Text style={[styles.animalSpecies, { color: theme.subtext }]}>{item.species} • {item.gender}</Text>
                                     </View>
                                     <View style={{ alignItems: 'flex-end' }}>
-                                        <Text style={styles.animalAge}>{calculateAge(item.dob)}</Text>
-                                        <Text style={styles.animalName}>{item.name || 'No Name'}</Text>
+                                        <Text style={[styles.animalAge, { color: theme.text }]}>{calculateAge(item.dob)}</Text>
+                                        <Text style={[styles.animalName, { color: theme.subtext }]}>{item.name || 'No Name'}</Text>
                                     </View>
                                 </View>
                             )}
                             ListEmptyComponent={
                                 <View style={styles.emptyState}>
-                                    <Text style={styles.emptyText}>{t('no_animals_farmer')}</Text>
+                                    <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_animals_farmer')}</Text>
                                 </View>
                             }
                         />
@@ -297,13 +298,13 @@ const FarmerDirectoryScreen = () => {
                 onRequestClose={() => setReportModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.reportModalContent}>
-                        <Text style={styles.reportTitle}>{t('report_non_compliance')}</Text>
-                        <Text style={styles.reportSubtitle}>
+                    <View style={[styles.reportModalContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.reportTitle, { color: theme.error }]}>{t('report_non_compliance')}</Text>
+                        <Text style={[styles.reportSubtitle, { color: theme.subtext }]}>
                             {t('report_subtitle', { farm: selectedFarmer?.farmName })}
                         </Text>
 
-                        <Text style={styles.label}>{t('reason')}</Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('reason')}</Text>
                         <View style={styles.reasonButtons}>
                             {[
                                 'suspected_overuse',
@@ -315,13 +316,15 @@ const FarmerDirectoryScreen = () => {
                                     key={reasonKey}
                                     style={[
                                         styles.reasonBtn,
-                                        reportReason === reasonKey && styles.activeReasonBtn
+                                        { borderColor: theme.border, backgroundColor: theme.background },
+                                        reportReason === reasonKey && { borderColor: theme.error, backgroundColor: `${theme.error}10` }
                                     ]}
                                     onPress={() => setReportReason(reasonKey)}
                                 >
                                     <Text style={[
                                         styles.reasonBtnText,
-                                        reportReason === reasonKey && styles.activeReasonBtnText
+                                        { color: theme.subtext },
+                                        reportReason === reasonKey && { color: theme.error, fontWeight: '600' }
                                     ]}>
                                         {t(reasonKey)}
                                     </Text>
@@ -329,10 +332,11 @@ const FarmerDirectoryScreen = () => {
                             ))}
                         </View>
 
-                        <Text style={styles.label}>{t('details')}</Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('details')}</Text>
                         <TextInput
-                            style={styles.textArea}
+                            style={[styles.textArea, { borderColor: theme.border, color: theme.text }]}
                             placeholder={t('provide_details')}
+                            placeholderTextColor={theme.subtext}
                             value={reportDetails}
                             onChangeText={setReportDetails}
                             multiline
@@ -341,13 +345,13 @@ const FarmerDirectoryScreen = () => {
 
                         <View style={styles.modalActions}>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.cancelBtn]}
+                                style={[styles.modalBtn, styles.cancelBtn, { backgroundColor: theme.background }]}
                                 onPress={() => setReportModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
+                                <Text style={[styles.cancelBtnText, { color: theme.subtext }]}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.modalBtn, styles.submitReportBtn]}
+                                style={[styles.modalBtn, styles.submitReportBtn, { backgroundColor: theme.error }]}
                                 onPress={submitReport}
                             >
                                 <Text style={styles.submitReportBtnText}>{t('submit_report')}</Text>
@@ -361,7 +365,7 @@ const FarmerDirectoryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
     headerContent: {},
     headerTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
@@ -374,54 +378,54 @@ const styles = StyleSheet.create({
     searchInput: { flex: 1, height: 44, color: '#fff', fontSize: 16 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     list: { padding: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+    card: { borderRadius: 12, padding: 16, marginBottom: 16, shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-    avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#dbeafe', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    avatarText: { fontSize: 18, fontWeight: 'bold', color: '#1e40af' },
+    avatar: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+    avatarText: { fontSize: 18, fontWeight: 'bold' },
     headerInfo: { flex: 1 },
-    farmerName: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
-    farmName: { fontSize: 14, color: '#6b7280' },
+    farmerName: { fontSize: 16, fontWeight: '600' },
+    farmName: { fontSize: 14 },
     moreBtn: { padding: 4 },
-    cardActions: { flexDirection: 'row', gap: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 16 },
+    cardActions: { flexDirection: 'row', gap: 12, borderTopWidth: 1, paddingTop: 16 },
     actionBtn: { flex: 1, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 10, borderRadius: 8, gap: 8 },
-    primaryBtn: { backgroundColor: '#eff6ff' },
-    primaryBtnText: { color: '#2563eb', fontWeight: '600', fontSize: 14 },
+    primaryBtn: {},
+    primaryBtnText: { fontWeight: '600', fontSize: 14 },
     contactActions: { flexDirection: 'row', gap: 8 },
-    iconBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb', justifyContent: 'center', alignItems: 'center' },
+    iconBtn: { width: 40, height: 40, borderRadius: 8, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
     emptyState: { alignItems: 'center', marginTop: 60 },
-    emptyText: { marginTop: 16, fontSize: 16, color: '#9ca3af' },
+    emptyText: { marginTop: 16, fontSize: 16 },
 
     // Animals Modal
-    modalContainer: { flex: 1, backgroundColor: '#f3f4f6' },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 50, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
-    closeBtnText: { fontSize: 16, color: '#2563eb', fontWeight: '600' },
-    modalSubHeader: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-    modalSubtitle: { fontSize: 14, color: '#6b7280' },
+    modalContainer: { flex: 1 },
+    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, paddingTop: 50, borderBottomWidth: 1 },
+    modalTitle: { fontSize: 18, fontWeight: 'bold' },
+    closeBtnText: { fontSize: 16, fontWeight: '600' },
+    modalSubHeader: { padding: 16, borderBottomWidth: 1 },
+    modalSubtitle: { fontSize: 14 },
     animalsList: { padding: 16 },
-    animalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12 },
-    animalId: { fontSize: 16, fontWeight: '600', color: '#1f2937' },
-    animalSpecies: { fontSize: 14, color: '#6b7280', marginTop: 2 },
-    animalAge: { fontSize: 14, fontWeight: '500', color: '#374151' },
-    animalName: { fontSize: 12, color: '#9ca3af', marginTop: 2 },
+    animalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 12, marginBottom: 12 },
+    animalId: { fontSize: 16, fontWeight: '600' },
+    animalSpecies: { fontSize: 14, marginTop: 2 },
+    animalAge: { fontSize: 14, fontWeight: '500' },
+    animalName: { fontSize: 12, marginTop: 2 },
 
     // Report Modal
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    reportModalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, maxHeight: '80%' },
-    reportTitle: { fontSize: 18, fontWeight: 'bold', color: '#b91c1c', marginBottom: 4 },
-    reportSubtitle: { fontSize: 14, color: '#6b7280', marginBottom: 20 },
-    label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+    reportModalContent: { borderRadius: 12, padding: 20, maxHeight: '80%' },
+    reportTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 4 },
+    reportSubtitle: { fontSize: 14, marginBottom: 20 },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
     reasonButtons: { gap: 8, marginBottom: 20 },
-    reasonBtn: { padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
-    activeReasonBtn: { borderColor: '#b91c1c', backgroundColor: '#fef2f2' },
-    reasonBtnText: { fontSize: 13, color: '#4b5563' },
-    activeReasonBtnText: { color: '#b91c1c', fontWeight: '600' },
-    textArea: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, height: 100, marginBottom: 20, fontSize: 14 },
+    reasonBtn: { padding: 12, borderRadius: 8, borderWidth: 1 },
+    activeReasonBtn: {},
+    reasonBtnText: { fontSize: 13 },
+    activeReasonBtnText: { fontWeight: '600' },
+    textArea: { borderWidth: 1, borderRadius: 8, padding: 12, height: 100, marginBottom: 20, fontSize: 14 },
     modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12 },
     modalBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
-    cancelBtn: { backgroundColor: '#f3f4f6' },
-    submitReportBtn: { backgroundColor: '#ef4444' },
-    cancelBtnText: { color: '#4b5563', fontWeight: '600' },
+    cancelBtn: {},
+    submitReportBtn: {},
+    cancelBtnText: { fontWeight: '600' },
     submitReportBtnText: { color: '#fff', fontWeight: '600' },
 });
 

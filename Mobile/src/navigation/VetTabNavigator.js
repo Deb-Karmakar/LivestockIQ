@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -54,6 +55,7 @@ const FeedStack = () => (
 
 const VetTabNavigator = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
 
     return (
         <Tab.Navigator
@@ -75,8 +77,12 @@ const VetTabNavigator = () => {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#2563eb',
-                tabBarInactiveTintColor: '#6b7280',
+                tabBarActiveTintColor: theme.primary,
+                tabBarInactiveTintColor: theme.subtext,
+                tabBarStyle: {
+                    backgroundColor: theme.card,
+                    borderTopColor: theme.border,
+                },
                 headerShown: false,
                 tabBarLabel: (() => {
                     switch (route.name) {
