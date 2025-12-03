@@ -11,11 +11,13 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { createTreatment } from '../../services/treatmentService';
 import { getAnimals } from '../../services/animalService';
 import { getFarmerProfile } from '../../services/farmerService';
+import { getVetDetailsByCode } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -24,7 +26,10 @@ const AddTreatmentScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [animals, setAnimals] = useState([]);
+    const [eligibleAnimals, setEligibleAnimals] = useState([]);
+    const [ineligibleCount, setIneligibleCount] = useState(0);
     const [vetId, setVetId] = useState(null);
+    const [vetName, setVetName] = useState(null);
 
     const [formData, setFormData] = useState({
         animalId: '',
@@ -45,6 +50,15 @@ const AddTreatmentScreen = ({ navigation }) => {
         try {
             const data = await getAnimals();
             setAnimals(data);
+
+            // Filter eligible animals (SAFE, NEW, or no status)
+            const eligible = (data || []).filter(animal =>
+                animal.mrlStatus === 'SAFE' ||
+                animal.mrlStatus === 'NEW' ||
+                !animal.mrlStatus
+            );
+            setEligibleAnimals(eligible);
+            setIneligibleCount((data || []).length - eligible.length);
         } catch (error) {
             console.error('Failed to fetch animals', error);
         }
@@ -53,11 +67,17 @@ const AddTreatmentScreen = ({ navigation }) => {
     const fetchFarmerProfile = async () => {
         try {
             const profile = await getFarmerProfile();
-            if (profile && profile.associatedVetId) {
-                setVetId(profile.associatedVetId);
+            // The backend returns 'vetId', not 'associatedVetId'
+            if (profile && profile.vetId) {
+                setVetId(profile.vetId);
+                // Fetch vet details using the vetId
+                const vetDetails = await getVetDetailsByCode(profile.vetId);
+                if (vetDetails) {
+                    setVetName(vetDetails.fullName);
+                }
             }
         } catch (error) {
-            console.error('Failed to fetch farmer profile', error);
+            console.error('Failed to fetch farmer profile or vet details', error);
         }
     };
 
@@ -91,15 +111,32 @@ const AddTreatmentScreen = ({ navigation }) => {
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color={theme.text} />
-                </TouchableOpacity>
-                <Text style={[styles.title, { color: theme.text }]}>{t('add_treatment')}</Text>
-                <View style={{ width: 24 }} />
-            </View>
+            <LinearGradient
+                colors={['#1e293b', '#0f172a']}
+                style={styles.header}
+            >
+                <View style={styles.headerContent}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name="arrow-back" size={24} color="#fff" />
+                    </TouchableOpacity>
+                    <View style={styles.headerTextContainer}>
+                        <Text style={styles.headerTitle}>{t('add_treatment')}</Text>
+                        <Text style={styles.headerSubtitle}>{t('treatment_subtitle')}</Text>
+                    </View>
+                </View>
+            </LinearGradient>
 
             <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
+                {/* Ineligible Warning */}
+                {ineligibleCount > 0 && (
+                    <View style={[styles.warningBox, { backgroundColor: '#fffbeb', borderColor: '#fcd34d' }]}>
+                        <Ionicons name="warning" size={20} color="#b45309" />
+                        <Text style={[styles.warningText, { color: '#92400e' }]}>
+                            {t('ineligible_animals_warning', { count: ineligibleCount })}
+                        </Text>
+                    </View>
+                )}
+
                 {/* Animal Selection */}
                 <View style={styles.field}>
                     <Text style={[styles.label, { color: theme.text }]}>{t('animal_required')}</Text>
@@ -111,7 +148,7 @@ const AddTreatmentScreen = ({ navigation }) => {
                             dropdownIconColor={theme.text}
                         >
                             <Picker.Item label={t('select_animal')} value="" color={theme.text} />
-                            {animals.map((animal) => (
+                            {eligibleAnimals.map((animal) => (
                                 <Picker.Item
                                     key={animal._id}
                                     label={`${animal.tagId} - ${animal.name || 'No Name'}`}
@@ -121,7 +158,7 @@ const AddTreatmentScreen = ({ navigation }) => {
                             ))}
                         </Picker>
                     </View>
-                    {animals.length === 0 && (
+                    {eligibleAnimals.length === 0 && (
                         <Text style={styles.helperText}>{t('no_eligible_animals')}</Text>
                     )}
                 </View>
@@ -162,6 +199,7 @@ const AddTreatmentScreen = ({ navigation }) => {
                                 <Picker.Item label="Oral" value="Oral" color={theme.text} />
                                 <Picker.Item label="Injection" value="Injection" color={theme.text} />
                                 <Picker.Item label="Topical" value="Topical" color={theme.text} />
+                                <Picker.Item label="Subcutaneous" value="Subcutaneous" color={theme.text} />
                             </Picker>
                         </View>
                     </View>
@@ -205,6 +243,17 @@ const AddTreatmentScreen = ({ navigation }) => {
                     />
                 </View>
 
+                {/* Supervising Vet Info */}
+                <View style={[styles.vetInfoBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                    <Ionicons name="medkit" size={20} color={theme.primary} />
+                    <View style={styles.vetInfoText}>
+                        <Text style={[styles.vetLabel, { color: theme.subtext }]}>{t('supervising_vet')}</Text>
+                        <Text style={[styles.vetValue, { color: theme.text }]}>
+                            {vetName ? `${vetName} (${vetId})` : (vetId ? `${t('vet_id')}: ${vetId}` : t('no_vet_assigned'))}
+                        </Text>
+                    </View>
+                </View>
+
                 {/* Submit Button */}
                 <TouchableOpacity
                     style={[
@@ -231,20 +280,47 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         padding: 20,
         paddingTop: 50,
-        borderBottomWidth: 1,
+        paddingBottom: 24,
     },
-    title: {
-        fontSize: 18,
+    headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    backBtn: {
+        marginRight: 16,
+    },
+    headerTextContainer: {
+        flex: 1,
+    },
+    headerTitle: {
+        fontSize: 24,
         fontWeight: 'bold',
+        color: '#fff',
+    },
+    headerSubtitle: {
+        fontSize: 14,
+        color: '#94a3b8',
+        marginTop: 4,
     },
     form: {
         flex: 1,
         padding: 20,
+    },
+    warningBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        marginBottom: 20,
+        gap: 12,
+    },
+    warningText: {
+        flex: 1,
+        fontSize: 13,
+        lineHeight: 18,
     },
     field: {
         marginBottom: 20,
@@ -287,20 +363,36 @@ const styles = StyleSheet.create({
         height: 100,
         paddingTop: 12,
     },
+    vetInfoBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 24,
+        gap: 12,
+    },
+    vetInfoText: {
+        flex: 1,
+    },
+    vetLabel: {
+        fontSize: 12,
+        marginBottom: 2,
+    },
+    vetValue: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
     submitButton: {
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
-        marginTop: 20,
         marginBottom: 40,
     },
     submitButtonText: {
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
-    },
-    buttonDisabled: {
-        // Handled dynamically
     },
     helperText: {
         fontSize: 12,

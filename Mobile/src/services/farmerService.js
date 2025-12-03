@@ -9,6 +9,8 @@ export const getMyProfile = async () => {
     }
 };
 
+export const getFarmerProfile = getMyProfile;
+
 export const updateMyProfile = async (profileData) => {
     try {
         const response = await api.put('/farmers/profile', profileData);

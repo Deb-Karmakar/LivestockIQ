@@ -162,6 +162,10 @@ export const translations = {
         treatment_submitted: 'Treatment record submitted for review',
         no_eligible_animals: 'No eligible animals found',
         fill_required: 'Please fill in all required fields',
+        ineligible_animals_warning: '{{count}} animal(s) are currently not eligible for new treatments due to active withdrawal periods.',
+        no_vet_assigned: 'No supervising vet assigned to your profile.',
+        treatment_subtitle: 'Submit a treatment record for vet review',
+        supervising_vet: 'Supervising Veterinarian',
 
         // Common
         error: 'Error',
@@ -572,6 +576,10 @@ export const translations = {
         treatment_submitted: 'उपचार रिकॉर्ड समीक्षा के लिए जमा किया गया',
         no_eligible_animals: 'कोई योग्य पशु नहीं मिला',
         fill_required: 'कृपया सभी आवश्यक फ़ील्ड भरें',
+        ineligible_animals_warning: '{{count}} पशु वर्तमान में सक्रिय निकासी अवधि के कारण नए उपचार के लिए योग्य नहीं हैं।',
+        no_vet_assigned: 'आपके प्रोफ़ाइल में कोई पर्यवेक्षक पशुचिकित्सक नियुक्त नहीं है।',
+        treatment_subtitle: 'पशुचिकित्सक समीक्षा के लिए उपचार रिकॉर्ड जमा करें',
+        supervising_vet: 'पर्यवेक्षक पशुचिकित्सक',
 
         // Common
         error: 'त्रुटि',

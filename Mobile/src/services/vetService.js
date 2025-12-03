@@ -69,3 +69,8 @@ export const getVetWhoAwareStewardshipData = async (from, to) => {
     const response = await api.get('/reports/vet/who-aware-stewardship-data', { params: { from, to } });
     return response.data;
 };
+
+export const getVetDetailsByCode = async (vetId) => {
+    const response = await api.get(`/vets/code/${vetId}`);
+    return response.data;
+};
