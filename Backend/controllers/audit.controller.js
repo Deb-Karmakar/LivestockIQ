@@ -54,9 +54,10 @@ export const getFarmAuditTrail = async (req, res) => {
         const { farmerId } = req.params;
 
         // Authorization: Only regulators, admins, or the farmer themselves can access
+        const userRole = req.user.role?.toLowerCase();
         const isAuthorized =
-            req.user.role === 'Regulator' ||
-            req.user.role === 'Admin' ||
+            userRole === 'regulator' ||
+            userRole === 'admin' ||
             req.user._id.toString() === farmerId;
 
         if (!isAuthorized) {
@@ -91,9 +92,10 @@ export const verifyFarmAuditIntegrity = async (req, res) => {
         const { farmerId } = req.params;
 
         // Authorization check
+        const userRole = req.user.role?.toLowerCase();
         const isAuthorized =
-            req.user.role === 'Regulator' ||
-            req.user.role === 'Admin' ||
+            userRole === 'regulator' ||
+            userRole === 'admin' ||
             req.user._id.toString() === farmerId;
 
         if (!isAuthorized) {
