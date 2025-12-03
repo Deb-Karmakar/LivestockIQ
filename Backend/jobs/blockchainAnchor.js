@@ -12,6 +12,7 @@ export const startBlockchainAnchorJob = () => {
     // - Every hour: '0 * * * *'
     // - Every day at midnight: '0 0 * * *'
     // - Every 12 hours: '0 */12 * * *'
+    // - Every 1 minutes: '*/1 * * * *'
 
     const schedule = '0 */6 * * *'; // Every 6 hours
 

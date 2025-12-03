@@ -10,7 +10,7 @@ export const generateFarmMerkleSnapshot = async (farmerId) => {
     try {
         const auditLogs = await AuditLog.find({ farmerId })
             .sort({ timestamp: 1 })
-            .select('currentHash')
+            .select('_id currentHash timestamp')
             .lean();
 
         if (auditLogs.length === 0) {
@@ -24,6 +24,13 @@ export const generateFarmMerkleSnapshot = async (farmerId) => {
         // Extract all hashes
         const hashes = auditLogs.map(log => log.currentHash);
 
+        // Extract log IDs for blockchain anchor
+        const includedLogIds = auditLogs.map(log => log._id.toString());
+
+        // Get timestamp range
+        const firstLogTimestamp = auditLogs[0].timestamp;
+        const lastLogTimestamp = auditLogs[auditLogs.length - 1].timestamp;
+
         // Generate Merkle root
         const merkleRoot = generateMerkleRoot(hashes);
 
@@ -32,6 +39,9 @@ export const generateFarmMerkleSnapshot = async (farmerId) => {
         return {
             merkleRoot,
             totalLogs: auditLogs.length,
+            includedLogIds,
+            firstLogTimestamp,
+            lastLogTimestamp,
             generatedAt: new Date(),
             farmerId,
         };
@@ -218,6 +228,9 @@ export const generateAndAnchorFarmSnapshot = async (farmerId) => {
                 dataSnapshot: {
                     merkleRoot: snapshot.merkleRoot,
                     totalLogs: snapshot.totalLogs,
+                    includedLogIds: snapshot.includedLogIds, // Array of log IDs
+                    firstLogTimestamp: snapshot.firstLogTimestamp,
+                    lastLogTimestamp: snapshot.lastLogTimestamp,
                     transactionHash: blockchainData.transactionHash,
                     blockNumber: blockchainData.blockNumber,
                     snapshotId: blockchainData.snapshotId,

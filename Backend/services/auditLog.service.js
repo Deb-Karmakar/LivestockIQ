@@ -289,3 +289,106 @@ export const getRecentAuditLogs = async (limit = 50) => {
         throw error;
     }
 };
+
+/**
+ * Find blockchain snapshot containing a specific log
+ * @param {ObjectId} logId - Audit log ID
+ * @returns {Object|null} - Blockchain snapshot details or null if not found
+ */
+export const findBlockchainSnapshotForLog = async (logId) => {
+    try {
+        const log = await AuditLog.findById(logId).lean();
+        if (!log) {
+            throw new Error('Audit log not found');
+        }
+
+        // Find blockchain anchor that includes this log
+        // First, try to find by includedLogIds (if available)
+        let anchor = await AuditLog.findOne({
+            eventType: 'BLOCKCHAIN_ANCHOR',
+            farmerId: log.farmerId,
+            'dataSnapshot.includedLogIds': logId.toString(),
+        }).lean();
+
+        // If not found by log IDs, fall back to timestamp-based matching
+        if (!anchor) {
+            const anchors = await AuditLog.find({
+                eventType: 'BLOCKCHAIN_ANCHOR',
+                farmerId: log.farmerId,
+            })
+                .sort({ timestamp: 1 })
+                .lean();
+
+            // Find the snapshot whose time range includes this log's timestamp
+            for (const a of anchors) {
+                if (a.dataSnapshot?.firstLogTimestamp && a.dataSnapshot?.lastLogTimestamp) {
+                    const logTime = new Date(log.timestamp).getTime();
+                    const firstTime = new Date(a.dataSnapshot.firstLogTimestamp).getTime();
+                    const lastTime = new Date(a.dataSnapshot.lastLogTimestamp).getTime();
+
+                    if (logTime >= firstTime && logTime <= lastTime) {
+                        anchor = a;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return anchor;
+    } catch (error) {
+        console.error('Error finding blockchain snapshot for log:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get all blockchain snapshots for a farm
+ * @param {ObjectId} farmerId - Farm ID
+ * @returns {Array} - All BLOCKCHAIN_ANCHOR audit logs
+ */
+export const getBlockchainSnapshots = async (farmerId) => {
+    try {
+        const snapshots = await AuditLog.find({
+            eventType: 'BLOCKCHAIN_ANCHOR',
+            farmerId,
+        })
+            .sort({ timestamp: -1 })
+            .lean();
+
+        return snapshots;
+    } catch (error) {
+        console.error('Error getting blockchain snapshots:', error);
+        throw error;
+    }
+};
+
+/**
+ * Verify if a log is included in a blockchain snapshot
+ * @param {ObjectId} logId - Log ID
+ * @param {Object} snapshot - Blockchain anchor log
+ * @returns {Boolean} - True if log is in snapshot
+ */
+export const isLogInSnapshot = (logId, snapshot) => {
+    try {
+        if (!snapshot || snapshot.eventType !== 'BLOCKCHAIN_ANCHOR') {
+            return false;
+        }
+
+        // Check includedLogIds array first
+        if (snapshot.dataSnapshot?.includedLogIds) {
+            return snapshot.dataSnapshot.includedLogIds.includes(logId.toString());
+        }
+
+        // Fallback to timestamp-based check
+        if (snapshot.dataSnapshot?.firstLogTimestamp && snapshot.dataSnapshot?.lastLogTimestamp) {
+            // This would require the log object, so return undefined to indicate uncertainty
+            return undefined;
+        }
+
+        return false;
+    } catch (error) {
+        console.error('Error checking if log is in snapshot:', error);
+        return false;
+    }
+};
+

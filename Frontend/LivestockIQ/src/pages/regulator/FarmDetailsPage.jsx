@@ -14,7 +14,8 @@ import {
     FileText,
     PawPrint,
     X,
-    Wheat
+    Wheat,
+    ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -163,9 +164,18 @@ const FarmDetailsPage = () => {
                             </h1>
                             <p className="text-slate-400 text-lg">{farm.farmOwner}</p>
                         </div>
-                        <Badge className={farm.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}>
-                            {farm.status}
-                        </Badge>
+                        <div className="flex gap-3 items-start">
+                            <Button
+                                onClick={() => navigate(`/regulator/farms/${id}/audit`)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                                <ShieldCheck className="w-4 h-4 mr-2" />
+                                Blockchain Audit Trail
+                            </Button>
+                            <Badge className={farm.status === 'Active' ? 'bg-green-500' : 'bg-gray-500'}>
+                                {farm.status}
+                            </Badge>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -8,6 +8,11 @@ import {
     getRecentAudits,
     getMyAuditLogs,
 } from '../controllers/audit.controller.js';
+import {
+    verifyLogOnBlockchain,
+    getBlockchainSnapshotsController,
+    getBlockchainProofForLog,
+} from '../controllers/blockchainVerification.controller.js';
 
 const router = express.Router();
 
@@ -28,5 +33,10 @@ router.get('/recent', protect, getRecentAudits);
 
 // Get audit logs for logged-in farmer
 router.get('/my-logs', protect, getMyAuditLogs);
+
+// Blockchain verification routes
+router.get('/verify-blockchain/:logId', protect, verifyLogOnBlockchain);
+router.get('/blockchain-snapshots/:farmerId', protect, getBlockchainSnapshotsController);
+router.get('/blockchain-proof/:logId', protect, getBlockchainProofForLog);
 
 export default router;
