@@ -21,9 +21,11 @@ import {
     getFarmerMrlCompliance
 } from '../../services/farmerService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const ReportsScreen = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [selectedReport, setSelectedReport] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -37,7 +39,7 @@ const ReportsScreen = () => {
             value: 'AmuUsage',
             label: t('amu_usage'),
             icon: 'medkit',
-            color: '#3b82f6',
+            color: theme.info,
             desc: t('amu_usage_desc'),
             requiresDateRange: true
         },
@@ -45,7 +47,7 @@ const ReportsScreen = () => {
             value: 'AnimalHealth',
             label: t('animal_health'),
             icon: 'heart',
-            color: '#ef4444',
+            color: theme.error,
             desc: t('animal_health_desc'),
             requiresDateRange: true
         },
@@ -53,7 +55,7 @@ const ReportsScreen = () => {
             value: 'HerdDemographics',
             label: t('demographics'),
             icon: 'people',
-            color: '#10b981',
+            color: theme.success,
             desc: t('demographics_desc'),
             requiresDateRange: false
         },
@@ -61,7 +63,7 @@ const ReportsScreen = () => {
             value: 'TreatmentHistory',
             label: t('treatments_report'),
             icon: 'list',
-            color: '#8b5cf6',
+            color: theme.primary,
             desc: t('treatments_report_desc'),
             requiresDateRange: true
         },
@@ -69,7 +71,7 @@ const ReportsScreen = () => {
             value: 'MrlCompliance',
             label: t('mrl_compliance_report'),
             icon: 'shield-checkmark',
-            color: '#f59e0b',
+            color: theme.warning,
             desc: t('mrl_compliance_desc'),
             requiresDateRange: true
         }
@@ -131,41 +133,41 @@ const ReportsScreen = () => {
         switch (reportData.reportType) {
             case 'AmuUsage':
                 cards.push(
-                    { label: t('total_treatments'), value: summary.totalTreatments, color: '#3b82f6' },
-                    { label: t('unique_drugs'), value: summary.uniqueDrugs, color: '#10b981' },
-                    { label: t('active_animals'), value: summary.activeAnimals, color: '#f59e0b' },
-                    { label: t('avg_month'), value: summary.averagePerMonth, color: '#8b5cf6' }
+                    { label: t('total_treatments'), value: summary.totalTreatments, color: theme.info },
+                    { label: t('unique_drugs'), value: summary.uniqueDrugs, color: theme.success },
+                    { label: t('active_animals'), value: summary.activeAnimals, color: theme.warning },
+                    { label: t('avg_month'), value: summary.averagePerMonth, color: theme.primary }
                 );
                 break;
             case 'AnimalHealth':
                 cards.push(
-                    { label: t('total_animals'), value: summary.totalAnimals, color: '#3b82f6' },
-                    { label: t('compliance_rate'), value: `${summary.complianceRate}%`, color: summary.complianceRate >= 90 ? '#10b981' : '#ef4444' },
-                    { label: t('violations'), value: summary.mrlViolations, color: '#ef4444' },
-                    { label: t('pass_rate'), value: `${((summary.testsPassed / (summary.testsPassed + summary.testsFailed || 1)) * 100).toFixed(1)}%`, color: '#10b981' }
+                    { label: t('total_animals'), value: summary.totalAnimals, color: theme.info },
+                    { label: t('compliance_rate'), value: `${summary.complianceRate}%`, color: summary.complianceRate >= 90 ? theme.success : theme.error },
+                    { label: t('violations'), value: summary.mrlViolations, color: theme.error },
+                    { label: t('pass_rate'), value: `${((summary.testsPassed / (summary.testsPassed + summary.testsFailed || 1)) * 100).toFixed(1)}%`, color: theme.success }
                 );
                 break;
             case 'HerdDemographics':
                 cards.push(
-                    { label: t('total_animals'), value: summary.totalAnimals, color: '#3b82f6' },
-                    { label: t('species_count'), value: summary.speciesCount, color: '#10b981' },
-                    { label: t('avg_age'), value: `${summary.averageAge} yr`, color: '#f59e0b' },
-                    { label: t('male_female'), value: `${summary.maleCount}/${summary.femaleCount}`, color: '#8b5cf6' }
+                    { label: t('total_animals'), value: summary.totalAnimals, color: theme.info },
+                    { label: t('species_count'), value: summary.speciesCount, color: theme.success },
+                    { label: t('avg_age'), value: `${summary.averageAge} yr`, color: theme.warning },
+                    { label: t('male_female'), value: `${summary.maleCount}/${summary.femaleCount}`, color: theme.primary }
                 );
                 break;
             case 'TreatmentHistory':
                 cards.push(
-                    { label: t('total_records'), value: summary.totalRecords, color: '#3b82f6' },
-                    { label: t('total_treatments'), value: summary.totalTreatments, color: '#10b981' },
-                    { label: t('feed_admin'), value: summary.totalFeedAdministrations, color: '#f59e0b' }
+                    { label: t('total_records'), value: summary.totalRecords, color: theme.info },
+                    { label: t('total_treatments'), value: summary.totalTreatments, color: theme.success },
+                    { label: t('feed_admin'), value: summary.totalFeedAdministrations, color: theme.warning }
                 );
                 break;
             case 'MrlCompliance':
                 cards.push(
-                    { label: t('safe'), value: summary.safeAnimals, color: '#10b981' },
-                    { label: t('in_withdrawal'), value: summary.inWithdrawal, color: '#f59e0b' },
-                    { label: t('violations'), value: summary.violations, color: '#ef4444' },
-                    { label: t('pass_rate'), value: `${summary.testPassRate}%`, color: '#3b82f6' }
+                    { label: t('safe'), value: summary.safeAnimals, color: theme.success },
+                    { label: t('in_withdrawal'), value: summary.inWithdrawal, color: theme.warning },
+                    { label: t('violations'), value: summary.violations, color: theme.error },
+                    { label: t('pass_rate'), value: `${summary.testPassRate}%`, color: theme.info }
                 );
                 break;
         }
@@ -173,8 +175,8 @@ const ReportsScreen = () => {
         return (
             <View style={styles.summaryGrid}>
                 {cards.map((card, index) => (
-                    <View key={index} style={styles.summaryCard}>
-                        <Text style={styles.summaryLabel}>{card.label}</Text>
+                    <View key={index} style={[styles.summaryCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Text style={[styles.summaryLabel, { color: theme.subtext }]}>{card.label}</Text>
                         <Text style={[styles.summaryValue, { color: card.color }]}>{card.value}</Text>
                     </View>
                 ))}
@@ -186,26 +188,26 @@ const ReportsScreen = () => {
         if (!reportData?.data?.length) {
             return (
                 <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>{t('no_data_available')}</Text>
+                    <Text style={[styles.emptyStateText, { color: theme.subtext }]}>{t('no_data_available')}</Text>
                 </View>
             );
         }
 
         return (
-            <View style={styles.dataList}>
-                <Text style={styles.sectionTitle}>{t('details')}</Text>
+            <View style={[styles.dataList, { backgroundColor: theme.card }]}>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('details')}</Text>
                 {reportData.data.slice(0, 50).map((item, index) => (
-                    <View key={index} style={styles.dataItem}>
+                    <View key={index} style={[styles.dataItem, { borderBottomColor: theme.border }]}>
                         <View style={styles.dataItemContent}>
-                            <Text style={styles.dataItemTitle}>
+                            <Text style={[styles.dataItemTitle, { color: theme.text }]}>
                                 {item.name || item.drug || item.animalId || 'Record'}
                             </Text>
-                            <Text style={styles.dataItemSubtitle}>
+                            <Text style={[styles.dataItemSubtitle, { color: theme.subtext }]}>
                                 {item.value || item.usage || item.type || ''}
                             </Text>
                         </View>
                         {item.date && (
-                            <Text style={styles.dataItemDate}>
+                            <Text style={[styles.dataItemDate, { color: theme.subtext }]}>
                                 {format(new Date(item.date), 'MMM d')}
                             </Text>
                         )}
@@ -216,23 +218,24 @@ const ReportsScreen = () => {
     };
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>{t('reports_title')}</Text>
-                <Text style={styles.headerSubtitle}>{t('reports_subtitle')}</Text>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>{t('reports_title')}</Text>
+                <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>{t('reports_subtitle')}</Text>
             </View>
 
             {/* Report Selection */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('select_report_type')}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('select_report_type')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
                     {REPORT_TYPES.map((type) => (
                         <TouchableOpacity
                             key={type.value}
                             style={[
                                 styles.typeCard,
-                                selectedReport?.value === type.value && styles.selectedTypeCard,
+                                { backgroundColor: theme.card, shadowColor: theme.text },
+                                selectedReport?.value === type.value && { backgroundColor: theme.background, borderColor: type.color, borderWidth: 2 },
                                 { borderColor: selectedReport?.value === type.value ? type.color : 'transparent' }
                             ]}
                             onPress={() => setSelectedReport(type)}
@@ -240,7 +243,7 @@ const ReportsScreen = () => {
                             <View style={[styles.iconContainer, { backgroundColor: `${type.color}20` }]}>
                                 <Ionicons name={type.icon} size={24} color={type.color} />
                             </View>
-                            <Text style={styles.typeLabel}>{type.label}</Text>
+                            <Text style={[styles.typeLabel, { color: theme.text }]}>{type.label}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
@@ -249,22 +252,22 @@ const ReportsScreen = () => {
             {/* Date Selection */}
             {selectedReport?.requiresDateRange && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{t('date_range')}</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('date_range')}</Text>
                     <View style={styles.dateRow}>
                         <TouchableOpacity
-                            style={styles.dateButton}
+                            style={[styles.dateButton, { backgroundColor: theme.card, borderColor: theme.border }]}
                             onPress={() => setShowStartPicker(true)}
                         >
-                            <Ionicons name="calendar-outline" size={20} color="#6b7280" />
-                            <Text style={styles.dateText}>{format(startDate, 'MMM d, yyyy')}</Text>
+                            <Ionicons name="calendar-outline" size={20} color={theme.subtext} />
+                            <Text style={[styles.dateText, { color: theme.text }]}>{format(startDate, 'MMM d, yyyy')}</Text>
                         </TouchableOpacity>
-                        <Ionicons name="arrow-forward" size={20} color="#9ca3af" />
+                        <Ionicons name="arrow-forward" size={20} color={theme.subtext} />
                         <TouchableOpacity
-                            style={styles.dateButton}
+                            style={[styles.dateButton, { backgroundColor: theme.card, borderColor: theme.border }]}
                             onPress={() => setShowEndPicker(true)}
                         >
-                            <Ionicons name="calendar-outline" size={20} color="#6b7280" />
-                            <Text style={styles.dateText}>{format(endDate, 'MMM d, yyyy')}</Text>
+                            <Ionicons name="calendar-outline" size={20} color={theme.subtext} />
+                            <Text style={[styles.dateText, { color: theme.text }]}>{format(endDate, 'MMM d, yyyy')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -275,7 +278,8 @@ const ReportsScreen = () => {
                 <TouchableOpacity
                     style={[
                         styles.generateButton,
-                        (!selectedReport || loading) && styles.disabledButton
+                        { backgroundColor: theme.primary },
+                        (!selectedReport || loading) && { backgroundColor: theme.border, opacity: 0.7 }
                     ]}
                     onPress={handleGenerateReport}
                     disabled={!selectedReport || loading}
@@ -294,7 +298,7 @@ const ReportsScreen = () => {
             {/* Results */}
             {reportData && (
                 <View style={styles.resultsContainer}>
-                    <Text style={styles.resultsTitle}>
+                    <Text style={[styles.resultsTitle, { color: theme.text }]}>
                         {REPORT_TYPES.find(r => r.value === reportData.reportType)?.label} {t('results')}
                     </Text>
                     {renderSummaryCards()}
@@ -328,20 +332,16 @@ const ReportsScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     header: {
         padding: 20,
         paddingTop: 60,
-        backgroundColor: '#1e293b',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
     },
     headerSubtitle: {
-        color: '#94a3b8',
         marginTop: 4,
     },
     section: {
@@ -351,7 +351,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#374151',
         marginBottom: 12,
     },
     typeScroll: {
@@ -359,7 +358,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     typeCard: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         marginRight: 12,
@@ -367,14 +365,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: 'transparent',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
         elevation: 2,
     },
     selectedTypeCard: {
-        backgroundColor: '#fff',
+        // Handled dynamically
     },
     iconContainer: {
         width: 48,
@@ -387,7 +384,6 @@ const styles = StyleSheet.create({
     typeLabel: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#374151',
         textAlign: 'center',
     },
     dateRow: {
@@ -400,19 +396,15 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         padding: 12,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#e5e7eb',
         gap: 8,
     },
     dateText: {
         fontSize: 14,
-        color: '#374151',
     },
     generateButton: {
-        backgroundColor: '#3b82f6',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -421,7 +413,6 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     disabledButton: {
-        backgroundColor: '#93c5fd',
         opacity: 0.7,
     },
     generateButtonText: {
@@ -435,7 +426,6 @@ const styles = StyleSheet.create({
     resultsTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1f2937',
         marginBottom: 16,
     },
     summaryGrid: {
@@ -446,10 +436,8 @@ const styles = StyleSheet.create({
     },
     summaryCard: {
         width: '48%',
-        backgroundColor: '#fff',
         padding: 16,
         borderRadius: 12,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -457,7 +445,6 @@ const styles = StyleSheet.create({
     },
     summaryLabel: {
         fontSize: 12,
-        color: '#6b7280',
         marginBottom: 4,
     },
     summaryValue: {
@@ -465,7 +452,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     dataList: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
     },
@@ -475,7 +461,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
     dataItemContent: {
         flex: 1,
@@ -483,23 +468,19 @@ const styles = StyleSheet.create({
     dataItemTitle: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
     },
     dataItemSubtitle: {
         fontSize: 12,
-        color: '#6b7280',
         marginTop: 2,
     },
     dataItemDate: {
         fontSize: 12,
-        color: '#9ca3af',
     },
     emptyState: {
         padding: 20,
         alignItems: 'center',
     },
     emptyStateText: {
-        color: '#6b7280',
     },
 });
 

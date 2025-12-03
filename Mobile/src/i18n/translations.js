@@ -387,6 +387,24 @@ export const translations = {
         in_progress: 'In Progress',
         resolved: 'Resolved',
         closed: 'Closed',
+
+        // Settings
+        theme: 'Theme',
+        light: 'Light',
+        dark: 'Dark',
+        color_blind: 'Color Blind',
+        notifications: 'Notifications',
+        enable_notifications: 'Enable Notifications',
+        edit_profile: 'Edit Profile',
+        change_password: 'Change Password',
+        help_center: 'Help Center',
+        terms_privacy: 'Terms & Privacy',
+        version: 'Version',
+        update_profile_desc: 'Update your personal information',
+        update_password_desc: 'Update your password',
+        manage_notifications: 'Manage notification settings',
+        get_help: 'Get help and support',
+        read_policies: 'Read our policies',
     },
     hi: {
         // Sections
@@ -776,5 +794,23 @@ export const translations = {
         in_progress: 'प्रगति पर',
         resolved: 'सुलझाया गया',
         closed: 'बंद',
+
+        // Settings
+        theme: 'थीम',
+        light: 'लाइट',
+        dark: 'डार्क',
+        color_blind: 'वर्णांध (Color Blind)',
+        notifications: 'सूचनाएं',
+        enable_notifications: 'सूचनाएं सक्षम करें',
+        edit_profile: 'प्रोफ़ाइल संपादित करें',
+        change_password: 'पासवर्ड बदलें',
+        help_center: 'सहायता केंद्र',
+        terms_privacy: 'शर्तें और गोपनीयता',
+        version: 'संस्करण',
+        update_profile_desc: 'अपनी व्यक्तिगत जानकारी अपडेट करें',
+        update_password_desc: 'अपना पासवर्ड अपडेट करें',
+        manage_notifications: 'अधिसूचना सेटिंग्स प्रबंधित करें',
+        get_help: 'मदद और समर्थन प्राप्त करें',
+        read_policies: 'हमारी नीतियां पढ़ें',
     }
 };

@@ -25,9 +25,11 @@ import {
     completeFeedingProgram
 } from '../../services/feedAdministrationService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const FeedAdministrationScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [administrations, setAdministrations] = useState([]);
@@ -167,15 +169,15 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
     const getWithdrawalInfo = (admin) => {
         const isMedicated = admin.feedId?.prescriptionRequired !== false;
-        if (!isMedicated) return { daysLeft: 'N/A', status: 'safe', label: t('safe_for_sale'), color: '#10b981', bg: '#d1fae5' };
-        if (!admin.withdrawalEndDate) return { daysLeft: 'N/A', status: 'pending', label: t('pending'), color: '#6b7280', bg: '#f3f4f6' };
+        if (!isMedicated) return { daysLeft: 'N/A', status: 'safe', label: t('safe_for_sale'), color: theme.success, bg: theme.success + '20' };
+        if (!admin.withdrawalEndDate) return { daysLeft: 'N/A', status: 'pending', label: t('pending'), color: theme.subtext, bg: theme.border };
 
         const endDate = new Date(admin.withdrawalEndDate);
         const daysLeft = differenceInDays(endDate, new Date());
 
-        if (daysLeft < 0) return { daysLeft: 0, status: 'safe', label: t('safe_for_sale'), color: '#10b981', bg: '#d1fae5' };
-        if (daysLeft <= 5) return { daysLeft, status: 'ending_soon', label: t('ending_soon'), color: '#f59e0b', bg: '#fef3c7' };
-        return { daysLeft, status: 'active', label: t('withdrawal_active'), color: '#ef4444', bg: '#fee2e2' };
+        if (daysLeft < 0) return { daysLeft: 0, status: 'safe', label: t('safe_for_sale'), color: theme.success, bg: theme.success + '20' };
+        if (daysLeft <= 5) return { daysLeft, status: 'ending_soon', label: t('ending_soon'), color: theme.warning, bg: theme.warning + '20' };
+        return { daysLeft, status: 'active', label: t('withdrawal_active'), color: theme.error, bg: theme.error + '20' };
     };
 
     const stats = {
@@ -186,16 +188,16 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
     if (loading && !refreshing) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#8b5cf6" />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={['#4c1d95', '#5b21b6', '#4c1d95']}
+                colors={[theme.primary, theme.secondary || theme.primary]} // Use theme colors
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -213,29 +215,29 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
             >
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
-                    <View style={styles.statCard}>
-                        <Text style={[styles.statValue, { color: '#8b5cf6' }]}>{stats.total}</Text>
-                        <Text style={styles.statLabel}>Total</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.statValue, { color: theme.primary }]}>{stats.total}</Text>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>Total</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.active}</Text>
-                        <Text style={styles.statLabel}>{t('active')}</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.statValue, { color: theme.error }]}>{stats.active}</Text>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('active')}</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.medicated}</Text>
-                        <Text style={styles.statLabel}>{t('medicated')}</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.statValue, { color: theme.error }]}>{stats.medicated}</Text>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('medicated')}</Text>
                     </View>
                 </View>
 
                 {/* List */}
                 {administrations.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Ionicons name="clipboard-outline" size={48} color="#9ca3af" />
-                        <Text style={styles.emptyText}>{t('no_feed_items')}</Text>
+                        <Ionicons name="clipboard-outline" size={48} color={theme.border} />
+                        <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_feed_items')}</Text>
                     </View>
                 ) : (
                     administrations.map((admin) => {
@@ -243,17 +245,28 @@ const FeedAdministrationScreen = ({ navigation }) => {
                         const isMedicated = admin.feedId?.prescriptionRequired;
 
                         return (
-                            <View key={admin._id} style={[styles.card, isMedicated ? styles.medicatedCard : styles.safeCard]}>
+                            <View key={admin._id} style={[
+                                styles.card,
+                                { backgroundColor: theme.card },
+                                isMedicated ? { borderLeftColor: theme.error } : { borderLeftColor: theme.primary }
+                            ]}>
                                 <View style={styles.cardHeader}>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={styles.feedName}>{admin.feedId?.feedName || 'Unknown Feed'}</Text>
-                                        <Text style={styles.groupName}>
+                                        <Text style={[styles.feedName, { color: theme.text }]}>{admin.feedId?.feedName || 'Unknown Feed'}</Text>
+                                        <Text style={[styles.groupName, { color: theme.subtext }]}>
                                             {admin.groupName ? `Group: ${admin.groupName}` : `${(admin.animalIds || []).length} animal(s)`}
                                         </Text>
                                     </View>
                                     <View style={styles.badgesRow}>
-                                        <View style={[styles.badge, isMedicated ? styles.medicatedBadge : styles.nonMedicatedBadge]}>
-                                            <Text style={[styles.badgeText, isMedicated ? styles.medicatedText : styles.nonMedicatedText]}>
+                                        <View style={[
+                                            styles.badge,
+                                            isMedicated ? { backgroundColor: theme.error + '20', borderColor: theme.error } : { backgroundColor: theme.success + '20', borderColor: theme.success },
+                                            { borderWidth: 1 }
+                                        ]}>
+                                            <Text style={[
+                                                styles.badgeText,
+                                                isMedicated ? { color: theme.error } : { color: theme.success }
+                                            ]}>
                                                 {isMedicated ? t('medicated') : t('non_medicated')}
                                             </Text>
                                         </View>
@@ -263,40 +276,40 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                     </View>
                                 </View>
 
-                                <View style={styles.detailsGrid}>
+                                <View style={[styles.detailsGrid, { backgroundColor: theme.background }]}>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>{t('antimicrobial_name')}</Text>
-                                        <Text style={styles.detailValue}>{admin.feedId?.antimicrobialName || 'N/A'}</Text>
+                                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('antimicrobial_name')}</Text>
+                                        <Text style={[styles.detailValue, { color: theme.text }]}>{admin.feedId?.antimicrobialName || 'N/A'}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>{t('quantity')}</Text>
-                                        <Text style={styles.detailValue}>{admin.feedQuantityUsed} {admin.feedId?.unit}</Text>
+                                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('quantity')}</Text>
+                                        <Text style={[styles.detailValue, { color: theme.text }]}>{admin.feedQuantityUsed} {admin.feedId?.unit}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
-                                        <Text style={styles.detailValue}>{format(new Date(admin.startDate), 'MMM dd, yyyy')}</Text>
+                                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('start_date')}</Text>
+                                        <Text style={[styles.detailValue, { color: theme.text }]}>{format(new Date(admin.startDate), 'MMM dd, yyyy')}</Text>
                                     </View>
                                     <View style={styles.detailItem}>
-                                        <Text style={styles.detailLabel}>{t('status')}</Text>
-                                        <Text style={styles.detailValue}>{admin.status}</Text>
+                                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('status')}</Text>
+                                        <Text style={[styles.detailValue, { color: theme.text }]}>{admin.status}</Text>
                                     </View>
                                 </View>
 
                                 {/* Animals List */}
-                                <View style={styles.animalsSection}>
-                                    <Text style={styles.animalsHeader}>{t('animals_in_batch')} ({(admin.animalIds || []).length})</Text>
+                                <View style={[styles.animalsSection, { borderTopColor: theme.border }]}>
+                                    <Text style={[styles.animalsHeader, { color: theme.subtext }]}>{t('animals_in_batch')} ({(admin.animalIds || []).length})</Text>
                                     <View style={styles.animalsList}>
                                         {(admin.animalIds || []).map((animalTag, index) => (
                                             <TouchableOpacity
                                                 key={index}
-                                                style={styles.animalChip}
+                                                style={[styles.animalChip, { backgroundColor: theme.background }]}
                                                 onPress={() => navigation.navigate('Animals', {
                                                     screen: 'AnimalHistory',
                                                     params: { animalId: animalTag }
                                                 })}
                                             >
-                                                <Ionicons name="paw" size={12} color="#4b5563" />
-                                                <Text style={styles.animalChipText}>{animalTag}</Text>
+                                                <Ionicons name="paw" size={12} color={theme.subtext} />
+                                                <Text style={[styles.animalChipText, { color: theme.text }]}>{animalTag}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
@@ -311,53 +324,56 @@ const FeedAdministrationScreen = ({ navigation }) => {
             {/* Add Modal */}
             <Modal visible={modalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('record_feed_use')}</Text>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('record_feed_use')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
-                            <Text style={styles.label}>{t('select_feed')} *</Text>
-                            <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('feed')}>
-                                <Text style={styles.dropdownText}>{form.feedName || t('select_feed')}</Text>
-                                <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                            <Text style={[styles.label, { color: theme.text }]}>{t('select_feed')} *</Text>
+                            <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('feed')}>
+                                <Text style={[styles.dropdownText, { color: theme.text }]}>{form.feedName || t('select_feed')}</Text>
+                                <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                             </TouchableOpacity>
 
                             <View style={styles.switchContainer}>
-                                <Text style={styles.label}>{t('group_feeding')}</Text>
+                                <Text style={[styles.label, { color: theme.text }]}>{t('group_feeding')}</Text>
                                 <Switch
                                     value={form.isGroupFeeding}
                                     onValueChange={(value) => setForm({ ...form, isGroupFeeding: value })}
-                                    trackColor={{ false: "#767577", true: "#a78bfa" }}
-                                    thumbColor={form.isGroupFeeding ? "#8b5cf6" : "#f4f3f4"}
+                                    trackColor={{ false: theme.border, true: theme.primary + '80' }}
+                                    thumbColor={form.isGroupFeeding ? theme.primary : "#f4f3f4"}
                                 />
                             </View>
 
                             {form.isGroupFeeding ? (
                                 <>
-                                    <Text style={styles.label}>{t('group_name')} *</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('group_name')} *</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                         value={form.groupName}
                                         onChangeText={(text) => setForm({ ...form, groupName: text })}
                                         placeholder="e.g., Pen 1 - Broilers"
+                                        placeholderTextColor={theme.subtext}
                                     />
-                                    <Text style={styles.label}>{t('select_animals')} ({form.selectedAnimals.length}) *</Text>
-                                    <View style={styles.multiSelectContainer}>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('select_animals')} ({form.selectedAnimals.length}) *</Text>
+                                    <View style={[styles.multiSelectContainer, { borderColor: theme.border }]}>
                                         {eligibleAnimals.map(animal => (
                                             <TouchableOpacity
                                                 key={animal._id}
                                                 style={[
                                                     styles.multiSelectItem,
-                                                    form.selectedAnimals.includes(animal.tagId) && styles.multiSelectItemSelected
+                                                    { borderBottomColor: theme.border },
+                                                    form.selectedAnimals.includes(animal.tagId) && { backgroundColor: theme.primary + '20' }
                                                 ]}
                                                 onPress={() => toggleAnimalSelection(animal.tagId)}
                                             >
                                                 <Text style={[
                                                     styles.multiSelectText,
-                                                    form.selectedAnimals.includes(animal.tagId) && styles.multiSelectTextSelected
+                                                    { color: theme.text },
+                                                    form.selectedAnimals.includes(animal.tagId) && { color: theme.primary, fontWeight: '500' }
                                                 ]}>
                                                     {animal.tagId}
                                                 </Text>
                                                 {form.selectedAnimals.includes(animal.tagId) && (
-                                                    <Ionicons name="checkmark-circle" size={20} color="#8b5cf6" />
+                                                    <Ionicons name="checkmark-circle" size={20} color={theme.primary} />
                                                 )}
                                             </TouchableOpacity>
                                         ))}
@@ -365,27 +381,28 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                 </>
                             ) : (
                                 <>
-                                    <Text style={styles.label}>{t('select_animal')} *</Text>
-                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('animal')}>
-                                        <Text style={styles.dropdownText}>{form.animalTag || t('select_animal')}</Text>
-                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('select_animal')} *</Text>
+                                    <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('animal')}>
+                                        <Text style={[styles.dropdownText, { color: theme.text }]}>{form.animalTag || t('select_animal')}</Text>
+                                        <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </>
                             )}
 
-                            <Text style={styles.label}>{t('quantity_used')} *</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('quantity_used')} *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={form.feedQuantityUsed}
                                 onChangeText={(text) => setForm({ ...form, feedQuantityUsed: text })}
                                 placeholder="0.00"
+                                placeholderTextColor={theme.subtext}
                                 keyboardType="numeric"
                             />
 
-                            <Text style={styles.label}>{t('start_date')} *</Text>
-                            <TouchableOpacity onPress={() => setShowStartDate(true)} style={styles.dateButton}>
-                                <Text>{format(form.startDate, 'MMM dd, yyyy')}</Text>
-                                <Ionicons name="calendar-outline" size={20} color="#6b7280" />
+                            <Text style={[styles.label, { color: theme.text }]}>{t('start_date')} *</Text>
+                            <TouchableOpacity onPress={() => setShowStartDate(true)} style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                                <Text style={{ color: theme.text }}>{format(form.startDate, 'MMM dd, yyyy')}</Text>
+                                <Ionicons name="calendar-outline" size={20} color={theme.subtext} />
                             </TouchableOpacity>
                             {showStartDate && (
                                 <DateTimePicker
@@ -399,21 +416,22 @@ const FeedAdministrationScreen = ({ navigation }) => {
                                 />
                             )}
 
-                            <Text style={styles.label}>{t('notes_label')}</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('notes_label')}</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[styles.input, styles.textArea, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={form.notes}
                                 onChangeText={(text) => setForm({ ...form, notes: text })}
                                 placeholder={t('notes_placeholder')}
+                                placeholderTextColor={theme.subtext}
                                 multiline
                                 numberOfLines={3}
                             />
                         </ScrollView>
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                                <Text style={styles.buttonText}>{t('cancel')}</Text>
+                            <TouchableOpacity style={[styles.button, styles.cancelButton, { backgroundColor: theme.background }]} onPress={() => setModalVisible(false)}>
+                                <Text style={[styles.buttonText, { color: theme.text }]}>{t('cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSave}>
+                            <TouchableOpacity style={[styles.button, styles.submitButton, { backgroundColor: theme.primary }]} onPress={handleSave}>
                                 <Text style={[styles.buttonText, { color: '#fff' }]}>{t('submit_review')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -424,34 +442,34 @@ const FeedAdministrationScreen = ({ navigation }) => {
             {/* Picker Modal */}
             <Modal visible={pickerVisible} animationType="fade" transparent={true}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
-                    <View style={styles.pickerContent}>
-                        <Text style={styles.pickerTitle}>{pickerType === 'feed' ? t('select_feed') : t('select_animal')}</Text>
+                    <View style={[styles.pickerContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.pickerTitle, { color: theme.text }]}>{pickerType === 'feed' ? t('select_feed') : t('select_animal')}</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {pickerType === 'feed' ? (
                                 activeFeed.map((feed) => (
                                     <TouchableOpacity
                                         key={feed._id}
-                                        style={styles.pickerOption}
+                                        style={[styles.pickerOption, { borderBottomColor: theme.border }]}
                                         onPress={() => handlePickerSelect(feed)}
                                     >
                                         <View>
-                                            <Text style={styles.pickerOptionText}>{feed.feedName}</Text>
-                                            <Text style={styles.pickerOptionSubtext}>
+                                            <Text style={[styles.pickerOptionText, { color: theme.text }]}>{feed.feedName}</Text>
+                                            <Text style={[styles.pickerOptionSubtext, { color: theme.subtext }]}>
                                                 {feed.remainingQuantity} {feed.unit} left • {feed.prescriptionRequired ? t('medicated') : 'Standard'}
                                             </Text>
                                         </View>
-                                        {form.feedId === feed._id && <Ionicons name="checkmark" size={20} color="#8b5cf6" />}
+                                        {form.feedId === feed._id && <Ionicons name="checkmark" size={20} color={theme.primary} />}
                                     </TouchableOpacity>
                                 ))
                             ) : (
                                 eligibleAnimals.map((animal) => (
                                     <TouchableOpacity
                                         key={animal._id}
-                                        style={styles.pickerOption}
+                                        style={[styles.pickerOption, { borderBottomColor: theme.border }]}
                                         onPress={() => handlePickerSelect(animal)}
                                     >
-                                        <Text style={styles.pickerOptionText}>{animal.tagId} - {animal.name || animal.species}</Text>
-                                        {form.animalId === animal.tagId && <Ionicons name="checkmark" size={20} color="#8b5cf6" />}
+                                        <Text style={[styles.pickerOptionText, { color: theme.text }]}>{animal.tagId} - {animal.name || animal.species}</Text>
+                                        {form.animalId === animal.tagId && <Ionicons name="checkmark" size={20} color={theme.primary} />}
                                     </TouchableOpacity>
                                 ))
                             )}
@@ -464,7 +482,7 @@ const FeedAdministrationScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -473,58 +491,50 @@ const styles = StyleSheet.create({
     addButton: { backgroundColor: 'rgba(255,255,255,0.2)', padding: 8, borderRadius: 8 },
     content: { padding: 16 },
     statsGrid: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-    statCard: { flex: 1, backgroundColor: '#fff', padding: 12, borderRadius: 12, alignItems: 'center' },
+    statCard: { flex: 1, padding: 12, borderRadius: 12, alignItems: 'center' },
     statValue: { fontSize: 18, fontWeight: 'bold' },
-    statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2 },
-    card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12, borderLeftWidth: 4 },
-    medicatedCard: { borderLeftColor: '#ef4444' },
-    safeCard: { borderLeftColor: '#3b82f6' },
+    statLabel: { fontSize: 10, marginTop: 2 },
+    card: { padding: 16, borderRadius: 12, marginBottom: 12, borderLeftWidth: 4 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
-    feedName: { fontSize: 16, fontWeight: 'bold', color: '#1f2937' },
-    groupName: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+    feedName: { fontSize: 16, fontWeight: 'bold' },
+    groupName: { fontSize: 12, marginTop: 2 },
     badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
     badgeText: { fontSize: 11, fontWeight: '700' },
-    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, backgroundColor: '#f9fafb', padding: 12, borderRadius: 8 },
+    detailsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, padding: 12, borderRadius: 8 },
     detailItem: { width: '45%' },
-    detailLabel: { fontSize: 10, color: '#6b7280', marginBottom: 2 },
-    detailValue: { fontSize: 13, fontWeight: '500', color: '#374151' },
-    medicatedBadge: { backgroundColor: '#fee2e2', borderWidth: 1, borderColor: '#fecaca' },
-    nonMedicatedBadge: { backgroundColor: '#d1fae5', borderWidth: 1, borderColor: '#a7f3d0' },
-    medicatedText: { color: '#991b1b' },
-    nonMedicatedText: { color: '#065f46' },
+    detailLabel: { fontSize: 10, marginBottom: 2 },
+    detailValue: { fontSize: 13, fontWeight: '500' },
     badgesRow: { flexDirection: 'row', gap: 8 },
-    animalsSection: { marginTop: 12, borderTopWidth: 1, borderTopColor: '#f3f4f6', paddingTop: 12 },
-    animalsHeader: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginBottom: 8 },
+    animalsSection: { marginTop: 12, borderTopWidth: 1, paddingTop: 12 },
+    animalsHeader: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
     animalsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    animalChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4 },
-    animalChipText: { fontSize: 12, color: '#4b5563', fontWeight: '500' },
+    animalChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4 },
+    animalChipText: { fontSize: 12, fontWeight: '500' },
     emptyState: { alignItems: 'center', padding: 40 },
-    emptyText: { marginTop: 12, color: '#9ca3af' },
+    emptyText: { marginTop: 12 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '90%' },
+    modalContent: { borderRadius: 16, padding: 20, maxHeight: '90%' },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-    label: { fontSize: 12, color: '#4b5563', marginBottom: 4, fontWeight: '500' },
-    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#f9fafb' },
+    label: { fontSize: 12, marginBottom: 4, fontWeight: '500' },
+    input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12 },
     textArea: { height: 80, textAlignVertical: 'top' },
-    dateButton: { padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
+    dateButton: { padding: 12, borderWidth: 1, borderRadius: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
     button: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-    cancelButton: { backgroundColor: '#f3f4f6' },
-    submitButton: { backgroundColor: '#8b5cf6' },
+    cancelButton: {},
+    submitButton: {},
     buttonText: { fontWeight: '600' },
-    dropdown: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
-    dropdownText: { color: '#1f2937' },
+    dropdown: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    dropdownText: {},
     switchContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    multiSelectContainer: { maxHeight: 150, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 12 },
-    multiSelectItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-    multiSelectItemSelected: { backgroundColor: '#f5f3ff' },
-    multiSelectText: { fontSize: 14, color: '#374151' },
-    multiSelectTextSelected: { color: '#7c3aed', fontWeight: '500' },
-    pickerContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '90%', alignSelf: 'center', maxHeight: '70%' },
+    multiSelectContainer: { maxHeight: 150, borderWidth: 1, borderRadius: 8, marginBottom: 12 },
+    multiSelectItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottomWidth: 1 },
+    multiSelectText: { fontSize: 14 },
+    pickerContent: { borderRadius: 16, padding: 20, width: '90%', alignSelf: 'center', maxHeight: '70%' },
     pickerTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-    pickerOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    pickerOptionText: { fontSize: 16, color: '#374151' },
-    pickerOptionSubtext: { fontSize: 12, color: '#6b7280', marginTop: 2 },
+    pickerOption: { paddingVertical: 12, borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    pickerOptionText: { fontSize: 16 },
+    pickerOptionSubtext: { fontSize: 12, marginTop: 2 },
 });
 
 export default FeedAdministrationScreen;

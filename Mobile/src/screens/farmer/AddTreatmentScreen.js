@@ -17,9 +17,11 @@ import { createTreatment } from '../../services/treatmentService';
 import { getAnimals } from '../../services/animalService';
 import { getFarmerProfile } from '../../services/farmerService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const AddTreatmentScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [animals, setAnimals] = useState([]);
     const [vetId, setVetId] = useState(null);
@@ -88,30 +90,33 @@ const AddTreatmentScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={styles.title}>{t('add_treatment')}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{t('add_treatment')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
                 {/* Animal Selection */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('animal_required')}</Text>
-                    <View style={styles.pickerContainer}>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('animal_required')}</Text>
+                    <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
                         <Picker
                             selectedValue={formData.animalId}
                             onValueChange={(itemValue) => setFormData({ ...formData, animalId: itemValue })}
+                            style={{ color: theme.text }}
+                            dropdownIconColor={theme.text}
                         >
-                            <Picker.Item label={t('select_animal')} value="" />
+                            <Picker.Item label={t('select_animal')} value="" color={theme.text} />
                             {animals.map((animal) => (
                                 <Picker.Item
                                     key={animal._id}
                                     label={`${animal.tagId} - ${animal.name || 'No Name'}`}
                                     value={animal.tagId}
+                                    color={theme.text}
                                 />
                             ))}
                         </Picker>
@@ -123,10 +128,11 @@ const AddTreatmentScreen = ({ navigation }) => {
 
                 {/* Drug Name */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('drug_name_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('drug_name_label')}</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                         placeholder="e.g., Amoxicillin"
+                        placeholderTextColor={theme.subtext}
                         value={formData.drugName}
                         onChangeText={(text) => setFormData({ ...formData, drugName: text })}
                     />
@@ -135,24 +141,27 @@ const AddTreatmentScreen = ({ navigation }) => {
                 {/* Dose & Route */}
                 <View style={styles.row}>
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>{t('dose')}</Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('dose')}</Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                             placeholder="e.g., 10ml"
+                            placeholderTextColor={theme.subtext}
                             value={formData.dose}
                             onChangeText={(text) => setFormData({ ...formData, dose: text })}
                         />
                     </View>
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>{t('route')}</Text>
-                        <View style={styles.pickerContainer}>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('route')}</Text>
+                        <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
                             <Picker
                                 selectedValue={formData.route}
                                 onValueChange={(itemValue) => setFormData({ ...formData, route: itemValue })}
+                                style={{ color: theme.text }}
+                                dropdownIconColor={theme.text}
                             >
-                                <Picker.Item label="Oral" value="Oral" />
-                                <Picker.Item label="Injection" value="Injection" />
-                                <Picker.Item label="Topical" value="Topical" />
+                                <Picker.Item label="Oral" value="Oral" color={theme.text} />
+                                <Picker.Item label="Injection" value="Injection" color={theme.text} />
+                                <Picker.Item label="Topical" value="Topical" color={theme.text} />
                             </Picker>
                         </View>
                     </View>
@@ -160,13 +169,13 @@ const AddTreatmentScreen = ({ navigation }) => {
 
                 {/* Start Date */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('start_date')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('start_date')}</Text>
                     <TouchableOpacity
-                        style={styles.dateInput}
+                        style={[styles.dateInput, { backgroundColor: theme.card, borderColor: theme.border }]}
                         onPress={() => setShowDatePicker(true)}
                     >
-                        <Ionicons name="calendar" size={20} color="#6b7280" />
-                        <Text style={styles.dateText}>
+                        <Ionicons name="calendar" size={20} color={theme.subtext} />
+                        <Text style={[styles.dateText, { color: theme.text }]}>
                             {formData.startDate.toLocaleDateString()}
                         </Text>
                     </TouchableOpacity>
@@ -183,10 +192,11 @@ const AddTreatmentScreen = ({ navigation }) => {
 
                 {/* Reason */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('reason_notes')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('reason_notes')}</Text>
                     <TextInput
-                        style={[styles.input, styles.textArea]}
+                        style={[styles.input, styles.textArea, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                         placeholder="e.g., Respiratory infection"
+                        placeholderTextColor={theme.subtext}
                         value={formData.reason}
                         onChangeText={(text) => setFormData({ ...formData, reason: text })}
                         multiline
@@ -197,7 +207,11 @@ const AddTreatmentScreen = ({ navigation }) => {
 
                 {/* Submit Button */}
                 <TouchableOpacity
-                    style={[styles.submitButton, loading && styles.buttonDisabled]}
+                    style={[
+                        styles.submitButton,
+                        { backgroundColor: theme.primary },
+                        loading && { backgroundColor: theme.subtext }
+                    ]}
                     onPress={handleSubmit}
                     disabled={loading}
                 >
@@ -215,7 +229,6 @@ const AddTreatmentScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     header: {
         flexDirection: 'row',
@@ -223,14 +236,11 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 20,
         paddingTop: 50,
-        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1f2937',
     },
     form: {
         flex: 1,
@@ -242,22 +252,16 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         padding: 12,
         fontSize: 16,
-        color: '#1f2937',
     },
     pickerContainer: {
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         overflow: 'hidden',
     },
@@ -271,23 +275,19 @@ const styles = StyleSheet.create({
     dateInput: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         padding: 12,
         gap: 12,
     },
     dateText: {
         fontSize: 16,
-        color: '#1f2937',
     },
     textArea: {
         height: 100,
         paddingTop: 12,
     },
     submitButton: {
-        backgroundColor: '#10b981',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
     buttonDisabled: {
-        backgroundColor: '#9ca3af',
+        // Handled dynamically
     },
     helperText: {
         fontSize: 12,

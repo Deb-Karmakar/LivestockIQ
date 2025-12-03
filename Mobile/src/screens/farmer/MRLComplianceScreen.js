@@ -24,9 +24,11 @@ import {
 } from '../../services/mrlService';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const MRLComplianceScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // overview, pending, history
@@ -182,17 +184,17 @@ const MRLComplianceScreen = ({ navigation }) => {
     const getStatusBadge = (status) => {
         switch (status?.mrlStatus) {
             case 'SAFE':
-                return { color: '#10b981', bg: '#d1fae5', text: t('safe_for_sale'), icon: 'checkmark-circle' };
+                return { color: theme.success, bg: theme.success + '20', text: t('safe_for_sale'), icon: 'checkmark-circle' };
             case 'PENDING_VERIFICATION':
-                return { color: '#3b82f6', bg: '#dbeafe', text: t('pending_verification'), icon: 'time' };
+                return { color: theme.primary, bg: theme.primary + '20', text: t('pending_verification'), icon: 'time' };
             case 'TEST_REQUIRED':
-                return { color: '#f59e0b', bg: '#fef3c7', text: t('test_required'), icon: 'alert-circle' };
+                return { color: theme.warning, bg: theme.warning + '20', text: t('test_required'), icon: 'alert-circle' };
             case 'VIOLATION':
-                return { color: '#ef4444', bg: '#fee2e2', text: t('mrl_violation'), icon: 'warning' };
+                return { color: theme.error, bg: theme.error + '20', text: t('mrl_violation'), icon: 'warning' };
             case 'WITHDRAWAL_ACTIVE':
                 return { color: '#f97316', bg: '#ffedd5', text: t('withdrawal_active'), icon: 'hand-left' };
             default:
-                return { color: '#6b7280', bg: '#f3f4f6', text: 'No Data', icon: 'help-circle' };
+                return { color: theme.subtext, bg: theme.border, text: 'No Data', icon: 'help-circle' };
         }
     };
 
@@ -200,21 +202,21 @@ const MRLComplianceScreen = ({ navigation }) => {
         <View>
             {/* Stats Grid */}
             <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                    <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'SAFE').length}</Text>
-                    <Text style={styles.statLabel}>{t('safe')}</Text>
+                <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'SAFE').length}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('safe')}</Text>
                 </View>
-                <View style={styles.statCard}>
-                    <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'TEST_REQUIRED').length}</Text>
-                    <Text style={styles.statLabel}>{t('test_required')}</Text>
+                <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'TEST_REQUIRED').length}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('test_required')}</Text>
                 </View>
-                <View style={styles.statCard}>
-                    <Text style={styles.statValue}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'VIOLATION').length}</Text>
-                    <Text style={styles.statLabel}>{t('violations')}</Text>
+                <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{Object.values(mrlStatuses).filter(s => s.mrlStatus === 'VIOLATION').length}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('violations')}</Text>
                 </View>
-                <View style={styles.statCard}>
-                    <Text style={styles.statValue}>{pendingTests.length}</Text>
-                    <Text style={styles.statLabel}>{t('pending')}</Text>
+                <View style={[styles.statCard, { backgroundColor: theme.card }]}>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{pendingTests.length}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('pending')}</Text>
                 </View>
             </View>
 
@@ -233,16 +235,16 @@ const MRLComplianceScreen = ({ navigation }) => {
                     (isPendingVerification && !isViolationResolved);
 
                 return (
-                    <View key={animal.tagId} style={styles.card}>
+                    <View key={animal.tagId} style={[styles.card, { backgroundColor: theme.card }]}>
                         <View style={styles.cardRow}>
                             <View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                    <Text style={styles.animalId}>{animal.tagId}</Text>
-                                    <View style={styles.speciesTag}>
-                                        <Text style={styles.speciesText}>{animal.species}</Text>
+                                    <Text style={[styles.animalId, { color: theme.text }]}>{animal.tagId}</Text>
+                                    <View style={[styles.speciesTag, { backgroundColor: theme.primary + '20' }]}>
+                                        <Text style={[styles.speciesText, { color: theme.primary }]}>{animal.species}</Text>
                                     </View>
                                 </View>
-                                <Text style={styles.animalName}>{animal.name}</Text>
+                                <Text style={[styles.animalName, { color: theme.subtext }]}>{animal.name}</Text>
                             </View>
                             <View style={[styles.badge, { backgroundColor: badge.bg }]}>
                                 <Ionicons name={badge.icon} size={14} color={badge.color} />
@@ -253,6 +255,7 @@ const MRLComplianceScreen = ({ navigation }) => {
                         <TouchableOpacity
                             style={[
                                 styles.uploadButton,
+                                { backgroundColor: isDisabled ? theme.border : theme.primary + '20' },
                                 isDisabled && styles.uploadButtonDisabled
                             ]}
                             onPress={() => handleOpenUpload(animal.tagId)}
@@ -261,11 +264,12 @@ const MRLComplianceScreen = ({ navigation }) => {
                             <Ionicons
                                 name={isDisabled ? "lock-closed" : "cloud-upload"}
                                 size={16}
-                                color={isDisabled ? "#9ca3af" : "#10b981"}
+                                color={isDisabled ? theme.subtext : theme.primary}
                                 style={{ marginRight: 6 }}
                             />
                             <Text style={[
                                 styles.uploadButtonText,
+                                { color: isDisabled ? theme.subtext : theme.primary },
                                 isDisabled && styles.uploadButtonTextDisabled
                             ]}>
                                 {isDisabled
@@ -275,12 +279,12 @@ const MRLComplianceScreen = ({ navigation }) => {
                         </TouchableOpacity>
 
                         {isDisabled && status?.mrlStatus === 'WITHDRAWAL_ACTIVE' && (
-                            <Text style={styles.statusNote}>
+                            <Text style={[styles.statusNote, { color: theme.error }]}>
                                 {t('cannot_upload_withdrawal')}
                             </Text>
                         )}
                         {isDisabled && isPendingVerification && !isViolationResolved && (
-                            <Text style={styles.statusNote}>
+                            <Text style={[styles.statusNote, { color: theme.error }]}>
                                 {t('pending_verification_msg')}
                             </Text>
                         )}
@@ -294,20 +298,20 @@ const MRLComplianceScreen = ({ navigation }) => {
         <View>
             {pendingTests.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Ionicons name="checkmark-circle-outline" size={48} color="#10b981" />
-                    <Text style={styles.emptyText}>{t('no_pending_tests')}</Text>
+                    <Ionicons name="checkmark-circle-outline" size={48} color={theme.success} />
+                    <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_pending_tests')}</Text>
                 </View>
             ) : (
                 pendingTests.map((item) => (
-                    <View key={item.animalId} style={styles.card}>
-                        <Text style={styles.animalId}>{item.animalId}</Text>
-                        <Text style={styles.animalName}>{item.animalName}</Text>
-                        <Text style={styles.detailText}>Last treated: {new Date(item.lastTreatmentDate).toLocaleDateString()}</Text>
+                    <View key={item.animalId} style={[styles.card, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.animalId, { color: theme.text }]}>{item.animalId}</Text>
+                        <Text style={[styles.animalName, { color: theme.subtext }]}>{item.animalName}</Text>
+                        <Text style={[styles.detailText, { color: theme.subtext }]}>Last treated: {new Date(item.lastTreatmentDate).toLocaleDateString()}</Text>
                         <TouchableOpacity
-                            style={[styles.uploadButton, { marginTop: 12 }]}
+                            style={[styles.uploadButton, { marginTop: 12, backgroundColor: theme.primary + '20' }]}
                             onPress={() => handleOpenUpload(item.animalId)}
                         >
-                            <Text style={styles.uploadButtonText}>{t('upload_test')}</Text>
+                            <Text style={[styles.uploadButtonText, { color: theme.primary }]}>{t('upload_test')}</Text>
                         </TouchableOpacity>
                     </View>
                 ))
@@ -319,31 +323,31 @@ const MRLComplianceScreen = ({ navigation }) => {
         <View>
             {testHistory.length === 0 ? (
                 <View style={styles.emptyState}>
-                    <Ionicons name="document-text-outline" size={48} color="#9ca3af" />
-                    <Text style={styles.emptyText}>{t('no_test_history')}</Text>
+                    <Ionicons name="document-text-outline" size={48} color={theme.border} />
+                    <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_test_history')}</Text>
                 </View>
             ) : (
                 testHistory.map((test) => (
-                    <View key={test._id} style={styles.card}>
+                    <View key={test._id} style={[styles.card, { backgroundColor: theme.card }]}>
                         <View style={styles.cardRow}>
-                            <Text style={styles.animalId}>{test.animalId}</Text>
-                            <View style={[styles.badge, { backgroundColor: test.isPassed ? '#d1fae5' : '#fee2e2' }]}>
-                                <Text style={{ color: test.isPassed ? '#10b981' : '#ef4444', fontSize: 12, fontWeight: 'bold' }}>
+                            <Text style={[styles.animalId, { color: theme.text }]}>{test.animalId}</Text>
+                            <View style={[styles.badge, { backgroundColor: test.isPassed ? theme.success + '20' : theme.error + '20' }]}>
+                                <Text style={{ color: test.isPassed ? theme.success : theme.error, fontSize: 12, fontWeight: 'bold' }}>
                                     {test.isPassed ? t('passed') : t('failed')}
                                 </Text>
                             </View>
                         </View>
                         <View style={styles.grid}>
                             <View>
-                                <Text style={styles.label}>{t('drug_name_label')}</Text>
-                                <Text style={styles.value}>{test.drugName}</Text>
+                                <Text style={[styles.label, { color: theme.subtext }]}>{t('drug_name_label')}</Text>
+                                <Text style={[styles.value, { color: theme.text }]}>{test.drugName}</Text>
                             </View>
                             <View>
-                                <Text style={styles.label}>{t('result')}</Text>
-                                <Text style={styles.value}>{test.residueLevelDetected} {test.unit}</Text>
+                                <Text style={[styles.label, { color: theme.subtext }]}>{t('result')}</Text>
+                                <Text style={[styles.value, { color: theme.text }]}>{test.residueLevelDetected} {test.unit}</Text>
                             </View>
                         </View>
-                        <Text style={[styles.detailText, { marginTop: 8 }]}>{t('report')}: {test.testReportNumber}</Text>
+                        <Text style={[styles.detailText, { marginTop: 8, color: theme.subtext }]}>{t('report')}: {test.testReportNumber}</Text>
                     </View>
                 ))
             )}
@@ -352,16 +356,16 @@ const MRLComplianceScreen = ({ navigation }) => {
 
     if (loading && !refreshing) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={['#0f172a', '#1e293b', '#0f172a']}
+                colors={[theme.primary, theme.secondary || theme.primary]} // Use theme colors
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -370,14 +374,14 @@ const MRLComplianceScreen = ({ navigation }) => {
                 <Text style={styles.headerSubtitle}>{t('mrl_subtitle')}</Text>
             </LinearGradient>
 
-            <View style={styles.tabs}>
+            <View style={[styles.tabs, { backgroundColor: theme.card }]}>
                 {['overview', 'pending', 'history'].map((tab) => (
                     <TouchableOpacity
                         key={tab}
-                        style={[styles.tab, activeTab === tab && styles.activeTab]}
+                        style={[styles.tab, activeTab === tab && { borderBottomColor: theme.primary, borderBottomWidth: 2 }]}
                         onPress={() => setActiveTab(tab)}
                     >
-                        <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
+                        <Text style={[styles.tabText, { color: activeTab === tab ? theme.primary : theme.subtext }]}>
                             {t(tab)}
                         </Text>
                     </TouchableOpacity>
@@ -386,7 +390,7 @@ const MRLComplianceScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
             >
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'pending' && renderPending()}
@@ -396,40 +400,41 @@ const MRLComplianceScreen = ({ navigation }) => {
             {/* Upload Modal */}
             <Modal visible={uploadModalVisible} animationType="slide" transparent={true}>
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>{t('upload_lab_test')}</Text>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.modalTitle, { color: theme.text }]}>{t('upload_lab_test')}</Text>
                         <ScrollView showsVerticalScrollIndicator={false}>
 
                             {/* Animal Selection */}
-                            <Text style={styles.label}>{t('animal_id')} *</Text>
-                            <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('animal')}>
-                                <Text style={styles.dropdownText}>{testForm.animalId || t('select_animal')}</Text>
-                                <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                            <Text style={[styles.label, { color: theme.text }]}>{t('animal_id')} *</Text>
+                            <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('animal')}>
+                                <Text style={[styles.dropdownText, { color: theme.text }]}>{testForm.animalId || t('select_animal')}</Text>
+                                <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                             </TouchableOpacity>
 
                             {/* Drug Name */}
-                            <Text style={styles.label}>{t('drug_name_label')}</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('drug_name_label')}</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={testForm.drugName}
                                 onChangeText={(text) => setTestForm({ ...testForm, drugName: text })}
                                 placeholder={t('drug_name_placeholder')}
+                                placeholderTextColor={theme.subtext}
                             />
 
                             {/* Sample & Product Type */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('sample_type')} *</Text>
-                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('sample')}>
-                                        <Text style={styles.dropdownText}>{testForm.sampleType}</Text>
-                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('sample_type')} *</Text>
+                                    <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('sample')}>
+                                        <Text style={[styles.dropdownText, { color: theme.text }]}>{testForm.sampleType}</Text>
+                                        <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('product_type')} *</Text>
-                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('product')}>
-                                        <Text style={styles.dropdownText}>{testForm.productType}</Text>
-                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('product_type')} *</Text>
+                                    <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('product')}>
+                                        <Text style={[styles.dropdownText, { color: theme.text }]}>{testForm.productType}</Text>
+                                        <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -437,59 +442,64 @@ const MRLComplianceScreen = ({ navigation }) => {
                             {/* Residue & Unit */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('residue_level')} *</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('residue_level')} *</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                         value={testForm.residueLevelDetected}
                                         onChangeText={(text) => setTestForm({ ...testForm, residueLevelDetected: text })}
                                         placeholder="0.00"
+                                        placeholderTextColor={theme.subtext}
                                         keyboardType="numeric"
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('unit')} *</Text>
-                                    <TouchableOpacity style={styles.dropdown} onPress={() => openPicker('unit')}>
-                                        <Text style={styles.dropdownText}>{testForm.unit}</Text>
-                                        <Ionicons name="chevron-down" size={20} color="#6b7280" />
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('unit')} *</Text>
+                                    <TouchableOpacity style={[styles.dropdown, { backgroundColor: theme.background, borderColor: theme.border }]} onPress={() => openPicker('unit')}>
+                                        <Text style={[styles.dropdownText, { color: theme.text }]}>{testForm.unit}</Text>
+                                        <Ionicons name="chevron-down" size={20} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
 
                             {/* Lab Info */}
-                            <Text style={styles.label}>{t('lab_name')} *</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('lab_name')} *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={testForm.labName}
                                 onChangeText={(text) => setTestForm({ ...testForm, labName: text })}
                                 placeholder="e.g., National MRL Testing Lab"
+                                placeholderTextColor={theme.subtext}
                             />
 
-                            <Text style={styles.label}>{t('lab_location')}</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('lab_location')}</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={testForm.labLocation}
                                 onChangeText={(text) => setTestForm({ ...testForm, labLocation: text })}
                                 placeholder="e.g., Mumbai, Maharashtra"
+                                placeholderTextColor={theme.subtext}
                             />
 
                             {/* Report Info */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('report_number')} *</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('report_number')} *</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                         value={testForm.testReportNumber}
                                         onChangeText={(text) => setTestForm({ ...testForm, testReportNumber: text })}
                                         placeholder="Report #"
+                                        placeholderTextColor={theme.subtext}
                                     />
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('cert_number')}</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('cert_number')}</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                         value={testForm.labCertificationNumber}
                                         onChangeText={(text) => setTestForm({ ...testForm, labCertificationNumber: text })}
                                         placeholder="Cert #"
+                                        placeholderTextColor={theme.subtext}
                                     />
                                 </View>
                             </View>
@@ -497,19 +507,20 @@ const MRLComplianceScreen = ({ navigation }) => {
                             {/* Date & Tester */}
                             <View style={styles.row}>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('test_date')} *</Text>
-                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.dateButton}>
-                                        <Text>{testForm.testDate.toLocaleDateString()}</Text>
-                                        <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('test_date')} *</Text>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.dateButton, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                                        <Text style={{ color: theme.text }}>{testForm.testDate.toLocaleDateString()}</Text>
+                                        <Ionicons name="calendar-outline" size={16} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </View>
                                 <View style={styles.halfInput}>
-                                    <Text style={styles.label}>{t('tested_by')}</Text>
+                                    <Text style={[styles.label, { color: theme.text }]}>{t('tested_by')}</Text>
                                     <TextInput
-                                        style={styles.input}
+                                        style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                         value={testForm.testedBy}
                                         onChangeText={(text) => setTestForm({ ...testForm, testedBy: text })}
                                         placeholder="Name"
+                                        placeholderTextColor={theme.subtext}
                                     />
                                 </View>
                             </View>
@@ -526,32 +537,34 @@ const MRLComplianceScreen = ({ navigation }) => {
                             )}
 
                             {/* Certificate URL */}
-                            <Text style={styles.label}>{t('certificate_url')} *</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('certificate_url')} *</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={testForm.certificateUrl}
                                 onChangeText={(text) => setTestForm({ ...testForm, certificateUrl: text })}
                                 placeholder="https://..."
+                                placeholderTextColor={theme.subtext}
                                 autoCapitalize="none"
                             />
 
                             {/* Notes */}
-                            <Text style={styles.label}>{t('notes_label')}</Text>
+                            <Text style={[styles.label, { color: theme.text }]}>{t('notes_label')}</Text>
                             <TextInput
-                                style={[styles.input, styles.textArea]}
+                                style={[styles.input, styles.textArea, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                                 value={testForm.notes}
                                 onChangeText={(text) => setTestForm({ ...testForm, notes: text })}
                                 placeholder={t('notes_placeholder')}
+                                placeholderTextColor={theme.subtext}
                                 multiline
                                 numberOfLines={3}
                             />
 
                         </ScrollView>
                         <View style={styles.modalButtons}>
-                            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setUploadModalVisible(false)}>
-                                <Text style={styles.buttonText}>{t('cancel')}</Text>
+                            <TouchableOpacity style={[styles.button, styles.cancelButton, { backgroundColor: theme.background }]} onPress={() => setUploadModalVisible(false)}>
+                                <Text style={[styles.buttonText, { color: theme.text }]}>{t('cancel')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={[styles.button, styles.submitButton]} onPress={handleSubmitTest}>
+                            <TouchableOpacity style={[styles.button, styles.submitButton, { backgroundColor: theme.primary }]} onPress={handleSubmitTest}>
                                 <Text style={[styles.buttonText, { color: '#fff' }]}>{t('submit_review')}</Text>
                             </TouchableOpacity>
                         </View>
@@ -562,21 +575,21 @@ const MRLComplianceScreen = ({ navigation }) => {
             {/* Selection Picker Modal */}
             <Modal visible={pickerVisible} animationType="fade" transparent={true}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setPickerVisible(false)}>
-                    <View style={styles.pickerContent}>
-                        <Text style={styles.pickerTitle}>Select {pickerType}</Text>
+                    <View style={[styles.pickerContent, { backgroundColor: theme.card }]}>
+                        <Text style={[styles.pickerTitle, { color: theme.text }]}>Select {pickerType}</Text>
                         <ScrollView style={{ maxHeight: 300 }}>
                             {getPickerOptions().map((option) => (
                                 <TouchableOpacity
                                     key={option.value}
-                                    style={styles.pickerOption}
+                                    style={[styles.pickerOption, { borderBottomColor: theme.border }]}
                                     onPress={() => handlePickerSelect(option.value)}
                                 >
-                                    <Text style={styles.pickerOptionText}>{option.label}</Text>
+                                    <Text style={[styles.pickerOptionText, { color: theme.text }]}>{option.label}</Text>
                                     {((pickerType === 'animal' && testForm.animalId === option.value) ||
                                         (pickerType === 'sample' && testForm.sampleType === option.value) ||
                                         (pickerType === 'product' && testForm.productType === option.value) ||
                                         (pickerType === 'unit' && testForm.unit === option.value)) && (
-                                            <Ionicons name="checkmark" size={20} color="#10b981" />
+                                            <Ionicons name="checkmark" size={20} color={theme.primary} />
                                         )}
                                 </TouchableOpacity>
                             ))}
@@ -589,59 +602,59 @@ const MRLComplianceScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     header: { padding: 20, paddingTop: 60, paddingBottom: 24 },
     headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
     headerSubtitle: { color: '#94a3b8', marginTop: 4 },
-    tabs: { flexDirection: 'row', backgroundColor: '#fff', padding: 4 },
+    tabs: { flexDirection: 'row', padding: 4 },
     tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-    activeTab: { borderBottomWidth: 2, borderBottomColor: '#10b981' },
-    tabText: { color: '#6b7280', fontWeight: '600' },
-    activeTabText: { color: '#10b981' },
+    activeTab: { borderBottomWidth: 2 },
+    tabText: { fontWeight: '600' },
+    activeTabText: {},
     content: { padding: 16 },
     statsGrid: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-    statCard: { flex: 1, backgroundColor: '#fff', padding: 12, borderRadius: 12, alignItems: 'center' },
-    statValue: { fontSize: 18, fontWeight: 'bold', color: '#1f2937' },
-    statLabel: { fontSize: 10, color: '#6b7280', marginTop: 2 },
-    card: { backgroundColor: '#fff', padding: 16, borderRadius: 12, marginBottom: 12 },
+    statCard: { flex: 1, padding: 12, borderRadius: 12, alignItems: 'center' },
+    statValue: { fontSize: 18, fontWeight: 'bold' },
+    statLabel: { fontSize: 10, marginTop: 2 },
+    card: { padding: 16, borderRadius: 12, marginBottom: 12 },
     cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    animalId: { fontSize: 16, fontWeight: 'bold', color: '#1f2937' },
-    animalName: { fontSize: 14, color: '#6b7280' },
+    animalId: { fontSize: 16, fontWeight: 'bold' },
+    animalName: { fontSize: 14 },
     badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4 },
     badgeText: { fontSize: 11, fontWeight: '700' },
-    uploadButton: { marginTop: 8, padding: 8, backgroundColor: '#ecfdf5', borderRadius: 6, alignItems: 'center' },
-    uploadButtonText: { color: '#10b981', fontWeight: '600', fontSize: 12 },
+    uploadButton: { marginTop: 8, padding: 8, borderRadius: 6, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
+    uploadButtonText: { fontWeight: '600', fontSize: 12 },
     emptyState: { alignItems: 'center', padding: 40 },
-    emptyText: { marginTop: 12, color: '#9ca3af' },
+    emptyText: { marginTop: 12 },
     grid: { flexDirection: 'row', gap: 16, marginTop: 12 },
-    label: { fontSize: 11, color: '#9ca3af', textTransform: 'uppercase' },
-    value: { fontSize: 14, color: '#374151', fontWeight: '500' },
-    detailText: { fontSize: 12, color: '#6b7280' },
+    label: { fontSize: 11, textTransform: 'uppercase' },
+    value: { fontSize: 14, fontWeight: '500' },
+    detailText: { fontSize: 12 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-    modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, maxHeight: '90%' },
+    modalContent: { borderRadius: 16, padding: 20, maxHeight: '90%' },
     modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, backgroundColor: '#f9fafb' },
+    input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12 },
     textArea: { height: 80, textAlignVertical: 'top' },
-    dateButton: { padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
+    dateButton: { padding: 12, borderWidth: 1, borderRadius: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     modalButtons: { flexDirection: 'row', gap: 12, marginTop: 8 },
     button: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center' },
-    cancelButton: { backgroundColor: '#f3f4f6' },
-    submitButton: { backgroundColor: '#10b981' },
+    cancelButton: {},
+    submitButton: {},
     buttonText: { fontWeight: '600' },
     row: { flexDirection: 'row', gap: 12 },
     halfInput: { flex: 1 },
-    dropdown: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb' },
-    dropdownText: { color: '#1f2937' },
-    pickerContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '80%', alignSelf: 'center', maxHeight: '60%' },
+    dropdown: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    dropdownText: {},
+    pickerContent: { borderRadius: 16, padding: 20, width: '80%', alignSelf: 'center', maxHeight: '60%' },
     pickerTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 12, textAlign: 'center' },
-    pickerOption: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    pickerOptionText: { fontSize: 16, color: '#374151' },
-    speciesTag: { backgroundColor: '#e0f2fe', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    speciesText: { fontSize: 10, color: '#0284c7', fontWeight: '600', textTransform: 'uppercase' },
-    uploadButtonDisabled: { backgroundColor: '#f3f4f6', borderColor: '#e5e7eb', borderWidth: 1 },
-    uploadButtonTextDisabled: { color: '#9ca3af' },
-    statusNote: { fontSize: 11, color: '#ef4444', marginTop: 4, fontStyle: 'italic' },
+    pickerOption: { paddingVertical: 12, borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    pickerOptionText: { fontSize: 16 },
+    speciesTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+    speciesText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+    uploadButtonDisabled: { borderWidth: 1 },
+    uploadButtonTextDisabled: {},
+    statusNote: { fontSize: 11, marginTop: 4, fontStyle: 'italic' },
 });
 
 export default MRLComplianceScreen;

@@ -1,3 +1,4 @@
+
 // Mobile/src/screens/farmer/AlertsScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -17,22 +18,23 @@ import { getTreatments } from '../../services/treatmentService';
 import { getMyHighAmuAlerts } from '../../services/farmerService';
 import { differenceInDays, format } from 'date-fns';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
-const SeverityBadge = ({ severity }) => {
+const SeverityBadge = ({ severity, theme }) => {
     let bg, text, border;
     switch (severity) {
         case 'Low':
-            bg = '#dcfce7'; text = '#166534'; border = '#bbf7d0'; break;
+            bg = theme.success + '20'; text = theme.success; border = theme.success + '40'; break;
         case 'Medium':
-            bg = '#fef9c3'; text = '#854d0e'; border = '#fde047'; break;
+            bg = theme.warning + '20'; text = theme.warning; border = theme.warning + '40'; break;
         case 'High':
-            bg = '#ffedd5'; text = '#9a3412'; border = '#fed7aa'; break;
+            bg = theme.error + '20'; text = theme.error; border = theme.error + '40'; break;
         case 'Critical':
-            bg = '#fee2e2'; text = '#991b1b'; border = '#fecaca'; break;
+            bg = theme.error + '30'; text = theme.error; border = theme.error + '50'; break;
         default:
-            bg = '#f3f4f6'; text = '#374151'; border = '#e5e7eb';
+            bg = theme.background; text = theme.subtext; border = theme.border;
     }
 
     return (
@@ -44,6 +46,7 @@ const SeverityBadge = ({ severity }) => {
 
 const AlertsScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [treatments, setTreatments] = useState([]);
     const [amuAlerts, setAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -56,37 +59,37 @@ const AlertsScreen = ({ navigation }) => {
         const configs = {
             HISTORICAL_SPIKE: {
                 icon: 'trending-up',
-                color: '#f97316', // orange-500
+                color: theme.warning, // orange-500
                 label: t('historical_spike'),
                 description: t('historical_spike_desc')
             },
             PEER_COMPARISON_SPIKE: {
                 icon: 'pulse',
-                color: '#eab308', // yellow-500
+                color: theme.warning, // yellow-500
                 label: t('peer_comparison'),
                 description: t('peer_comparison_desc')
             },
             ABSOLUTE_THRESHOLD: {
                 icon: 'warning',
-                color: '#ef4444', // red-500
+                color: theme.error, // red-500
                 label: t('absolute_limit'),
                 description: t('absolute_limit_desc')
             },
             TREND_INCREASE: {
                 icon: 'trending-up',
-                color: '#3b82f6', // blue-500
+                color: theme.info, // blue-500
                 label: t('upward_trend'),
                 description: t('upward_trend_desc')
             },
             CRITICAL_DRUG_USAGE: {
                 icon: 'shield',
-                color: '#a855f7', // purple-500
+                color: theme.primary, // purple-500
                 label: t('critical_drugs'),
                 description: t('critical_drugs_desc')
             },
             SUSTAINED_HIGH_USAGE: {
                 icon: 'notifications',
-                color: '#ef4444', // red-500
+                color: theme.error, // red-500
                 label: t('sustained_high_use'),
                 description: t('sustained_high_use_desc')
             }
@@ -147,24 +150,24 @@ const AlertsScreen = ({ navigation }) => {
                 key={alert._id}
                 style={[
                     styles.alertCard,
-                    { borderLeftColor: config.color }
+                    { backgroundColor: theme.card, borderLeftColor: config.color, shadowColor: theme.text }
                 ]}
                 onPress={() => handleAlertClick(alert)}
             >
-                <View style={[styles.alertIconContainer, { backgroundColor: `${config.color}20` }]}>
+                <View style={[styles.alertIconContainer, { backgroundColor: config.color + '20' }]}>
                     <Ionicons name={config.icon} size={24} color={config.color} />
                 </View>
                 <View style={styles.alertContent}>
                     <View style={styles.alertHeader}>
-                        <Text style={styles.alertTitle}>{config.label}</Text>
-                        <SeverityBadge severity={alert.severity} />
+                        <Text style={[styles.alertTitle, { color: theme.text }]}>{config.label}</Text>
+                        <SeverityBadge severity={alert.severity} theme={theme} />
                     </View>
-                    <Text style={styles.alertMessage} numberOfLines={2}>{alert.message}</Text>
-                    <Text style={styles.alertDate}>
+                    <Text style={[styles.alertMessage, { color: theme.subtext }]} numberOfLines={2}>{alert.message}</Text>
+                    <Text style={[styles.alertDate, { color: theme.subtext }]}>
                         {format(new Date(alert.createdAt), 'MMM d, h:mm a')}
                     </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
             </TouchableOpacity>
         );
     };
@@ -173,18 +176,18 @@ const AlertsScreen = ({ navigation }) => {
         <View style={styles.listContainer}>
             {pendingTreatments.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{t('pending_approvals')} ({pendingTreatments.length})</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('pending_approvals')} ({pendingTreatments.length})</Text>
                     {pendingTreatments.map(treatment => (
-                        <View key={treatment._id} style={styles.operationalCard}>
+                        <View key={treatment._id} style={[styles.operationalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                             <View>
-                                <Text style={styles.operationalTitle}>{t('animal_label')} {treatment.animalId}</Text>
-                                <Text style={styles.operationalSubtitle}>{t('drug_name_label')}: {treatment.drugName}</Text>
+                                <Text style={[styles.operationalTitle, { color: theme.text }]}>{t('animal_label')} {treatment.animalId}</Text>
+                                <Text style={[styles.operationalSubtitle, { color: theme.subtext }]}>{t('drug_name_label')}: {treatment.drugName}</Text>
                             </View>
                             <TouchableOpacity
-                                style={styles.viewButton}
+                                style={[styles.viewButton, { backgroundColor: theme.background }]}
                                 onPress={() => navigation.navigate('Treatments')}
                             >
-                                <Text style={styles.viewButtonText}>{t('view')}</Text>
+                                <Text style={[styles.viewButtonText, { color: theme.text }]}>{t('view')}</Text>
                             </TouchableOpacity>
                         </View>
                     ))}
@@ -193,24 +196,24 @@ const AlertsScreen = ({ navigation }) => {
 
             {withdrawalAlerts.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{t('withdrawal_ending')} ({withdrawalAlerts.length})</Text>
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('withdrawal_ending')} ({withdrawalAlerts.length})</Text>
                     {withdrawalAlerts.map(treatment => {
                         const daysLeft = differenceInDays(new Date(treatment.withdrawalEndDate), new Date());
                         return (
-                            <View key={treatment._id} style={styles.operationalCard}>
+                            <View key={treatment._id} style={[styles.operationalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                                 <View>
-                                    <Text style={styles.operationalTitle}>{t('animal_label')} {treatment.animalId}</Text>
-                                    <Text style={styles.operationalSubtitle}>
+                                    <Text style={[styles.operationalTitle, { color: theme.text }]}>{t('animal_label')} {treatment.animalId}</Text>
+                                    <Text style={[styles.operationalSubtitle, { color: theme.subtext }]}>
                                         {daysLeft} {daysLeft !== 1 ? t('days_remaining') : t('day_remaining')}
                                     </Text>
                                 </View>
                                 <View style={[
                                     styles.statusBadge,
-                                    { backgroundColor: daysLeft <= 2 ? '#fee2e2' : '#f3f4f6' }
+                                    { backgroundColor: daysLeft <= 2 ? theme.error + '20' : theme.background }
                                 ]}>
                                     <Text style={[
                                         styles.statusText,
-                                        { color: daysLeft <= 2 ? '#991b1b' : '#374151' }
+                                        { color: daysLeft <= 2 ? theme.error : theme.subtext }
                                     ]}>
                                         {daysLeft <= 2 ? t('critical') : t('warning')}
                                     </Text>
@@ -223,9 +226,9 @@ const AlertsScreen = ({ navigation }) => {
 
             {pendingTreatments.length === 0 && withdrawalAlerts.length === 0 && (
                 <View style={styles.emptyState}>
-                    <Ionicons name="shield-checkmark" size={48} color="#10b981" />
-                    <Text style={styles.emptyStateTitle}>{t('all_clear')}</Text>
-                    <Text style={styles.emptyStateText}>{t('no_operational_tasks')}</Text>
+                    <Ionicons name="shield-checkmark" size={48} color={theme.success} />
+                    <Text style={[styles.emptyStateTitle, { color: theme.text }]}>{t('all_clear')}</Text>
+                    <Text style={[styles.emptyStateText, { color: theme.subtext }]}>{t('no_operational_tasks')}</Text>
                 </View>
             )}
         </View>
@@ -233,57 +236,57 @@ const AlertsScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>{t('loading_alerts')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>{t('loading_alerts')}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <ScrollView
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} />
+                    <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.primary} />
                 }
             >
                 {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>{t('alerts_title')}</Text>
-                    <Text style={styles.headerSubtitle}>{t('alerts_subtitle')}</Text>
+                <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
+                    <Text style={[styles.headerTitle, { color: theme.text }]}>{t('alerts_title')}</Text>
+                    <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>{t('alerts_subtitle')}</Text>
                 </View>
 
                 {/* Stats Cards */}
                 <View style={styles.statsContainer}>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>{t('amu_alerts')}</Text>
-                        <Text style={[styles.statValue, { color: '#ef4444' }]}>{stats.totalAmuAlerts}</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('amu_alerts')}</Text>
+                        <Text style={[styles.statValue, { color: theme.error }]}>{stats.totalAmuAlerts}</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>{t('critical')}</Text>
-                        <Text style={[styles.statValue, { color: '#f97316' }]}>{stats.criticalAmu}</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('critical')}</Text>
+                        <Text style={[styles.statValue, { color: theme.warning }]}>{stats.criticalAmu}</Text>
                     </View>
-                    <View style={styles.statCard}>
-                        <Text style={styles.statLabel}>{t('withdrawal')}</Text>
-                        <Text style={[styles.statValue, { color: '#10b981' }]}>{stats.withdrawalEnding}</Text>
+                    <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('withdrawal')}</Text>
+                        <Text style={[styles.statValue, { color: theme.success }]}>{stats.withdrawalEnding}</Text>
                     </View>
                 </View>
 
                 {/* Tabs */}
-                <View style={styles.tabContainer}>
+                <View style={[styles.tabContainer, { backgroundColor: theme.card }]}>
                     <TouchableOpacity
-                        style={[styles.tab, activeTab === 'amu' && styles.activeTab]}
+                        style={[styles.tab, activeTab === 'amu' && { backgroundColor: theme.background }]}
                         onPress={() => setActiveTab('amu')}
                     >
-                        <Text style={[styles.tabText, activeTab === 'amu' && styles.activeTabText]}>
+                        <Text style={[styles.tabText, { color: theme.subtext }, activeTab === 'amu' && { color: theme.text, fontWeight: 'bold' }]}>
                             {t('amu_alerts')}
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.tab, activeTab === 'operational' && styles.activeTab]}
+                        style={[styles.tab, activeTab === 'operational' && { backgroundColor: theme.background }]}
                         onPress={() => setActiveTab('operational')}
                     >
-                        <Text style={[styles.tabText, activeTab === 'operational' && styles.activeTabText]}>
+                        <Text style={[styles.tabText, { color: theme.subtext }, activeTab === 'operational' && { color: theme.text, fontWeight: 'bold' }]}>
                             {t('operational')}
                         </Text>
                     </TouchableOpacity>
@@ -296,9 +299,9 @@ const AlertsScreen = ({ navigation }) => {
                             amuAlerts.map(renderAmuAlert)
                         ) : (
                             <View style={styles.emptyState}>
-                                <Ionicons name="checkmark-circle" size={48} color="#10b981" />
-                                <Text style={styles.emptyStateTitle}>{t('no_amu_alerts')}</Text>
-                                <Text style={styles.emptyStateText}>{t('no_amu_alerts_desc')}</Text>
+                                <Ionicons name="checkmark-circle" size={48} color={theme.success} />
+                                <Text style={[styles.emptyStateTitle, { color: theme.text }]}>{t('no_amu_alerts')}</Text>
+                                <Text style={[styles.emptyStateText, { color: theme.subtext }]}>{t('no_amu_alerts_desc')}</Text>
                             </View>
                         )}
                     </View>
@@ -315,49 +318,49 @@ const AlertsScreen = ({ navigation }) => {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
                         {selectedAlert && (
                             <>
-                                <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitle}>
+                                <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                                    <Text style={[styles.modalTitle, { color: theme.text }]}>
                                         {getAmuAlertConfig(selectedAlert.alertType)?.label || t('alert_details')}
                                     </Text>
                                     <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                        <Ionicons name="close" size={24} color="#6b7280" />
+                                        <Ionicons name="close" size={24} color={theme.subtext} />
                                     </TouchableOpacity>
                                 </View>
 
                                 <ScrollView style={styles.modalBody}>
                                     <View style={styles.modalSection}>
                                         <View style={styles.flexRow}>
-                                            <Text style={styles.modalLabel}>{t('severity')}:</Text>
-                                            <SeverityBadge severity={selectedAlert.severity} />
+                                            <Text style={[styles.modalLabel, { color: theme.text }]}>{t('severity')}:</Text>
+                                            <SeverityBadge severity={selectedAlert.severity} theme={theme} />
                                         </View>
-                                        <Text style={styles.modalMessage}>{selectedAlert.message}</Text>
-                                        <Text style={styles.modalDate}>
+                                        <Text style={[styles.modalMessage, { color: theme.subtext }]}>{selectedAlert.message}</Text>
+                                        <Text style={[styles.modalDate, { color: theme.subtext }]}>
                                             {format(new Date(selectedAlert.createdAt), 'MMM d, yyyy h:mm a')}
                                         </Text>
                                     </View>
 
                                     {selectedAlert.details?.drugClassBreakdown && (
                                         <View style={styles.modalSection}>
-                                            <Text style={styles.modalSectionTitle}>{t('drug_class_breakdown')}</Text>
+                                            <Text style={[styles.modalSectionTitle, { color: theme.text }]}>{t('drug_class_breakdown')}</Text>
                                             <View style={styles.breakdownGrid}>
-                                                <View style={[styles.breakdownItem, { backgroundColor: '#dcfce7' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#166534' }]}>{t('access')}</Text>
-                                                    <Text style={[styles.breakdownValue, { color: '#14532d' }]}>
+                                                <View style={[styles.breakdownItem, { backgroundColor: theme.success + '20' }]}>
+                                                    <Text style={[styles.breakdownLabel, { color: theme.success }]}>{t('access')}</Text>
+                                                    <Text style={[styles.breakdownValue, { color: theme.success }]}>
                                                         {selectedAlert.details.drugClassBreakdown.access || 0}
                                                     </Text>
                                                 </View>
-                                                <View style={[styles.breakdownItem, { backgroundColor: '#ffedd5' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#9a3412' }]}>{t('watch')}</Text>
-                                                    <Text style={[styles.breakdownValue, { color: '#7c2d12' }]}>
+                                                <View style={[styles.breakdownItem, { backgroundColor: theme.warning + '20' }]}>
+                                                    <Text style={[styles.breakdownLabel, { color: theme.warning }]}>{t('watch')}</Text>
+                                                    <Text style={[styles.breakdownValue, { color: theme.warning }]}>
                                                         {selectedAlert.details.drugClassBreakdown.watch || 0}
                                                     </Text>
                                                 </View>
-                                                <View style={[styles.breakdownItem, { backgroundColor: '#fee2e2' }]}>
-                                                    <Text style={[styles.breakdownLabel, { color: '#991b1b' }]}>{t('reserve')}</Text>
-                                                    <Text style={[styles.breakdownValue, { color: '#7f1d1d' }]}>
+                                                <View style={[styles.breakdownItem, { backgroundColor: theme.error + '20' }]}>
+                                                    <Text style={[styles.breakdownLabel, { color: theme.error }]}>{t('reserve')}</Text>
+                                                    <Text style={[styles.breakdownValue, { color: theme.error }]}>
                                                         {selectedAlert.details.drugClassBreakdown.reserve || 0}
                                                     </Text>
                                                 </View>
@@ -377,7 +380,6 @@ const AlertsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     loadingContainer: {
         flex: 1,
@@ -386,20 +388,16 @@ const styles = StyleSheet.create({
     },
     loadingText: {
         marginTop: 10,
-        color: '#6b7280',
     },
     header: {
         padding: 20,
         paddingTop: 60,
-        backgroundColor: '#1e293b',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
     },
     headerSubtitle: {
-        color: '#94a3b8',
         marginTop: 4,
     },
     statsContainer: {
@@ -411,11 +409,9 @@ const styles = StyleSheet.create({
     },
     statCard: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 15,
         borderRadius: 12,
         alignItems: 'center',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -423,7 +419,6 @@ const styles = StyleSheet.create({
     },
     statLabel: {
         fontSize: 12,
-        color: '#6b7280',
         marginBottom: 4,
     },
     statValue: {
@@ -433,7 +428,6 @@ const styles = StyleSheet.create({
     tabContainer: {
         flexDirection: 'row',
         padding: 15,
-        backgroundColor: '#fff',
         marginHorizontal: 15,
         borderRadius: 12,
         marginBottom: 15,
@@ -444,29 +438,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 8,
     },
-    activeTab: {
-        backgroundColor: '#f3f4f6',
-    },
     tabText: {
-        color: '#6b7280',
         fontWeight: '600',
-    },
-    activeTabText: {
-        color: '#1f2937',
     },
     listContainer: {
         padding: 15,
         paddingTop: 0,
     },
     alertCard: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 15,
         marginBottom: 10,
         flexDirection: 'row',
         alignItems: 'center',
         borderLeftWidth: 4,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -493,16 +478,13 @@ const styles = StyleSheet.create({
     alertTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1f2937',
     },
     alertMessage: {
         fontSize: 14,
-        color: '#4b5563',
         marginBottom: 4,
     },
     alertDate: {
         fontSize: 12,
-        color: '#9ca3af',
     },
     badge: {
         paddingHorizontal: 8,
@@ -520,18 +502,15 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 10,
     },
     operationalCard: {
-        backgroundColor: '#fff',
         padding: 15,
         borderRadius: 12,
         marginBottom: 10,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 2,
@@ -540,15 +519,12 @@ const styles = StyleSheet.create({
     operationalTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1f2937',
     },
     operationalSubtitle: {
         fontSize: 14,
-        color: '#6b7280',
         marginTop: 2,
     },
     viewButton: {
-        backgroundColor: '#f3f4f6',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
@@ -556,7 +532,6 @@ const styles = StyleSheet.create({
     viewButtonText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#374151',
     },
     statusBadge: {
         paddingHorizontal: 8,
@@ -574,11 +549,9 @@ const styles = StyleSheet.create({
     emptyStateTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1f2937',
         marginTop: 16,
     },
     emptyStateText: {
-        color: '#6b7280',
         marginTop: 8,
     },
     modalOverlay: {
@@ -587,7 +560,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         maxHeight: '80%',
@@ -599,12 +571,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
     modalTitle: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#1f2937',
     },
     modalBody: {
         padding: 20,
@@ -621,22 +591,18 @@ const styles = StyleSheet.create({
     modalLabel: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#374151',
     },
     modalMessage: {
         fontSize: 16,
-        color: '#4b5563',
         lineHeight: 24,
         marginBottom: 8,
     },
     modalDate: {
         fontSize: 14,
-        color: '#9ca3af',
     },
     modalSectionTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 12,
     },
     breakdownGrid: {

@@ -2,16 +2,19 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const SupportScreen = () => {
+    const { theme } = useTheme();
+
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <View style={styles.iconContainer}>
-                <Ionicons name="help-circle" size={64} color="#d1d5db" />
+                <Ionicons name="help-circle" size={64} color={theme.border} />
             </View>
-            <Text style={styles.title}>Support</Text>
-            <Text style={styles.subtitle}>Get help and raise tickets</Text>
-            <Text style={styles.comingSoon}>Coming Soon</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Support</Text>
+            <Text style={[styles.subtitle, { color: theme.subtext }]}>Get help and raise tickets</Text>
+            <Text style={[styles.comingSoon, { color: theme.primary }]}>Coming Soon</Text>
         </View>
     );
 };
@@ -21,7 +24,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
         padding: 20,
     },
     iconContainer: {
@@ -30,18 +32,15 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#1f2937',
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 14,
-        color: '#6b7280',
         marginBottom: 16,
         textAlign: 'center',
     },
     comingSoon: {
         fontSize: 12,
-        color: '#10b981',
         fontWeight: '600',
     },
 });

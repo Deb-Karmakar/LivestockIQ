@@ -15,11 +15,13 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { createAnimal, updateAnimal } from '../../services/animalService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 import BarcodeScannerModal from '../../components/BarcodeScannerModal';
 
 const AddAnimalScreen = ({ navigation, route }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const { animal } = route.params || {};
     const isEditing = !!animal;
 
@@ -87,23 +89,29 @@ const AddAnimalScreen = ({ navigation, route }) => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color="#1f2937" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
-                <Text style={styles.title}>{isEditing ? t('edit_animal') : t('add_new_animal')}</Text>
+                <Text style={[styles.title, { color: theme.text }]}>{isEditing ? t('edit_animal') : t('add_new_animal')}</Text>
                 <View style={{ width: 24 }} />
             </View>
 
             <ScrollView style={styles.form} showsVerticalScrollIndicator={false}>
                 {/* Tag ID */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('tag_id_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('tag_id_label')}</Text>
                     <View style={styles.inputRow}>
                         <TextInput
-                            style={[styles.input, styles.flexInput, isEditing && styles.inputDisabled]}
+                            style={[
+                                styles.input,
+                                styles.flexInput,
+                                { backgroundColor: theme.card, borderColor: theme.border, color: theme.text },
+                                isEditing && { backgroundColor: theme.background, color: theme.subtext }
+                            ]}
                             placeholder={t('tag_id_placeholder')}
+                            placeholderTextColor={theme.subtext}
                             value={formData.tagId}
                             onChangeText={(text) => setFormData({ ...formData, tagId: text })}
                             maxLength={12}
@@ -111,21 +119,26 @@ const AddAnimalScreen = ({ navigation, route }) => {
                             editable={!isEditing}
                         />
                         <TouchableOpacity
-                            style={[styles.scanButton, isEditing && styles.buttonDisabled]}
+                            style={[
+                                styles.scanButton,
+                                { backgroundColor: theme.card, borderColor: theme.border },
+                                isEditing && { backgroundColor: theme.background, borderColor: theme.border }
+                            ]}
                             disabled={isEditing}
                             onPress={() => setShowScanner(true)}
                         >
-                            <Ionicons name="qr-code" size={20} color={isEditing ? '#9ca3af' : '#10b981'} />
+                            <Ionicons name="qr-code" size={20} color={isEditing ? theme.subtext : theme.success} />
                         </TouchableOpacity>
                     </View>
                 </View>
 
                 {/* Name */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('animal_name_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('animal_name_label')}</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                         placeholder={t('animal_name_placeholder')}
+                        placeholderTextColor={theme.subtext}
                         value={formData.name}
                         onChangeText={(text) => setFormData({ ...formData, name: text })}
                     />
@@ -134,21 +147,23 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 {/* Species & Gender Row */}
                 <View style={styles.row}>
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>{t('species_label')}</Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('species_label')}</Text>
                         <View style={styles.chipContainer}>
                             {speciesList.slice(0, 4).map((s) => (
                                 <TouchableOpacity
                                     key={s}
                                     style={[
                                         styles.chip,
-                                        formData.species === s && styles.chipSelected,
+                                        { backgroundColor: theme.background, borderColor: theme.border },
+                                        formData.species === s && { backgroundColor: theme.primary, borderColor: theme.primary },
                                     ]}
                                     onPress={() => setFormData({ ...formData, species: s })}
                                 >
                                     <Text
                                         style={[
                                             styles.chipText,
-                                            formData.species === s && styles.chipTextSelected,
+                                            { color: theme.subtext },
+                                            formData.species === s && { color: '#fff' },
                                         ]}
                                     >
                                         {s}
@@ -162,14 +177,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
                                     key={s}
                                     style={[
                                         styles.chip,
-                                        formData.species === s && styles.chipSelected,
+                                        { backgroundColor: theme.background, borderColor: theme.border },
+                                        formData.species === s && { backgroundColor: theme.primary, borderColor: theme.primary },
                                     ]}
                                     onPress={() => setFormData({ ...formData, species: s })}
                                 >
                                     <Text
                                         style={[
                                             styles.chipText,
-                                            formData.species === s && styles.chipTextSelected,
+                                            { color: theme.subtext },
+                                            formData.species === s && { color: '#fff' },
                                         ]}
                                     >
                                         {s}
@@ -180,21 +197,23 @@ const AddAnimalScreen = ({ navigation, route }) => {
                     </View>
 
                     <View style={[styles.field, styles.halfWidth]}>
-                        <Text style={styles.label}>{t('gender_label')}</Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('gender_label')}</Text>
                         <View style={styles.chipContainer}>
                             {genderList.map((g) => (
                                 <TouchableOpacity
                                     key={g}
                                     style={[
                                         styles.chip,
-                                        formData.gender === g && styles.chipSelected,
+                                        { backgroundColor: theme.background, borderColor: theme.border },
+                                        formData.gender === g && { backgroundColor: theme.primary, borderColor: theme.primary },
                                     ]}
                                     onPress={() => setFormData({ ...formData, gender: g })}
                                 >
                                     <Text
                                         style={[
                                             styles.chipText,
-                                            formData.gender === g && styles.chipTextSelected,
+                                            { color: theme.subtext },
+                                            formData.gender === g && { color: '#fff' },
                                         ]}
                                     >
                                         {g}
@@ -207,13 +226,13 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Date of Birth */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('dob_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('dob_label')}</Text>
                     <TouchableOpacity
-                        style={styles.dateInput}
+                        style={[styles.dateInput, { backgroundColor: theme.card, borderColor: theme.border }]}
                         onPress={() => setShowDatePicker(true)}
                     >
-                        <Ionicons name="calendar" size={20} color="#6b7280" />
-                        <Text style={styles.dateText}>
+                        <Ionicons name="calendar" size={20} color={theme.subtext} />
+                        <Text style={[styles.dateText, { color: theme.text }]}>
                             {formData.dob.toLocaleDateString()}
                         </Text>
                     </TouchableOpacity>
@@ -230,11 +249,12 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Weight */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('weight_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('weight_label')}</Text>
                     <View style={styles.inputRow}>
                         <TextInput
-                            style={[styles.input, styles.flexInput]}
+                            style={[styles.input, styles.flexInput, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                             placeholder={t('weight_placeholder')}
+                            placeholderTextColor={theme.subtext}
                             value={formData.weight}
                             onChangeText={(text) => setFormData({ ...formData, weight: text })}
                             keyboardType="numeric"
@@ -245,14 +265,16 @@ const AddAnimalScreen = ({ navigation, route }) => {
                                     key={unit}
                                     style={[
                                         styles.unitChip,
-                                        formData.weightUnit === unit && styles.chipSelected,
+                                        { backgroundColor: theme.background, borderColor: theme.border },
+                                        formData.weightUnit === unit && { backgroundColor: theme.primary, borderColor: theme.primary },
                                     ]}
                                     onPress={() => setFormData({ ...formData, weightUnit: unit })}
                                 >
                                     <Text
                                         style={[
                                             styles.chipText,
-                                            formData.weightUnit === unit && styles.chipTextSelected,
+                                            { color: theme.subtext },
+                                            formData.weightUnit === unit && { color: '#fff' },
                                         ]}
                                     >
                                         {unit}
@@ -265,10 +287,11 @@ const AddAnimalScreen = ({ navigation, route }) => {
 
                 {/* Notes */}
                 <View style={styles.field}>
-                    <Text style={styles.label}>{t('notes_label')}</Text>
+                    <Text style={[styles.label, { color: theme.text }]}>{t('notes_label')}</Text>
                     <TextInput
-                        style={[styles.input, styles.textArea]}
+                        style={[styles.input, styles.textArea, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
                         placeholder={t('notes_placeholder')}
+                        placeholderTextColor={theme.subtext}
                         value={formData.notes}
                         onChangeText={(text) => setFormData({ ...formData, notes: text })}
                         multiline
@@ -280,13 +303,18 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 {/* Buttons */}
                 <View style={styles.buttonRow}>
                     <TouchableOpacity
-                        style={[styles.button, styles.cancelButton]}
+                        style={[styles.button, styles.cancelButton, { backgroundColor: theme.card, borderColor: theme.border }]}
                         onPress={() => navigation.goBack()}
                     >
-                        <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+                        <Text style={[styles.cancelButtonText, { color: theme.text }]}>{t('cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={[styles.button, styles.submitButton, loading && styles.buttonDisabled]}
+                        style={[
+                            styles.button,
+                            styles.submitButton,
+                            { backgroundColor: theme.primary },
+                            loading && { backgroundColor: theme.subtext }
+                        ]}
                         onPress={handleSubmit}
                         disabled={loading}
                     >
@@ -313,7 +341,6 @@ const AddAnimalScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     header: {
         flexDirection: 'row',
@@ -321,14 +348,11 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 20,
         paddingTop: 50,
-        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1f2937',
     },
     form: {
         flex: 1,
@@ -340,21 +364,16 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#374151',
         marginBottom: 8,
     },
     input: {
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         padding: 12,
         fontSize: 16,
-        color: '#1f2937',
     },
     inputDisabled: {
-        backgroundColor: '#f3f4f6',
-        color: '#9ca3af',
+        // Handled dynamically
     },
     inputRow: {
         flexDirection: 'row',
@@ -366,9 +385,7 @@ const styles = StyleSheet.create({
     scanButton: {
         width: 48,
         height: 48,
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
@@ -389,17 +406,13 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: '#f3f4f6',
         borderWidth: 1,
-        borderColor: '#d1d5db',
     },
     chipSelected: {
-        backgroundColor: '#10b981',
-        borderColor: '#10b981',
+        // Handled dynamically
     },
     chipText: {
         fontSize: 13,
-        color: '#6b7280',
         fontWeight: '500',
     },
     chipTextSelected: {
@@ -410,23 +423,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 12,
-        backgroundColor: '#f3f4f6',
         borderWidth: 1,
-        borderColor: '#d1d5db',
     },
     dateInput: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
         borderRadius: 12,
         padding: 12,
         gap: 12,
     },
     dateText: {
         fontSize: 16,
-        color: '#1f2937',
     },
     textArea: {
         height: 100,
@@ -445,17 +453,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: '#fff',
         borderWidth: 1,
-        borderColor: '#d1d5db',
     },
     cancelButtonText: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#374151',
     },
     submitButton: {
-        backgroundColor: '#10b981',
+        // Handled dynamically
     },
     submitButtonText: {
         fontSize: 16,
@@ -463,8 +468,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
     buttonDisabled: {
-        backgroundColor: '#9ca3af',
-        borderColor: '#9ca3af',
+        // Handled dynamically
     },
 });
 

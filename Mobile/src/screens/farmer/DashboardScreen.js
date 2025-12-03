@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { getAnimals } from '../../services/animalService';
 import { getTreatments } from '../../services/treatmentService';
 
@@ -21,6 +22,7 @@ const { width } = Dimensions.get('window');
 const DashboardScreen = ({ navigation }) => {
     const { user } = useAuth();
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [animals, setAnimals] = useState([]);
@@ -78,7 +80,7 @@ const DashboardScreen = ({ navigation }) => {
                     severity: 'warning',
                     title: 'Pending Vet Approval',
                     description: `Treatment for ${t.animalId} needs signature`,
-                    color: '#f59e0b',
+                    color: theme.warning,
                 });
             }
 
@@ -92,14 +94,14 @@ const DashboardScreen = ({ navigation }) => {
                         severity: daysLeft <= 2 ? 'critical' : 'warning',
                         title: 'Withdrawal Ending Soon',
                         description: `Animal ${t.animalId} safe in ${daysLeft} days`,
-                        color: daysLeft <= 2 ? '#ef4444' : '#f59e0b',
+                        color: daysLeft <= 2 ? theme.error : theme.warning,
                     });
                 }
             }
         });
 
         return alertsList.slice(0, 4);
-    }, [treatments]);
+    }, [treatments, theme]);
 
     // Recent activity
     const recentActivity = React.useMemo(() => {
@@ -113,9 +115,9 @@ const DashboardScreen = ({ navigation }) => {
                 type: 'Treatment',
                 date: t.updatedAt,
                 icon: 'medical',
-                color: '#3b82f6',
+                color: theme.info,
             }));
-    }, [treatments]);
+    }, [treatments, theme]);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -137,65 +139,65 @@ const DashboardScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>{t('loading_dashboard')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>{t('loading_dashboard')}</Text>
             </View>
         );
     }
 
     return (
         <ScrollView
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
             refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} />
+                <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.primary} />
             }
         >
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
                 <View style={styles.headerGradient}>
-                    <Text style={styles.greeting}>
+                    <Text style={[styles.greeting, { color: theme.text }]}>
                         {getGreeting()}, {user?.farmOwner?.split(' ')[0] || 'Farmer'}!
                     </Text>
-                    <Text style={styles.farmName}>{user?.farmName || t('your_farm')}</Text>
-                    <Text style={styles.alertsText}>
-                        You have <Text style={styles.alertsCount}>{alerts.length} alerts</Text> {t('alerts_attention')}
+                    <Text style={[styles.farmName, { color: theme.primary }]}>{user?.farmName || t('your_farm')}</Text>
+                    <Text style={[styles.alertsText, { color: theme.subtext }]}>
+                        You have <Text style={[styles.alertsCount, { color: theme.warning }]}>{alerts.length} alerts</Text> {t('alerts_attention')}
                     </Text>
                 </View>
             </View>
 
             {/* Stats Grid */}
             <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                    <View style={[styles.statIconContainer, { backgroundColor: '#3b82f620' }]}>
-                        <Ionicons name="paw" size={20} color="#3b82f6" />
+                <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                    <View style={[styles.statIconContainer, { backgroundColor: `${theme.info}20` }]}>
+                        <Ionicons name="paw" size={20} color={theme.info} />
                     </View>
-                    <Text style={styles.statValue}>{stats.totalAnimals}</Text>
-                    <Text style={styles.statLabel}>{t('total_animals')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.totalAnimals}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('total_animals')}</Text>
                 </View>
 
-                <View style={styles.statCard}>
-                    <View style={[styles.statIconContainer, { backgroundColor: '#10b98120' }]}>
-                        <Ionicons name="checkmark-circle" size={20} color="#10b981" />
+                <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                    <View style={[styles.statIconContainer, { backgroundColor: `${theme.success}20` }]}>
+                        <Ionicons name="checkmark-circle" size={20} color={theme.success} />
                     </View>
-                    <Text style={styles.statValue}>{stats.safeForSale}</Text>
-                    <Text style={styles.statLabel}>{t('safe_for_sale')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.safeForSale}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('safe_for_sale')}</Text>
                 </View>
 
-                <View style={styles.statCard}>
-                    <View style={[styles.statIconContainer, { backgroundColor: '#f59e0b20' }]}>
-                        <Ionicons name="medical" size={20} color="#f59e0b" />
+                <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                    <View style={[styles.statIconContainer, { backgroundColor: `${theme.warning}20` }]}>
+                        <Ionicons name="medical" size={20} color={theme.warning} />
                     </View>
-                    <Text style={styles.statValue}>{stats.activeTreatments}</Text>
-                    <Text style={styles.statLabel}>{t('active_treatments')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.activeTreatments}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('active_treatments')}</Text>
                 </View>
 
-                <View style={styles.statCard}>
-                    <View style={[styles.statIconContainer, { backgroundColor: '#a855f720' }]}>
-                        <Ionicons name="time" size={20} color="#a855f7" />
+                <View style={[styles.statCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                    <View style={[styles.statIconContainer, { backgroundColor: `${theme.primary}20` }]}>
+                        <Ionicons name="time" size={20} color={theme.primary} />
                     </View>
-                    <Text style={styles.statValue}>{stats.pendingApproval}</Text>
-                    <Text style={styles.statLabel}>{t('pending_approval')}</Text>
+                    <Text style={[styles.statValue, { color: theme.text }]}>{stats.pendingApproval}</Text>
+                    <Text style={[styles.statLabel, { color: theme.subtext }]}>{t('pending_approval')}</Text>
                 </View>
             </View>
 
@@ -203,27 +205,27 @@ const DashboardScreen = ({ navigation }) => {
             {alerts.length > 0 && (
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Ionicons name="notifications" size={20} color="#ef4444" />
-                        <Text style={styles.sectionTitle}>{t('urgent_alerts')}</Text>
-                        <View style={styles.badge}>
+                        <Ionicons name="notifications" size={20} color={theme.error} />
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('urgent_alerts')}</Text>
+                        <View style={[styles.badge, { backgroundColor: theme.error }]}>
                             <Text style={styles.badgeText}>{alerts.length}</Text>
                         </View>
                     </View>
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                         {alerts.map((alert, index) => (
                             <View
                                 key={alert.id}
                                 style={[
                                     styles.alertItem,
-                                    index < alerts.length - 1 && styles.alertItemBorder,
+                                    index < alerts.length - 1 && [styles.alertItemBorder, { borderBottomColor: theme.border }],
                                 ]}
                             >
                                 <View style={[styles.alertDot, { backgroundColor: alert.color }]} />
                                 <View style={styles.alertContent}>
-                                    <Text style={styles.alertTitle}>{alert.title}</Text>
-                                    <Text style={styles.alertDescription}>{alert.description}</Text>
+                                    <Text style={[styles.alertTitle, { color: theme.text }]}>{alert.title}</Text>
+                                    <Text style={[styles.alertDescription, { color: theme.subtext }]}>{alert.description}</Text>
                                 </View>
-                                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                                <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
                             </View>
                         ))}
                     </View>
@@ -233,36 +235,36 @@ const DashboardScreen = ({ navigation }) => {
             {/* Recent Activity */}
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Ionicons name="pulse" size={20} color="#3b82f6" />
-                    <Text style={styles.sectionTitle}>{t('recent_activity')}</Text>
+                    <Ionicons name="pulse" size={20} color={theme.info} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('recent_activity')}</Text>
                 </View>
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                     {recentActivity.length > 0 ? (
                         recentActivity.map((activity, index) => (
                             <View
                                 key={`${activity.id}-${index}`}
                                 style={[
                                     styles.activityItem,
-                                    index < recentActivity.length - 1 && styles.activityItemBorder,
+                                    index < recentActivity.length - 1 && [styles.activityItemBorder, { borderBottomColor: theme.border }],
                                 ]}
                             >
                                 <View style={[styles.activityIcon, { backgroundColor: `${activity.color}20` }]}>
                                     <Ionicons name={activity.icon} size={16} color={activity.color} />
                                 </View>
                                 <View style={styles.activityContent}>
-                                    <Text style={styles.activityId}>{activity.id}</Text>
-                                    <Text style={styles.activityTask}>{activity.task}</Text>
-                                    <Text style={styles.activityTime}>{formatTimeAgo(activity.date)}</Text>
+                                    <Text style={[styles.activityId, { color: theme.text }]}>{activity.id}</Text>
+                                    <Text style={[styles.activityTask, { color: theme.subtext }]}>{activity.task}</Text>
+                                    <Text style={[styles.activityTime, { color: theme.subtext }]}>{formatTimeAgo(activity.date)}</Text>
                                 </View>
-                                <View style={styles.activityBadge}>
-                                    <Text style={styles.activityBadgeText}>{activity.type}</Text>
+                                <View style={[styles.activityBadge, { backgroundColor: `${theme.info}20` }]}>
+                                    <Text style={[styles.activityBadgeText, { color: theme.info }]}>{activity.type}</Text>
                                 </View>
                             </View>
                         ))
                     ) : (
                         <View style={styles.emptyState}>
-                            <Ionicons name="pulse-outline" size={48} color="#d1d5db" />
-                            <Text style={styles.emptyStateText}>{t('no_recent_activity')}</Text>
+                            <Ionicons name="pulse-outline" size={48} color={theme.border} />
+                            <Text style={[styles.emptyStateText, { color: theme.subtext }]}>{t('no_recent_activity')}</Text>
                         </View>
                     )}
                 </View>
@@ -271,31 +273,31 @@ const DashboardScreen = ({ navigation }) => {
             {/* Quick Actions */}
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Ionicons name="flash" size={20} color="#10b981" />
-                    <Text style={styles.sectionTitle}>{t('quick_actions')}</Text>
+                    <Ionicons name="flash" size={20} color={theme.success} />
+                    <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('quick_actions')}</Text>
                 </View>
                 <View style={styles.quickActions}>
                     <TouchableOpacity
-                        style={styles.quickActionButton}
+                        style={[styles.quickActionButton, { backgroundColor: theme.card, shadowColor: theme.text }]}
                         onPress={() => navigation.navigate('Animals')}
                     >
-                        <Ionicons name="paw" size={24} color="#10b981" />
-                        <Text style={styles.quickActionText}>{t('manage_animals')}</Text>
+                        <Ionicons name="paw" size={24} color={theme.success} />
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>{t('manage_animals')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.quickActionButton}
+                        style={[styles.quickActionButton, { backgroundColor: theme.card, shadowColor: theme.text }]}
                         onPress={() => navigation.navigate('Treatments')}
                     >
-                        <Ionicons name="medical" size={24} color="#3b82f6" />
-                        <Text style={styles.quickActionText}>{t('record_treatment')}</Text>
+                        <Ionicons name="medical" size={24} color={theme.info} />
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>{t('record_treatment')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.quickActionButton}>
-                        <Ionicons name="cube" size={24} color="#a855f7" />
-                        <Text style={styles.quickActionText}>{t('record_sale')}</Text>
+                    <TouchableOpacity style={[styles.quickActionButton, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Ionicons name="cube" size={24} color={theme.primary} />
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>{t('record_sale')}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.quickActionButton}>
-                        <Ionicons name="notifications" size={24} color="#f59e0b" />
-                        <Text style={styles.quickActionText}>{t('view_alerts')}</Text>
+                    <TouchableOpacity style={[styles.quickActionButton, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                        <Ionicons name="notifications" size={24} color={theme.warning} />
+                        <Text style={[styles.quickActionText, { color: theme.text }]}>{t('view_alerts')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -306,21 +308,17 @@ const DashboardScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
     },
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#6b7280',
     },
     header: {
-        backgroundColor: '#1e293b',
         paddingTop: 50,
         paddingBottom: 30,
         paddingHorizontal: 20,
@@ -331,20 +329,16 @@ const styles = StyleSheet.create({
     greeting: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#fff',
     },
     farmName: {
         fontSize: 16,
-        color: '#10b981',
         fontWeight: '600',
     },
     alertsText: {
         fontSize: 14,
-        color: '#cbd5e1',
         marginTop: 4,
     },
     alertsCount: {
-        color: '#fbbf24',
         fontWeight: '600',
     },
     statsGrid: {
@@ -355,11 +349,9 @@ const styles = StyleSheet.create({
     },
     statCard: {
         width: (width - 42) / 2,
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 16,
         alignItems: 'center',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -376,11 +368,9 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#1f2937',
     },
     statLabel: {
         fontSize: 12,
-        color: '#6b7280',
         textAlign: 'center',
         marginTop: 4,
     },
@@ -397,11 +387,9 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#1f2937',
         flex: 1,
     },
     badge: {
-        backgroundColor: '#ef4444',
         borderRadius: 12,
         paddingHorizontal: 8,
         paddingVertical: 2,
@@ -412,10 +400,8 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     card: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 16,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -428,7 +414,6 @@ const styles = StyleSheet.create({
     },
     alertItemBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
     alertDot: {
         width: 8,
@@ -442,12 +427,10 @@ const styles = StyleSheet.create({
     alertTitle: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 2,
     },
     alertDescription: {
         fontSize: 12,
-        color: '#6b7280',
     },
     activityItem: {
         flexDirection: 'row',
@@ -456,7 +439,6 @@ const styles = StyleSheet.create({
     },
     activityItemBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
     activityIcon: {
         width: 36,
@@ -472,27 +454,22 @@ const styles = StyleSheet.create({
     activityId: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#1f2937',
     },
     activityTask: {
         fontSize: 12,
-        color: '#6b7280',
         marginTop: 2,
     },
     activityTime: {
         fontSize: 11,
-        color: '#9ca3af',
         marginTop: 4,
     },
     activityBadge: {
-        backgroundColor: '#3b82f620',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 8,
     },
     activityBadgeText: {
         fontSize: 11,
-        color: '#3b82f6',
         fontWeight: '600',
     },
     emptyState: {
@@ -501,7 +478,6 @@ const styles = StyleSheet.create({
     },
     emptyStateText: {
         fontSize: 14,
-        color: '#9ca3af',
         marginTop: 12,
     },
     quickActions: {
@@ -511,12 +487,10 @@ const styles = StyleSheet.create({
     },
     quickActionButton: {
         width: (width - 42) / 2,
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 8,
@@ -525,7 +499,6 @@ const styles = StyleSheet.create({
     },
     quickActionText: {
         fontSize: 12,
-        color: '#374151',
         fontWeight: '600',
         textAlign: 'center',
     },

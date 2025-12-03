@@ -11,9 +11,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { getAnimalHistory } from '../../services/animalService';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const AnimalHistoryScreen = ({ route, navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const { animalId } = route.params;
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -85,43 +87,43 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
                     <View style={[styles.iconCircle, { backgroundColor: icon.bg }]}>
                         <Ionicons name={icon.name} size={20} color={icon.color} />
                     </View>
-                    {!isLast && <View style={styles.timelineLine} />}
+                    {!isLast && <View style={[styles.timelineLine, { backgroundColor: theme.border }]} />}
                 </View>
 
                 <View style={styles.timelineContent}>
-                    <View style={styles.card}>
+                    <View style={[styles.card, { backgroundColor: theme.card }]}>
                         <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>{item.title}</Text>
-                            <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
+                            <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
+                            <Text style={[styles.cardDate, { color: theme.subtext }]}>{formatDate(item.date)}</Text>
                         </View>
 
                         {item.description && (
-                            <Text style={styles.cardDescription}>{item.description}</Text>
+                            <Text style={[styles.cardDescription, { color: theme.subtext }]}>{item.description}</Text>
                         )}
 
                         {item.details && (
                             <View style={styles.detailsContainer}>
                                 {item.details && typeof item.details === 'string' ? (
-                                    <Text style={styles.detailValue}>{item.details}</Text>
+                                    <Text style={[styles.detailValue, { color: theme.text }]}>{item.details}</Text>
                                 ) : Array.isArray(item.details) ? (
                                     item.details.map((detail, idx) => (
                                         <View key={idx} style={styles.detailRow}>
-                                            <Text style={styles.detailLabel}>{detail.label}:</Text>
-                                            <Text style={styles.detailValue}>{detail.value}</Text>
+                                            <Text style={[styles.detailLabel, { color: theme.subtext }]}>{detail.label}:</Text>
+                                            <Text style={[styles.detailValue, { color: theme.text }]}>{detail.value}</Text>
                                         </View>
                                     ))
                                 ) : (
-                                    <Text style={styles.detailValue}>{item.details}</Text>
+                                    <Text style={[styles.detailValue, { color: theme.text }]}>{item.details}</Text>
                                 )}
                             </View>
                         )}
 
                         {item.status && (
-                            <View style={styles.statusBadge}>
+                            <View style={[styles.statusBadge, { backgroundColor: theme.background }]}>
                                 <Text
                                     style={[
                                         styles.statusText,
-                                        { color: item.status === 'Approved' ? '#10b981' : '#f59e0b' },
+                                        { color: item.status === 'Approved' ? theme.success : theme.warning },
                                     ]}
                                 >
                                     {t(item.status.toLowerCase()) || item.status}
@@ -136,30 +138,30 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>{t('loading_history')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>{t('loading_history')}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: theme.card }]}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={24} color={theme.text} />
                 </TouchableOpacity>
                 <View style={styles.headerText}>
-                    <Text style={styles.title}>{t('medical_history')}</Text>
-                    <Text style={styles.subtitle}>{t('animal_label')}: {animalId}</Text>
+                    <Text style={[styles.title, { color: theme.text }]}>{t('medical_history')}</Text>
+                    <Text style={[styles.subtitle, { color: theme.subtext }]}>{t('animal_label')}: {animalId}</Text>
                 </View>
             </View>
 
             {/* Timeline */}
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
             >
                 {history.length > 0 ? (
                     <View style={styles.timeline}>
@@ -167,9 +169,9 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
                     </View>
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="document-text-outline" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>{t('no_history')}</Text>
-                        <Text style={styles.emptySubtext}>
+                        <Ionicons name="document-text-outline" size={64} color={theme.border} />
+                        <Text style={[styles.emptyText, { color: theme.text }]}>{t('no_history')}</Text>
+                        <Text style={[styles.emptySubtext, { color: theme.subtext }]}>
                             {t('no_history_subtext')}
                         </Text>
                     </View>
@@ -182,21 +184,17 @@ const AnimalHistoryScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
     },
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#6b7280',
     },
     header: {
-        backgroundColor: '#1e293b',
         paddingTop: 50,
         paddingBottom: 20,
         paddingHorizontal: 20,
@@ -212,11 +210,9 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
     },
     subtitle: {
         fontSize: 14,
-        color: '#cbd5e1',
         marginTop: 4,
     },
     content: {
@@ -243,14 +239,12 @@ const styles = StyleSheet.create({
     timelineLine: {
         width: 2,
         flex: 1,
-        backgroundColor: '#e5e7eb',
         marginTop: 8,
     },
     timelineContent: {
         flex: 1,
     },
     card: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
         shadowColor: '#000',
@@ -265,16 +259,13 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 16,
         fontWeight: '600',
-        color: '#1f2937',
         marginBottom: 4,
     },
     cardDate: {
         fontSize: 12,
-        color: '#9ca3af',
     },
     cardDescription: {
         fontSize: 14,
-        color: '#6b7280',
         marginBottom: 12,
     },
     detailsContainer: {
@@ -285,13 +276,11 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: 13,
-        color: '#6b7280',
         fontWeight: '500',
         marginRight: 4,
     },
     detailValue: {
         fontSize: 13,
-        color: '#1f2937',
         flex: 1,
     },
     statusBadge: {
@@ -300,7 +289,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 12,
-        backgroundColor: '#f3f4f6',
     },
     statusText: {
         fontSize: 12,
@@ -314,12 +302,10 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#374151',
         marginTop: 16,
     },
     emptySubtext: {
         fontSize: 14,
-        color: '#6b7280',
         textAlign: 'center',
         marginTop: 8,
     },

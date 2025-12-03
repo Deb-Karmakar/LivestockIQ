@@ -10,117 +10,94 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const MoreScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
-    const { t, language, changeLanguage } = useLanguage();
+    const { t } = useLanguage();
+    const { theme } = useTheme();
 
     const menuItems = [
         {
             section: t('treatment_records'), // Health & Treatments
             items: [
-                { name: t('treatment_records'), icon: 'medkit', screen: 'Treatments', color: '#3b82f6' },
-                { name: t('mrl_compliance'), icon: 'shield-checkmark', screen: 'MRLCompliance', color: '#10b981' },
+                { name: t('treatment_records'), icon: 'medkit', screen: 'Treatments', color: theme.primary },
+                { name: t('mrl_compliance'), icon: 'shield-checkmark', screen: 'MRLCompliance', color: theme.success },
             ],
         },
         {
             section: t('compliance_inventory'), // Inventory & Feed
             items: [
-                { name: t('drug_inventory'), icon: 'cube', screen: 'Inventory', color: '#6366f1' },
-                { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: '#f59e0b' },
-                { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: '#8b5cf6' },
+                { name: t('drug_inventory'), icon: 'cube', screen: 'Inventory', color: theme.info },
+                { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: theme.warning },
+                { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: theme.primary },
             ],
         },
         {
             section: t('reports_support'), // Analytics & Support
             items: [
-                { name: t('reports'), icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
-                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: '#ef4444' },
+                { name: t('reports'), icon: 'document-text', screen: 'Reports', color: theme.info },
+                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: theme.error },
             ],
         },
         {
             section: t('account'),
             items: [
-                { name: t('settings'), icon: 'settings', screen: 'Settings', color: '#6b7280' },
+                { name: t('settings'), icon: 'settings', screen: 'Settings', color: theme.subtext },
             ],
         },
     ];
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Profile Header */}
-            <View style={styles.header}>
-                <View style={styles.profileIcon}>
-                    <Ionicons name="person" size={32} color="#fff" />
+            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
+                <View style={[styles.profileIcon, { backgroundColor: `${theme.primary}20` }]}>
+                    <Ionicons name="person" size={32} color={theme.primary} />
                 </View>
                 <View style={styles.profileInfo}>
-                    <Text style={styles.profileName}>{user?.farmOwner || 'Farmer'}</Text>
-                    <Text style={styles.profileEmail}>{user?.email}</Text>
-                    <Text style={styles.farmName}>{user?.farmName || 'Your Farm'}</Text>
+                    <Text style={[styles.profileName, { color: theme.text }]}>{user?.farmOwner || 'Farmer'}</Text>
+                    <Text style={[styles.profileEmail, { color: theme.subtext }]}>{user?.email}</Text>
+                    <Text style={[styles.farmName, { color: theme.primary }]}>{user?.farmName || 'Your Farm'}</Text>
                 </View>
             </View>
 
             {/* Menu Sections */}
             {menuItems.map((section, sectionIndex) => (
                 <View key={sectionIndex} style={styles.section}>
-                    <Text style={styles.sectionTitle}>{section.section}</Text>
-                    <View style={styles.sectionCard}>
+                    <Text style={[styles.sectionTitle, { color: theme.subtext }]}>{section.section}</Text>
+                    <View style={[styles.sectionCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                         {section.items.map((item, itemIndex) => (
                             <TouchableOpacity
                                 key={item.name}
                                 style={[
                                     styles.menuItem,
-                                    itemIndex < section.items.length - 1 && styles.menuItemBorder,
+                                    itemIndex < section.items.length - 1 && [styles.menuItemBorder, { borderBottomColor: theme.border }],
                                 ]}
                                 onPress={() => navigation.navigate(item.screen)}
                             >
                                 <View style={[styles.menuIconContainer, { backgroundColor: `${item.color}20` }]}>
                                     <Ionicons name={item.icon} size={22} color={item.color} />
                                 </View>
-                                <Text style={styles.menuItemText}>{item.name}</Text>
-                                <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+                                <Text style={[styles.menuItemText, { color: theme.text }]}>{item.name}</Text>
+                                <Ionicons name="chevron-forward" size={20} color={theme.subtext} />
                             </TouchableOpacity>
                         ))}
                     </View>
                 </View>
             ))}
 
-            {/* Language Toggle Section */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{t('language')}</Text>
-                <View style={styles.sectionCard}>
-                    <TouchableOpacity
-                        style={[styles.menuItem, language === 'en' && styles.selectedLang]}
-                        onPress={() => changeLanguage('en')}
-                    >
-                        <View style={[styles.menuIconContainer, { backgroundColor: '#e0f2fe' }]}>
-                            <Text style={{ fontSize: 18 }}>🇺🇸</Text>
-                        </View>
-                        <Text style={styles.menuItemText}>{t('english')}</Text>
-                        {language === 'en' && <Ionicons name="checkmark" size={20} color="#10b981" />}
-                    </TouchableOpacity>
-                    <View style={styles.menuItemBorder} />
-                    <TouchableOpacity
-                        style={[styles.menuItem, language === 'hi' && styles.selectedLang]}
-                        onPress={() => changeLanguage('hi')}
-                    >
-                        <View style={[styles.menuIconContainer, { backgroundColor: '#ffedd5' }]}>
-                            <Text style={{ fontSize: 18 }}>🇮🇳</Text>
-                        </View>
-                        <Text style={styles.menuItemText}>{t('hindi')}</Text>
-                        {language === 'hi' && <Ionicons name="checkmark" size={20} color="#10b981" />}
-                    </TouchableOpacity>
-                </View>
-            </View>
-
             {/* Logout Button */}
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-                <Ionicons name="log-out" size={20} color="#ef4444" />
-                <Text style={styles.logoutText}>{t('logout')}</Text>
+            <TouchableOpacity
+                style={[styles.logoutButton, { backgroundColor: theme.card, borderColor: `${theme.error}40` }]}
+                onPress={logout}
+            >
+                <Ionicons name="log-out" size={20} color={theme.error} />
+                <Text style={[styles.logoutText, { color: theme.error }]}>{t('logout')}</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-                <Text style={styles.footerText}>LivestockIQ v1.0.0</Text>
+                <Text style={[styles.footerText, { color: theme.subtext }]}>LivestockIQ v1.0.0</Text>
             </View>
         </ScrollView>
     );
@@ -129,10 +106,8 @@ const MoreScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     header: {
-        backgroundColor: '#1e293b',
         padding: 24,
         paddingTop: 40,
         flexDirection: 'row',
@@ -142,7 +117,6 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: '#10b981',
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 16,
@@ -153,17 +127,14 @@ const styles = StyleSheet.create({
     profileName: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#fff',
         marginBottom: 4,
     },
     profileEmail: {
         fontSize: 13,
-        color: '#cbd5e1',
         marginBottom: 4,
     },
     farmName: {
         fontSize: 14,
-        color: '#10b981',
         fontWeight: '600',
     },
     section: {
@@ -173,16 +144,13 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 13,
         fontWeight: '600',
-        color: '#6b7280',
         textTransform: 'uppercase',
         marginBottom: 8,
         letterSpacing: 0.5,
     },
     sectionCard: {
-        backgroundColor: '#fff',
         borderRadius: 12,
         overflow: 'hidden',
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
         shadowRadius: 3,
@@ -195,7 +163,6 @@ const styles = StyleSheet.create({
     },
     menuItemBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: '#f3f4f6',
     },
     menuIconContainer: {
         width: 40,
@@ -209,25 +176,21 @@ const styles = StyleSheet.create({
         flex: 1,
         fontSize: 15,
         fontWeight: '500',
-        color: '#1f2937',
     },
     logoutButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#fff',
         marginHorizontal: 16,
         marginTop: 24,
         marginBottom: 16,
         padding: 16,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#fee2e2',
     },
     logoutText: {
         fontSize: 15,
         fontWeight: '600',
-        color: '#ef4444',
         marginLeft: 8,
     },
     footer: {
@@ -236,11 +199,7 @@ const styles = StyleSheet.create({
     },
     footerText: {
         fontSize: 12,
-        color: '#9ca3af',
     },
-    selectedLang: {
-        backgroundColor: '#f0fdf4',
-    }
 });
 
 export default MoreScreen;

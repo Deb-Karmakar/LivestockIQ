@@ -18,9 +18,11 @@ import { createTicket } from '../../services/ticketService';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const RaiseTicketScreen = () => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const navigation = useNavigation();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -127,21 +129,23 @@ const RaiseTicketScreen = () => {
 
     const renderDropdown = (label, options, selectedValue, field) => (
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>{label} <Text style={styles.required}>*</Text></Text>
+            <Text style={[styles.label, { color: theme.text }]}>{label} <Text style={styles.required}>*</Text></Text>
             <View style={styles.pillsContainer}>
                 {options.map((option) => (
                     <TouchableOpacity
                         key={option}
                         style={[
                             styles.pill,
-                            selectedValue === option && styles.activePill,
+                            { backgroundColor: theme.background, borderColor: theme.border },
+                            selectedValue === option && { backgroundColor: theme.primary + '20', borderColor: theme.primary },
                             field === 'priority' && selectedValue === option && getPriorityStyle(option)
                         ]}
                         onPress={() => handleChange(field, option)}
                     >
                         <Text style={[
                             styles.pillText,
-                            selectedValue === option && styles.activePillText
+                            { color: theme.subtext },
+                            selectedValue === option && { color: theme.primary, fontWeight: '600' }
                         ]}>
                             {field === 'category' ? getCategoryLabel(option) : getPriorityLabel(option)}
                         </Text>
@@ -153,10 +157,10 @@ const RaiseTicketScreen = () => {
 
     const getPriorityStyle = (priority) => {
         switch (priority) {
-            case 'Low': return { backgroundColor: '#dbeafe', borderColor: '#3b82f6' };
-            case 'Medium': return { backgroundColor: '#fef3c7', borderColor: '#f59e0b' };
-            case 'High': return { backgroundColor: '#fee2e2', borderColor: '#ef4444' };
-            case 'Urgent': return { backgroundColor: '#fecaca', borderColor: '#dc2626' };
+            case 'Low': return { backgroundColor: theme.info + '20', borderColor: theme.info };
+            case 'Medium': return { backgroundColor: theme.warning + '20', borderColor: theme.warning };
+            case 'High': return { backgroundColor: theme.error + '20', borderColor: theme.error };
+            case 'Urgent': return { backgroundColor: theme.error + '40', borderColor: theme.error };
             default: return {};
         }
     };
@@ -164,10 +168,10 @@ const RaiseTicketScreen = () => {
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: theme.background }]}
         >
             <LinearGradient
-                colors={['#1e293b', '#0f172a']}
+                colors={[theme.primary, theme.secondary || theme.primary]}
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
@@ -194,12 +198,13 @@ const RaiseTicketScreen = () => {
             </LinearGradient>
 
             <ScrollView style={styles.formContainer} contentContainerStyle={styles.scrollContent}>
-                <View style={styles.card}>
+                <View style={[styles.card, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t('subject')} <Text style={styles.required}>*</Text></Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('subject')} <Text style={styles.required}>*</Text></Text>
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                             placeholder={t('subject_placeholder')}
+                            placeholderTextColor={theme.subtext}
                             value={formData.subject}
                             onChangeText={(text) => handleChange('subject', text)}
                             maxLength={100}
@@ -210,10 +215,11 @@ const RaiseTicketScreen = () => {
                     {renderDropdown(t('priority'), priorities, formData.priority, 'priority')}
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>{t('description_label')} <Text style={styles.required}>*</Text></Text>
+                        <Text style={[styles.label, { color: theme.text }]}>{t('description_label')} <Text style={styles.required}>*</Text></Text>
                         <TextInput
-                            style={[styles.input, styles.textArea]}
+                            style={[styles.input, styles.textArea, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
                             placeholder={t('description_placeholder')}
+                            placeholderTextColor={theme.subtext}
                             value={formData.description}
                             onChangeText={(text) => handleChange('description', text)}
                             multiline
@@ -223,7 +229,7 @@ const RaiseTicketScreen = () => {
                     </View>
 
                     <TouchableOpacity
-                        style={[styles.submitBtn, loading && styles.disabledBtn]}
+                        style={[styles.submitBtn, { backgroundColor: theme.primary }, loading && styles.disabledBtn]}
                         onPress={handleSubmit}
                         disabled={loading}
                     >
@@ -243,7 +249,7 @@ const RaiseTicketScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f3f4f6' },
+    container: { flex: 1 },
     header: { padding: 20, paddingTop: 50, paddingBottom: 24 },
     headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     backBtn: { padding: 4 },
@@ -255,18 +261,16 @@ const styles = StyleSheet.create({
     historyBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
     formContainer: { flex: 1 },
     scrollContent: { padding: 16 },
-    card: { backgroundColor: '#fff', borderRadius: 12, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+    card: { borderRadius: 12, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
     inputGroup: { marginBottom: 20 },
-    label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
     required: { color: '#ef4444' },
-    input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 12, fontSize: 15, color: '#1f2937', backgroundColor: '#f9fafb' },
+    input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 15 },
     textArea: { height: 120 },
     pillsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    pill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#f9fafb' },
-    activePill: { backgroundColor: '#eff6ff', borderColor: '#3b82f6' },
-    pillText: { fontSize: 13, color: '#4b5563' },
-    activePillText: { color: '#2563eb', fontWeight: '600' },
-    submitBtn: { backgroundColor: '#2563eb', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 12, gap: 8, marginTop: 8 },
+    pill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+    pillText: { fontSize: 13 },
+    submitBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 12, gap: 8, marginTop: 8 },
     disabledBtn: { opacity: 0.7 },
     submitBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });

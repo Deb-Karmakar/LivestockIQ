@@ -16,9 +16,11 @@ import { getTreatments } from '../../services/treatmentService';
 import { differenceInDays } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const TreatmentsScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [treatments, setTreatments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -63,23 +65,23 @@ const TreatmentsScreen = ({ navigation }) => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'Approved': return '#10b981';
-            case 'Pending': return '#f59e0b';
-            case 'Rejected': return '#ef4444';
-            default: return '#9ca3af';
+            case 'Approved': return theme.success;
+            case 'Pending': return theme.warning;
+            case 'Rejected': return theme.error;
+            default: return theme.subtext;
         }
     };
 
     const getWithdrawalBadge = (info) => {
         switch (info.status) {
             case 'safe':
-                return { color: '#10b981', bg: '#d1fae5', text: t('safe_for_sale'), icon: 'shield-checkmark' };
+                return { color: theme.success, bg: `${theme.success}20`, text: t('safe_for_sale'), icon: 'shield-checkmark' };
             case 'ending_soon':
-                return { color: '#f59e0b', bg: '#fef3c7', text: t('ending_soon'), icon: 'alert-circle' };
+                return { color: theme.warning, bg: `${theme.warning}20`, text: t('ending_soon'), icon: 'alert-circle' };
             case 'active':
-                return { color: '#ef4444', bg: '#fee2e2', text: t('active_withdrawal'), icon: 'shield' };
+                return { color: theme.error, bg: `${theme.error}20`, text: t('active_withdrawal'), icon: 'shield' };
             default:
-                return { color: '#6b7280', bg: '#f3f4f6', text: t('pending_vet'), icon: 'time' };
+                return { color: theme.subtext, bg: theme.background, text: t('pending_vet'), icon: 'time' };
         }
     };
 
@@ -97,16 +99,16 @@ const TreatmentsScreen = ({ navigation }) => {
         const badge = getWithdrawalBadge(withdrawalInfo);
 
         return (
-            <TouchableOpacity style={styles.treatmentCard}>
+            <TouchableOpacity style={[styles.treatmentCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                 {/* Header: Drug Name & Approval Status */}
                 <View style={styles.cardHeader}>
                     <View style={styles.headerLeft}>
-                        <View style={styles.iconContainer}>
-                            <Ionicons name="medkit" size={20} color="#3b82f6" />
+                        <View style={[styles.iconContainer, { backgroundColor: `${theme.primary}20` }]}>
+                            <Ionicons name="medkit" size={20} color={theme.primary} />
                         </View>
                         <View>
-                            <Text style={styles.drugName}>{item.drugName}</Text>
-                            <Text style={styles.animalId}>ID: {item.animalId}</Text>
+                            <Text style={[styles.drugName, { color: theme.text }]}>{item.drugName}</Text>
+                            <Text style={[styles.animalId, { color: theme.subtext }]}>ID: {item.animalId}</Text>
                         </View>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
@@ -135,18 +137,18 @@ const TreatmentsScreen = ({ navigation }) => {
                 )}
 
                 {/* Details Grid */}
-                <View style={styles.detailsGrid}>
+                <View style={[styles.detailsGrid, { borderTopColor: theme.border }]}>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>{t('dose')}</Text>
-                        <Text style={styles.detailValue}>{item.dose || 'N/A'}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('dose')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.dose || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>{t('route')}</Text>
-                        <Text style={styles.detailValue}>{item.route || 'N/A'}</Text>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('route')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>{item.route || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailItem}>
-                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
-                        <Text style={styles.detailValue}>
+                        <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('start_date')}</Text>
+                        <Text style={[styles.detailValue, { color: theme.text }]}>
                             {new Date(item.startDate).toLocaleDateString()}
                         </Text>
                     </View>
@@ -154,9 +156,9 @@ const TreatmentsScreen = ({ navigation }) => {
 
                 {/* Vet Notes */}
                 {item.vetNotes && (
-                    <View style={styles.vetNotes}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={16} color="#3b82f6" />
-                        <Text style={styles.vetNotesText}>
+                    <View style={[styles.vetNotes, { backgroundColor: `${theme.primary}10` }]}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={16} color={theme.primary} />
+                        <Text style={[styles.vetNotesText, { color: theme.primary }]}>
                             <Text style={styles.vetNotesLabel}>{t('vet_label')} </Text>
                             {item.vetNotes}
                         </Text>
@@ -168,16 +170,16 @@ const TreatmentsScreen = ({ navigation }) => {
 
     if (loading && !refreshing) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             <LinearGradient
-                colors={['#0f172a', '#1e293b', '#0f172a']}
+                colors={[theme.mode === 'dark' ? '#0f172a' : '#1e293b', theme.mode === 'dark' ? '#1e293b' : '#334155']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={styles.header}
@@ -198,7 +200,7 @@ const TreatmentsScreen = ({ navigation }) => {
                 </View>
             </LinearGradient>
 
-            <View style={styles.filterContainer}>
+            <View style={[styles.filterContainer, { backgroundColor: theme.card }]}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {[
                         { id: 'all', label: 'All' },
@@ -208,10 +210,18 @@ const TreatmentsScreen = ({ navigation }) => {
                     ].map((f) => (
                         <TouchableOpacity
                             key={f.id}
-                            style={[styles.filterButton, filter === f.id && styles.filterButtonActive]}
+                            style={[
+                                styles.filterButton,
+                                { backgroundColor: theme.background, borderColor: theme.border },
+                                filter === f.id && { backgroundColor: theme.primary, borderColor: theme.primary }
+                            ]}
                             onPress={() => setFilter(f.id)}
                         >
-                            <Text style={[styles.filterText, filter === f.id && styles.filterTextActive]}>
+                            <Text style={[
+                                styles.filterText,
+                                { color: theme.subtext },
+                                filter === f.id && { color: '#fff' }
+                            ]}>
                                 {f.label}
                             </Text>
                         </TouchableOpacity>
@@ -224,17 +234,17 @@ const TreatmentsScreen = ({ navigation }) => {
                 keyExtractor={(item) => item._id}
                 renderItem={renderTreatment}
                 contentContainerStyle={styles.list}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="medical" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>{t('no_treatments_found')}</Text>
+                        <Ionicons name="medical" size={64} color={theme.border} />
+                        <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_treatments_found')}</Text>
                     </View>
                 }
             />
 
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]}
                 onPress={() => navigation.navigate('AddTreatment')}
             >
                 <Ionicons name="add" size={28} color="#fff" />
@@ -246,7 +256,6 @@ const TreatmentsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     loadingContainer: {
         flex: 1,
@@ -282,7 +291,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     filterContainer: {
-        backgroundColor: '#fff',
         paddingVertical: 12,
         paddingHorizontal: 16,
     },
@@ -291,32 +299,20 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 20,
         marginRight: 8,
-        backgroundColor: '#f3f4f6',
         borderWidth: 1,
-        borderColor: '#e5e7eb',
-    },
-    filterButtonActive: {
-        backgroundColor: '#10b981',
-        borderColor: '#10b981',
     },
     filterText: {
         fontSize: 14,
-        color: '#6b7280',
         fontWeight: '500',
-    },
-    filterTextActive: {
-        color: '#fff',
     },
     list: {
         padding: 16,
         paddingBottom: 80,
     },
     treatmentCard: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 16,
         marginBottom: 16,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
         shadowRadius: 8,
@@ -337,18 +333,15 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 10,
-        backgroundColor: '#eff6ff',
         justifyContent: 'center',
         alignItems: 'center',
     },
     drugName: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1f2937',
     },
     animalId: {
         fontSize: 13,
-        color: '#6b7280',
         marginTop: 2,
     },
     statusBadge: {
@@ -399,7 +392,6 @@ const styles = StyleSheet.create({
     detailsGrid: {
         flexDirection: 'row',
         borderTopWidth: 1,
-        borderTopColor: '#f3f4f6',
         paddingTop: 12,
         gap: 24,
     },
@@ -408,19 +400,16 @@ const styles = StyleSheet.create({
     },
     detailLabel: {
         fontSize: 11,
-        color: '#9ca3af',
         marginBottom: 2,
         textTransform: 'uppercase',
         fontWeight: '600',
     },
     detailValue: {
         fontSize: 14,
-        color: '#374151',
         fontWeight: '500',
     },
     vetNotes: {
         marginTop: 12,
-        backgroundColor: '#eff6ff',
         padding: 12,
         borderRadius: 8,
         flexDirection: 'row',
@@ -429,7 +418,6 @@ const styles = StyleSheet.create({
     vetNotesText: {
         flex: 1,
         fontSize: 13,
-        color: '#1e40af',
         lineHeight: 18,
     },
     vetNotesLabel: {
@@ -441,7 +429,6 @@ const styles = StyleSheet.create({
     },
     emptyText: {
         fontSize: 16,
-        color: '#9ca3af',
         marginTop: 16,
     },
     fab: {
@@ -451,10 +438,8 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#10b981',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#10b981',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,
         shadowRadius: 8,

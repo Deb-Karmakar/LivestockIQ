@@ -16,9 +16,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAnimals, deleteAnimal } from '../../services/animalService';
 import AIHealthTipModal from '../../components/AIHealthTipModal';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const AnimalsScreen = ({ navigation }) => {
     const { t } = useLanguage();
+    const { theme } = useTheme();
     const [animals, setAnimals] = useState([]);
     const [filteredAnimals, setFilteredAnimals] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -128,17 +130,17 @@ const AnimalsScreen = ({ navigation }) => {
     const getMRLBadgeColor = (status) => {
         switch (status) {
             case 'SAFE':
-                return { bg: '#10b98120', text: '#10b981', label: t('safe_for_sale') };
+                return { bg: `${theme.success}20`, text: theme.success, label: t('safe_for_sale') };
             case 'WITHDRAWAL_ACTIVE':
-                return { bg: '#ef444420', text: '#ef4444', label: t('active_treatments') }; // Reusing active_treatments or need new key? 'Under Withdrawal'
+                return { bg: `${theme.error}20`, text: theme.error, label: t('active_treatments') }; // Reusing active_treatments or need new key? 'Under Withdrawal'
             case 'TEST_REQUIRED':
-                return { bg: '#f59e0b20', text: '#f59e0b', label: 'Test Required' };
+                return { bg: `${theme.warning}20`, text: theme.warning, label: 'Test Required' };
             case 'PENDING_VERIFICATION':
-                return { bg: '#3b82f620', text: '#3b82f6', label: t('pending_approval') };
+                return { bg: `${theme.info}20`, text: theme.info, label: t('pending_approval') };
             case 'VIOLATION':
-                return { bg: '#ef444420', text: '#ef4444', label: 'MRL Violation' };
+                return { bg: `${theme.error}20`, text: theme.error, label: 'MRL Violation' };
             default:
-                return { bg: '#6b728020', text: '#6b7280', label: 'No Status' };
+                return { bg: `${theme.subtext}20`, text: theme.subtext, label: 'No Status' };
         }
     };
 
@@ -158,11 +160,11 @@ const AnimalsScreen = ({ navigation }) => {
         const mrlBadge = getMRLBadgeColor(item.mrlStatus);
 
         return (
-            <View style={styles.animalCard}>
+            <View style={[styles.animalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
                 <View style={styles.animalHeader}>
                     <View style={styles.animalInfo}>
-                        <Text style={styles.animalTagId}>{item.tagId}</Text>
-                        {item.name && <Text style={styles.animalName}>{item.name}</Text>}
+                        <Text style={[styles.animalTagId, { color: theme.text }]}>{item.tagId}</Text>
+                        {item.name && <Text style={[styles.animalName, { color: theme.subtext }]}>{item.name}</Text>}
                     </View>
                     <View style={[styles.mrlBadge, { backgroundColor: mrlBadge.bg }]}>
                         <Ionicons name="shield-checkmark" size={16} color={mrlBadge.text} />
@@ -170,21 +172,21 @@ const AnimalsScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.statsGrid}>
-                    <View style={styles.statItem}>
-                        <Ionicons name="paw" size={14} color="#6b7280" />
-                        <Text style={styles.statValue}>{item.species}</Text>
+                    <View style={[styles.statItem, { backgroundColor: theme.background }]}>
+                        <Ionicons name="paw" size={14} color={theme.subtext} />
+                        <Text style={[styles.statValue, { color: theme.text }]}>{item.species}</Text>
                     </View>
-                    <View style={styles.statItem}>
-                        <Ionicons name="male-female" size={14} color="#6b7280" />
-                        <Text style={styles.statValue}>{item.gender || 'N/A'}</Text>
+                    <View style={[styles.statItem, { backgroundColor: theme.background }]}>
+                        <Ionicons name="male-female" size={14} color={theme.subtext} />
+                        <Text style={[styles.statValue, { color: theme.text }]}>{item.gender || 'N/A'}</Text>
                     </View>
-                    <View style={styles.statItem}>
-                        <Ionicons name="calendar" size={14} color="#6b7280" />
-                        <Text style={styles.statValue}>{calculateAge(item.dob)}</Text>
+                    <View style={[styles.statItem, { backgroundColor: theme.background }]}>
+                        <Ionicons name="calendar" size={14} color={theme.subtext} />
+                        <Text style={[styles.statValue, { color: theme.text }]}>{calculateAge(item.dob)}</Text>
                     </View>
-                    <View style={styles.statItem}>
-                        <Ionicons name="fitness" size={14} color="#6b7280" />
-                        <Text style={styles.statValue}>{item.weight || 'N/A'}</Text>
+                    <View style={[styles.statItem, { backgroundColor: theme.background }]}>
+                        <Ionicons name="fitness" size={14} color={theme.subtext} />
+                        <Text style={[styles.statValue, { color: theme.text }]}>{item.weight || 'N/A'}</Text>
                     </View>
                 </View>
 
@@ -195,9 +197,9 @@ const AnimalsScreen = ({ navigation }) => {
                 </View>
 
                 {item.notes && (
-                    <View style={styles.notesContainer}>
-                        <Text style={styles.notesLabel}>{t('notes_label')}</Text>
-                        <Text style={styles.notesText} numberOfLines={2}>
+                    <View style={[styles.notesContainer, { backgroundColor: theme.background }]}>
+                        <Text style={[styles.notesLabel, { color: theme.subtext }]}>{t('notes_label')}</Text>
+                        <Text style={[styles.notesText, { color: theme.text }]} numberOfLines={2}>
                             {item.notes}
                         </Text>
                     </View>
@@ -206,26 +208,26 @@ const AnimalsScreen = ({ navigation }) => {
                 {/* Updated Action Buttons */}
                 <View style={styles.actionButtons}>
                     <TouchableOpacity
-                        style={[styles.actionButton, styles.editButton]}
+                        style={[styles.actionButton, styles.editButton, { backgroundColor: `${theme.info}20` }]}
                         onPress={() => navigation.navigate('AddAnimal', { animal: item })}
                     >
-                        <Ionicons name="create" size={16} color="#3b82f6" />
-                        <Text style={styles.editButtonText}>{t('edit')}</Text>
+                        <Ionicons name="create" size={16} color={theme.info} />
+                        <Text style={[styles.editButtonText, { color: theme.info }]}>{t('edit')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.actionButton, styles.historyButton]}
+                        style={[styles.actionButton, styles.historyButton, { backgroundColor: `${theme.primary}20` }]}
                         onPress={() => handleViewHistory(item)}
                     >
-                        <Ionicons name="document-text" size={16} color="#8b5cf6" />
-                        <Text style={styles.historyButtonText}>{t('history')}</Text>
+                        <Ionicons name="document-text" size={16} color={theme.primary} />
+                        <Text style={[styles.historyButtonText, { color: theme.primary }]}>{t('history')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={[styles.actionButton, styles.moreButton]}
+                        style={[styles.actionButton, styles.moreButton, { backgroundColor: theme.background }]}
                         onPress={() => handleMoreActions(item)}
                     >
-                        <Ionicons name="ellipsis-horizontal" size={16} color="#6b7280" />
+                        <Ionicons name="ellipsis-horizontal" size={16} color={theme.subtext} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -234,48 +236,49 @@ const AnimalsScreen = ({ navigation }) => {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#10b981" />
-                <Text style={styles.loadingText}>{t('loading_animals')}</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                <ActivityIndicator size="large" color={theme.primary} />
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>{t('loading_animals')}</Text>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: theme.background }]}>
             {/* Header Banner (now rendered at the TOP) */}
-            <View style={styles.headerBanner}>
+            <View style={[styles.headerBanner, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
                 <View style={styles.headerContent}>
                     <View style={styles.headerTextContainer}>
-                        <Text style={styles.headerBadge}>
-                            <Ionicons name="sparkles" size={14} color="#10b981" /> {t('herd_management')}
+                        <Text style={[styles.headerBadge, { color: theme.success }]}>
+                            <Ionicons name="sparkles" size={14} color={theme.success} /> {t('herd_management')}
                         </Text>
-                        <Text style={styles.headerTitle}>{t('animals_livestock')}</Text>
-                        <Text style={styles.headerSubtitle}>
-                            {t('you_have_registered', { count: animals.length })} <Text style={styles.highlight}>{animals.length} {t('animals_registered')}</Text>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>{t('animals_livestock')}</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.subtext }]}>
+                            {t('you_have_registered', { count: animals.length })} <Text style={[styles.highlight, { color: theme.success }]}>{animals.length} {t('animals_registered')}</Text>
                         </Text>
                     </View>
                 </View>
             </View>
 
             {/* Search and Filter (moved BELOW the header) */}
-            <View style={styles.searchContainer}>
-                <View style={styles.searchBox}>
-                    <Ionicons name="search" size={20} color="#6b7280" />
+            <View style={[styles.searchContainer, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                <View style={[styles.searchBox, { backgroundColor: theme.background }]}>
+                    <Ionicons name="search" size={20} color={theme.subtext} />
                     <TextInput
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: theme.text }]}
                         placeholder={t('search_placeholder')}
+                        placeholderTextColor={theme.subtext}
                         value={searchTerm}
                         onChangeText={setSearchTerm}
                     />
                     {searchTerm.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchTerm('')}>
-                            <Ionicons name="close-circle" size={20} color="#9ca3af" />
+                            <Ionicons name="close-circle" size={20} color={theme.subtext} />
                         </TouchableOpacity>
                     )}
                 </View>
                 <TouchableOpacity
-                    style={styles.filterButton}
+                    style={[styles.filterButton, { backgroundColor: theme.primary }]}
                     onPress={() => setShowFilterModal(true)}
                 >
                     <Ionicons name="filter" size={20} color="#fff" />
@@ -283,13 +286,13 @@ const AnimalsScreen = ({ navigation }) => {
             </View>
 
             {/* Stats */}
-            <View style={styles.statsBar}>
-                <Text style={styles.statsText}>
+            <View style={[styles.statsBar, { backgroundColor: theme.card }]}>
+                <Text style={[styles.statsText, { color: theme.subtext }]}>
                     Showing {filteredAnimals.length} of {animals.length} animals
                 </Text>
                 {speciesFilter !== 'All' && (
                     <TouchableOpacity onPress={() => setSpeciesFilter('All')}>
-                        <Text style={styles.clearFilter}>{t('clear_filter')}</Text>
+                        <Text style={[styles.clearFilter, { color: theme.primary }]}>{t('clear_filter')}</Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -300,12 +303,12 @@ const AnimalsScreen = ({ navigation }) => {
                 keyExtractor={(item) => item._id}
                 renderItem={renderAnimal}
                 contentContainerStyle={styles.list}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Ionicons name="paw" size={64} color="#d1d5db" />
-                        <Text style={styles.emptyText}>{t('no_animals_found')}</Text>
-                        <Text style={styles.emptySubtext}>
+                        <Ionicons name="paw" size={64} color={theme.border} />
+                        <Text style={[styles.emptyText, { color: theme.text }]}>{t('no_animals_found')}</Text>
+                        <Text style={[styles.emptySubtext, { color: theme.subtext }]}>
                             {searchTerm || speciesFilter !== 'All'
                                 ? t('no_animals_subtext')
                                 : t('add_first_animal')}
@@ -316,7 +319,7 @@ const AnimalsScreen = ({ navigation }) => {
 
             {/* FAB */}
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { backgroundColor: theme.primary }]}
                 onPress={() => navigation.navigate('AddAnimal')}
             >
                 <Ionicons name="add" size={28} color="#fff" />
@@ -330,11 +333,11 @@ const AnimalsScreen = ({ navigation }) => {
                 onRequestClose={() => setShowFilterModal(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>{t('filter_species')}</Text>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+                            <Text style={[styles.modalTitle, { color: theme.text }]}>{t('filter_species')}</Text>
                             <TouchableOpacity onPress={() => setShowFilterModal(false)}>
-                                <Ionicons name="close" size={24} color="#6b7280" />
+                                <Ionicons name="close" size={24} color={theme.subtext} />
                             </TouchableOpacity>
                         </View>
                         <View style={styles.filterOptions}>
@@ -343,7 +346,8 @@ const AnimalsScreen = ({ navigation }) => {
                                     key={species}
                                     style={[
                                         styles.filterOption,
-                                        speciesFilter === species && styles.filterOptionSelected,
+                                        { backgroundColor: theme.background },
+                                        speciesFilter === species && { backgroundColor: `${theme.primary}20` },
                                     ]}
                                     onPress={() => {
                                         setSpeciesFilter(species);
@@ -353,13 +357,14 @@ const AnimalsScreen = ({ navigation }) => {
                                     <Text
                                         style={[
                                             styles.filterOptionText,
-                                            speciesFilter === species && styles.filterOptionTextSelected,
+                                            { color: theme.text },
+                                            speciesFilter === species && { color: theme.primary, fontWeight: '600' },
                                         ]}
                                     >
                                         {species}
                                     </Text>
                                     {speciesFilter === species && (
-                                        <Ionicons name="checkmark" size={20} color="#10b981" />
+                                        <Ionicons name="checkmark" size={20} color={theme.primary} />
                                     )}
                                 </TouchableOpacity>
                             ))}
@@ -384,34 +389,27 @@ const AnimalsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f3f4f6',
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
     },
     loadingText: {
         marginTop: 12,
         fontSize: 14,
-        color: '#6b7280',
     },
     searchContainer: {
         flexDirection: 'row',
         padding: 15,
         gap: 10,
-        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
-        // Add a small margin so search sits visually under the header
         marginTop: 8,
     },
     searchBox: {
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f3f4f6',
         borderRadius: 12,
         paddingHorizontal: 12,
         gap: 8,
@@ -419,13 +417,11 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         fontSize: 15,
-        color: '#1f2937',
         paddingVertical: 10,
     },
     filterButton: {
         width: 44,
         height: 44,
-        backgroundColor: '#10b981',
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
@@ -433,7 +429,6 @@ const styles = StyleSheet.create({
 
     /* Header Banner styles added */
     headerBanner: {
-        backgroundColor: '#1e293b',
         padding: 20,
     },
     headerContent: {
@@ -444,20 +439,16 @@ const styles = StyleSheet.create({
     },
     headerBadge: {
         fontSize: 12,
-        color: '#10b981',
         fontWeight: '600',
     },
     headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#fff',
     },
     headerSubtitle: {
         fontSize: 14,
-        color: '#cbd5e1',
     },
     highlight: {
-        color: '#10b981',
         fontWeight: '600',
     },
 
@@ -467,26 +458,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 15,
         paddingVertical: 10,
-        backgroundColor: '#fff',
     },
     statsText: {
         fontSize: 13,
-        color: '#6b7280',
     },
     clearFilter: {
         fontSize: 13,
-        color: '#10b981',
         fontWeight: '600',
     },
     list: {
         padding: 15,
     },
     animalCard: {
-        backgroundColor: '#fff',
         borderRadius: 16,
         padding: 16,
         marginBottom: 12,
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -504,12 +490,10 @@ const styles = StyleSheet.create({
     animalTagId: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#1f2937',
         fontFamily: 'monospace',
     },
     animalName: {
         fontSize: 14,
-        color: '#6b7280',
         marginTop: 2,
     },
     mrlBadge: {
@@ -529,14 +513,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 4,
-        backgroundColor: '#f3f4f6',
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 8,
     },
     statValue: {
         fontSize: 12,
-        color: '#374151',
         fontWeight: '500',
     },
     mrlStatusBadge: {
@@ -551,7 +533,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     notesContainer: {
-        backgroundColor: '#f9fafb',
         padding: 10,
         borderRadius: 8,
         marginBottom: 12,
@@ -559,12 +540,10 @@ const styles = StyleSheet.create({
     notesLabel: {
         fontSize: 11,
         fontWeight: '600',
-        color: '#6b7280',
         marginBottom: 4,
     },
     notesText: {
         fontSize: 12,
-        color: '#374151',
     },
 
     /* Action buttons updated styles */
@@ -582,33 +561,26 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     editButton: {
-        backgroundColor: '#3b82f620',
     },
     editButtonText: {
-        color: '#3b82f6',
         fontSize: 13,
         fontWeight: '600',
     },
     deleteButton: {
-        backgroundColor: '#ef444420',
     },
     deleteButtonText: {
-        color: '#ef4444',
         fontSize: 13,
         fontWeight: '600',
     },
 
     /* New primaryActions + history/more styles */
     historyButton: {
-        backgroundColor: '#8b5cf620',
     },
     historyButtonText: {
-        color: '#8b5cf6',
         fontSize: 13,
         fontWeight: '600',
     },
     moreButton: {
-        backgroundColor: '#f3f4f6',
         paddingHorizontal: 12,
         flex: 0,
         width: 48,
@@ -621,7 +593,6 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-        backgroundColor: '#10b981',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
@@ -637,12 +608,10 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#374151',
         marginTop: 16,
     },
     emptySubtext: {
         fontSize: 14,
-        color: '#9ca3af',
         marginTop: 8,
         textAlign: 'center',
     },
@@ -652,7 +621,6 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#fff',
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         paddingBottom: 40,
@@ -663,12 +631,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 20,
         borderBottomWidth: 1,
-        borderBottomColor: '#e5e7eb',
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#1f2937',
     },
     filterOptions: {
         padding: 20,
@@ -681,18 +647,14 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderRadius: 12,
         marginBottom: 8,
-        backgroundColor: '#f9fafb',
     },
     filterOptionSelected: {
-        backgroundColor: '#10b98110',
     },
     filterOptionText: {
         fontSize: 15,
-        color: '#374151',
         fontWeight: '500',
     },
     filterOptionTextSelected: {
-        color: '#10b981',
         fontWeight: '600',
     },
 });
