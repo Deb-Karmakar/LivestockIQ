@@ -8,22 +8,24 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const VetMoreScreen = ({ navigation }) => {
     const { user, logout } = useAuth();
+    const { t } = useLanguage();
 
     const menuItems = [
         {
-            section: 'Practice',
+            section: t('practice'),
             items: [
-                { name: 'Reports', icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
+                { name: t('reports'), icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
             ],
         },
         {
-            section: 'Support & Settings',
+            section: t('support_settings'),
             items: [
-                { name: 'Support', icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
-                { name: 'Settings', icon: 'settings', screen: 'Settings', color: '#6b7280' },
+                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
+                { name: t('settings'), icon: 'settings', screen: 'Settings', color: '#6b7280' },
             ],
         },
     ];
@@ -36,9 +38,9 @@ const VetMoreScreen = ({ navigation }) => {
                     <Ionicons name="medkit" size={32} color="#fff" />
                 </View>
                 <View style={styles.profileInfo}>
-                    <Text style={styles.profileName}>{user?.fullName || 'Veterinarian'}</Text>
+                    <Text style={styles.profileName}>{user?.fullName || t('veterinarian')}</Text>
                     <Text style={styles.profileEmail}>{user?.email}</Text>
-                    <Text style={styles.vetId}>ID: {user?.vetId}</Text>
+                    <Text style={styles.vetId}>{t('unique_vet_id')}: {user?.vetId}</Text>
                 </View>
             </View>
 
@@ -70,11 +72,11 @@ const VetMoreScreen = ({ navigation }) => {
             {/* Logout Button */}
             <TouchableOpacity style={styles.logoutButton} onPress={logout}>
                 <Ionicons name="log-out" size={20} color="#ef4444" />
-                <Text style={styles.logoutText}>Logout</Text>
+                <Text style={styles.logoutText}>{t('logout')}</Text>
             </TouchableOpacity>
 
             <View style={styles.footer}>
-                <Text style={styles.footerText}>LivestockIQ v1.0.0</Text>
+                <Text style={styles.footerText}>{t('version')}</Text>
             </View>
         </ScrollView>
     );

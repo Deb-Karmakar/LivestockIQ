@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { getVetDashboardData } from '../../services/vetService';
 
 const StatCard = ({ title, value, color, subtitle, icon }) => (
@@ -28,6 +29,7 @@ const StatCard = ({ title, value, color, subtitle, icon }) => (
 
 const VetDashboardScreen = ({ navigation }) => {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState(null);
@@ -39,12 +41,12 @@ const VetDashboardScreen = ({ navigation }) => {
             setData(dashboardData);
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            Alert.alert('Error', 'Failed to load dashboard data');
+            Alert.alert(t('error'), t('failed_load_dashboard'));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchData();
@@ -58,7 +60,7 @@ const VetDashboardScreen = ({ navigation }) => {
     const handleCopyVetId = () => {
         if (user?.vetId) {
             Clipboard.setString(user.vetId);
-            Alert.alert('Success', `Vet ID (${user.vetId}) copied to clipboard`);
+            Alert.alert(t('success'), t('id_copied', { id: user.vetId }));
         }
     };
 
@@ -73,7 +75,7 @@ const VetDashboardScreen = ({ navigation }) => {
     if (!data) {
         return (
             <View style={styles.container}>
-                <Text>No data available</Text>
+                <Text>{t('no_data')}</Text>
             </View>
         );
     }
@@ -88,11 +90,16 @@ const VetDashboardScreen = ({ navigation }) => {
                     <View>
                         <View style={styles.headerTopRow}>
                             <Ionicons name="medkit" size={16} color="#60a5fa" />
-                            <Text style={styles.headerLabel}>Veterinary Dashboard</Text>
+                            <Text style={styles.headerLabel}>{t('vet_dashboard')}</Text>
                         </View>
-                        <Text style={styles.welcomeText}>Welcome, {user?.fullName || 'Doctor'}!</Text>
+                        <Text style={styles.welcomeText}>{t('welcome_vet', { name: user?.fullName || 'Doctor' })}</Text>
                         <Text style={styles.subText}>
-                            You have <Text style={styles.highlightText}>{data.stats.pendingReviewCount} pending reviews</Text> from <Text style={styles.highlightTextBlue}>{data.stats.supervisedFarmsCount} supervised farms</Text>.
+                            {t('dashboard_summary', { pendingCount: data.stats.pendingReviewCount, farmCount: data.stats.supervisedFarmsCount }).split(/<bold>(.*?)<\/bold>|<blue>(.*?)<\/blue>/).map((part, index) => {
+                                if (!part) return null;
+                                if (index === 1 || index === 4) return <Text key={index} style={styles.highlightText}>{part}</Text>;
+                                if (index === 2 || index === 5) return <Text key={index} style={styles.highlightTextBlue}>{part}</Text>;
+                                return <Text key={index}>{part}</Text>;
+                            })}
                         </Text>
                     </View>
                 </View>
@@ -109,15 +116,15 @@ const VetDashboardScreen = ({ navigation }) => {
                             <Ionicons name="share-social" size={20} color="#2563eb" />
                         </View>
                         <View>
-                            <Text style={styles.idCardTitle}>Your Unique Vet ID</Text>
-                            <Text style={styles.idCardSubtitle}>Share with farmers to connect</Text>
+                            <Text style={styles.idCardTitle}>{t('unique_vet_id')}</Text>
+                            <Text style={styles.idCardSubtitle}>{t('share_connect')}</Text>
                         </View>
                     </View>
                     <View style={styles.idCardContent}>
                         <Text style={styles.vetIdText}>{user?.vetId || 'Loading...'}</Text>
                         <TouchableOpacity style={styles.copyButton} onPress={handleCopyVetId}>
                             <Ionicons name="copy-outline" size={18} color="#fff" />
-                            <Text style={styles.copyButtonText}>Copy ID</Text>
+                            <Text style={styles.copyButtonText}>{t('copy_id')}</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -125,24 +132,24 @@ const VetDashboardScreen = ({ navigation }) => {
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
                     <StatCard
-                        title="Pending Reviews"
+                        title={t('pending_reviews')}
                         value={data.stats.pendingReviewCount}
                         color="#f97316"
-                        subtitle="Awaiting approval"
+                        subtitle={t('awaiting_approval')}
                         icon="clipboard"
                     />
                     <StatCard
-                        title="Total Prescriptions"
+                        title={t('total_prescriptions')}
                         value={data.stats.totalPrescriptions}
                         color="#10b981"
-                        subtitle="Approved treatments"
+                        subtitle={t('approved_treatments')}
                         icon="medical"
                     />
                     <StatCard
-                        title="Supervised Farms"
+                        title={t('supervised_farms')}
                         value={data.stats.supervisedFarmsCount}
                         color="#3b82f6"
-                        subtitle="Active farms"
+                        subtitle={t('active_farms')}
                         icon="business"
                     />
                 </View>
@@ -154,8 +161,8 @@ const VetDashboardScreen = ({ navigation }) => {
                             <Ionicons name="list" size={20} color="#ea580c" />
                         </View>
                         <View>
-                            <Text style={styles.sectionTitle}>High-Priority Reviews</Text>
-                            <Text style={styles.sectionSubtitle}>Recent treatments requiring attention</Text>
+                            <Text style={styles.sectionTitle}>{t('high_priority_reviews')}</Text>
+                            <Text style={styles.sectionSubtitle}>{t('recent_treatments_attention')}</Text>
                         </View>
                     </View>
 
@@ -164,21 +171,21 @@ const VetDashboardScreen = ({ navigation }) => {
                             <View key={req._id} style={styles.requestCard}>
                                 <View>
                                     <Text style={styles.requestFarmer}>{req.farmerId.farmOwner}</Text>
-                                    <Text style={styles.requestAnimal}>Animal ID: {req.animalId}</Text>
+                                    <Text style={styles.requestAnimal}>{t('animal_id', { id: req.animalId })}</Text>
                                 </View>
                                 <TouchableOpacity
                                     style={styles.reviewButton}
                                     onPress={() => navigation.navigate('Requests')}
                                 >
-                                    <Text style={styles.reviewButtonText}>Review</Text>
+                                    <Text style={styles.reviewButtonText}>{t('review')}</Text>
                                 </TouchableOpacity>
                             </View>
                         ))
                     ) : (
                         <View style={styles.emptyState}>
                             <Ionicons name="checkmark-circle-outline" size={48} color="#9ca3af" />
-                            <Text style={styles.emptyText}>No pending requests</Text>
-                            <Text style={styles.emptySubtext}>All caught up!</Text>
+                            <Text style={styles.emptyText}>{t('no_pending_requests')}</Text>
+                            <Text style={styles.emptySubtext}>{t('all_caught_up')}</Text>
                         </View>
                     )}
                 </View>
@@ -190,8 +197,8 @@ const VetDashboardScreen = ({ navigation }) => {
                             <Ionicons name="shield-checkmark" size={20} color="#16a34a" />
                         </View>
                         <View>
-                            <Text style={styles.sectionTitle}>Approval Rate</Text>
-                            <Text style={styles.sectionSubtitle}>Your treatment approval statistics</Text>
+                            <Text style={styles.sectionTitle}>{t('approval_rate')}</Text>
+                            <Text style={styles.sectionSubtitle}>{t('approval_stats')}</Text>
                         </View>
                     </View>
                     <View style={styles.complianceContent}>
@@ -202,7 +209,7 @@ const VetDashboardScreen = ({ navigation }) => {
                         <View style={styles.progressBarBg}>
                             <View style={[styles.progressBarFill, { width: `${data.approvalRate}%` }]} />
                         </View>
-                        <Text style={styles.complianceNote}>Based on your prescription decisions.</Text>
+                        <Text style={styles.complianceNote}>{t('approval_note')}</Text>
                     </View>
                 </View>
 

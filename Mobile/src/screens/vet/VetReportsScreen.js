@@ -19,6 +19,7 @@ import {
     getVetComplianceMonitoringData,
     getVetWhoAwareStewardshipData
 } from '../../services/vetService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const ReportTypeCard = ({ title, description, icon, isSelected, onPress }) => (
     <TouchableOpacity
@@ -35,7 +36,7 @@ const ReportTypeCard = ({ title, description, icon, isSelected, onPress }) => (
     </TouchableOpacity>
 );
 
-const SummaryCard = ({ label, value, icon, trend }) => (
+const SummaryCard = ({ label, value, icon, trend, t }) => (
     <View style={styles.summaryCard}>
         <View style={styles.summaryHeader}>
             <Text style={styles.summaryLabel}>{label}</Text>
@@ -50,7 +51,7 @@ const SummaryCard = ({ label, value, icon, trend }) => (
                     color={trend === 'up' ? '#16a34a' : '#ef4444'}
                 />
                 <Text style={[styles.trendText, { color: trend === 'up' ? '#16a34a' : '#ef4444' }]}>
-                    {trend === 'up' ? 'Positive' : 'Negative'}
+                    {trend === 'up' ? t('positive') : t('negative')}
                 </Text>
             </View>
         )}
@@ -58,6 +59,7 @@ const SummaryCard = ({ label, value, icon, trend }) => (
 );
 
 const VetReportsScreen = () => {
+    const { t } = useLanguage();
     const [selectedReportType, setSelectedReportType] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -69,33 +71,33 @@ const VetReportsScreen = () => {
     const reportTypes = [
         {
             value: 'PracticeOverview',
-            label: 'Practice Overview',
+            label: t('practice_overview'),
             icon: 'medkit',
-            desc: 'Practice stats & activity'
+            desc: t('practice_stats')
         },
         {
             value: 'PrescriptionAnalytics',
-            label: 'Prescription Analytics',
+            label: t('prescription_analytics'),
             icon: 'flask',
-            desc: 'Drug usage analysis'
+            desc: t('drug_usage_analysis')
         },
         {
             value: 'FarmSupervision',
-            label: 'Farm Supervision',
+            label: t('farm_supervision'),
             icon: 'business',
-            desc: 'Supervised farms status'
+            desc: t('supervised_farms_status')
         },
         {
             value: 'WhoAwareStewardship',
-            label: 'WHO AWaRe',
+            label: t('who_aware'),
             icon: 'shield-checkmark',
-            desc: 'Stewardship monitoring'
+            desc: t('stewardship_monitoring')
         }
     ];
 
     const handleGenerateReport = async () => {
         if (!selectedReportType) {
-            Alert.alert('Selection Required', 'Please select a report type');
+            Alert.alert(t('selection_required'), t('select_report_error'));
             return;
         }
 
@@ -122,7 +124,7 @@ const VetReportsScreen = () => {
             setReportData(data);
         } catch (error) {
             console.error('Report generation error:', error);
-            Alert.alert('Error', 'Failed to generate report');
+            Alert.alert(t('error'), t('failed_generate'));
         } finally {
             setLoading(false);
         }
@@ -136,34 +138,34 @@ const VetReportsScreen = () => {
         switch (reportData.reportType) {
             case 'PracticeOverview':
                 cards = [
-                    { label: 'Supervised Farms', value: summary.supervisedFarms, icon: 'business' },
-                    { label: 'Total Prescriptions', value: summary.totalPrescriptions, icon: 'medkit' },
-                    { label: 'Approval Rate', value: `${summary.approvalRate}%`, icon: 'checkmark-circle', trend: summary.approvalRate >= 90 ? 'up' : 'down' },
-                    { label: 'Feed Prescriptions', value: summary.feedPrescriptions, icon: 'nutrition' }
+                    { label: t('supervised_farms'), value: summary.supervisedFarms, icon: 'business' },
+                    { label: t('total_prescriptions'), value: summary.totalPrescriptions, icon: 'medkit' },
+                    { label: t('approval_rate'), value: `${summary.approvalRate}%`, icon: 'checkmark-circle', trend: summary.approvalRate >= 90 ? 'up' : 'down' },
+                    { label: t('feed_prescriptions'), value: summary.feedPrescriptions, icon: 'nutrition' }
                 ];
                 break;
             case 'PrescriptionAnalytics':
                 cards = [
-                    { label: 'Total Prescriptions', value: summary.totalPrescriptions, icon: 'medkit' },
-                    { label: 'Unique Drugs', value: summary.uniqueDrugs, icon: 'flask' },
-                    { label: 'Species Treated', value: summary.speciesTreated, icon: 'paw' },
-                    { label: 'Access Group', value: summary.accessCount, icon: 'shield' }
+                    { label: t('total_prescriptions'), value: summary.totalPrescriptions, icon: 'medkit' },
+                    { label: t('unique_drugs'), value: summary.uniqueDrugs, icon: 'flask' },
+                    { label: t('species_treated'), value: summary.speciesTreated, icon: 'paw' },
+                    { label: t('access_group'), value: summary.accessCount, icon: 'shield' }
                 ];
                 break;
             case 'FarmSupervision':
                 cards = [
-                    { label: 'Total Farms', value: summary.totalFarms, icon: 'business' },
-                    { label: 'Total Treatments', value: summary.totalTreatments, icon: 'medkit' },
-                    { label: 'Total Alerts', value: summary.totalAlerts, icon: 'alert-circle' },
-                    { label: 'Farms w/ Alerts', value: summary.farmsWithAlerts, icon: 'warning' }
+                    { label: t('total_farms'), value: summary.totalFarms, icon: 'business' },
+                    { label: t('total_treatments'), value: summary.totalTreatments, icon: 'medkit' },
+                    { label: t('total_alerts'), value: summary.totalAlerts, icon: 'alert-circle' },
+                    { label: t('farms_alerts'), value: summary.farmsWithAlerts, icon: 'warning' }
                 ];
                 break;
             case 'WhoAwareStewardship':
                 cards = [
-                    { label: 'Access Group', value: summary.accessCount, icon: 'shield-checkmark' },
-                    { label: 'Watch Group', value: summary.watchCount, icon: 'eye' },
-                    { label: 'Reserve Group', value: summary.reserveCount, icon: 'alert-circle' },
-                    { label: 'Stewardship Score', value: `${summary.stewardshipScore}%`, icon: 'ribbon', trend: summary.stewardshipScore >= 80 ? 'up' : 'down' }
+                    { label: t('access_group'), value: summary.accessCount, icon: 'shield-checkmark' },
+                    { label: t('watch_group'), value: summary.watchCount, icon: 'eye' },
+                    { label: t('reserve_group'), value: summary.reserveCount, icon: 'alert-circle' },
+                    { label: t('stewardship_score'), value: `${summary.stewardshipScore}%`, icon: 'ribbon', trend: summary.stewardshipScore >= 80 ? 'up' : 'down' }
                 ];
                 break;
         }
@@ -171,7 +173,7 @@ const VetReportsScreen = () => {
         return (
             <View style={styles.summaryGrid}>
                 {cards.map((card, index) => (
-                    <SummaryCard key={index} {...card} />
+                    <SummaryCard key={index} {...card} t={t} />
                 ))}
             </View>
         );
@@ -180,13 +182,13 @@ const VetReportsScreen = () => {
     const renderDataList = () => {
         if (!reportData?.data?.length) return (
             <View style={styles.emptyState}>
-                <Text style={styles.emptyText}>No data available for this period</Text>
+                <Text style={styles.emptyText}>{t('no_data')}</Text>
             </View>
         );
 
         return (
             <View style={styles.dataList}>
-                <Text style={styles.sectionTitle}>Detailed Data</Text>
+                <Text style={styles.sectionTitle}>{t('detailed_data')}</Text>
                 {reportData.data.slice(0, 10).map((item, index) => (
                     <View key={index} style={styles.dataItem}>
                         <View>
@@ -201,7 +203,7 @@ const VetReportsScreen = () => {
                     </View>
                 ))}
                 {reportData.data.length > 10 && (
-                    <Text style={styles.moreText}>+ {reportData.data.length - 10} more items</Text>
+                    <Text style={styles.moreText}>{t('more_items', { count: reportData.data.length - 10 })}</Text>
                 )}
             </View>
         );
@@ -223,16 +225,16 @@ const VetReportsScreen = () => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerTopRow}>
                         <Ionicons name="stats-chart" size={20} color="#60a5fa" />
-                        <Text style={styles.headerLabel}>Reports & Analytics</Text>
+                        <Text style={styles.headerLabel}>{t('reports_analytics')}</Text>
                     </View>
-                    <Text style={styles.welcomeText}>Practice Insights</Text>
-                    <Text style={styles.subText}>Generate reports and analyze your practice data.</Text>
+                    <Text style={styles.welcomeText}>{t('practice_insights')}</Text>
+                    <Text style={styles.subText}>{t('generate_analyze')}</Text>
                 </View>
             </LinearGradient>
 
             <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Report Type Selection */}
-                <Text style={styles.sectionHeader}>Select Report Type</Text>
+                <Text style={styles.sectionHeader}>{t('select_report_type')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeScroll}>
                     {reportTypes.map((type) => (
                         <ReportTypeCard
@@ -249,7 +251,7 @@ const VetReportsScreen = () => {
                 {/* Date Selection */}
                 <View style={styles.dateSection}>
                     <View style={styles.datePickerContainer}>
-                        <Text style={styles.dateLabel}>From</Text>
+                        <Text style={styles.dateLabel}>{t('from')}</Text>
                         <TouchableOpacity onPress={() => setShowStartPicker(true)} style={styles.dateButton}>
                             <Ionicons name="calendar-outline" size={20} color="#64748b" />
                             <Text style={styles.dateText}>{startDate.toLocaleDateString()}</Text>
@@ -265,7 +267,7 @@ const VetReportsScreen = () => {
                         )}
                     </View>
                     <View style={styles.datePickerContainer}>
-                        <Text style={styles.dateLabel}>To</Text>
+                        <Text style={styles.dateLabel}>{t('to')}</Text>
                         <TouchableOpacity onPress={() => setShowEndPicker(true)} style={styles.dateButton}>
                             <Ionicons name="calendar-outline" size={20} color="#64748b" />
                             <Text style={styles.dateText}>{endDate.toLocaleDateString()}</Text>
@@ -293,7 +295,7 @@ const VetReportsScreen = () => {
                     ) : (
                         <>
                             <Ionicons name="download-outline" size={20} color="#fff" />
-                            <Text style={styles.generateButtonText}>Generate Report</Text>
+                            <Text style={styles.generateButtonText}>{t('generate_report')}</Text>
                         </>
                     )}
                 </TouchableOpacity>
@@ -301,8 +303,8 @@ const VetReportsScreen = () => {
                 {/* Results */}
                 {reportData && (
                     <View style={styles.resultsContainer}>
-                        <Text style={styles.sectionHeader}>Report Summary</Text>
-                        <Text style={styles.resultDate}>Generated on {new Date().toLocaleString()}</Text>
+                        <Text style={styles.sectionHeader}>{t('report_summary')}</Text>
+                        <Text style={styles.resultDate}>{t('generated_on', { date: new Date().toLocaleString() })}</Text>
                         {renderSummary()}
                         {renderDataList()}
                     </View>

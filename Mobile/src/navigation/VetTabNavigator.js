@@ -1,4 +1,5 @@
-import React from 'react'; // Fixed duplicate import
+import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -52,6 +53,8 @@ const FeedStack = () => (
 );
 
 const VetTabNavigator = () => {
+    const { t } = useLanguage();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -75,6 +78,16 @@ const VetTabNavigator = () => {
                 tabBarActiveTintColor: '#2563eb',
                 tabBarInactiveTintColor: '#6b7280',
                 headerShown: false,
+                tabBarLabel: (() => {
+                    switch (route.name) {
+                        case 'Dashboard': return t('nav_dashboard');
+                        case 'Requests': return t('nav_requests');
+                        case 'Feed': return t('nav_feed');
+                        case 'Farmers': return t('nav_farmers');
+                        case 'More': return t('nav_more');
+                        default: return route.name;
+                    }
+                })(),
             })}
         >
             <Tab.Screen name="Dashboard" component={DashboardStack} />

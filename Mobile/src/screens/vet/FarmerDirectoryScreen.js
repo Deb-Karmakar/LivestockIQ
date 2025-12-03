@@ -16,8 +16,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getMyFarmers, getAnimalsForFarmer, reportFarmer } from '../../services/vetService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const FarmerDirectoryScreen = () => {
+    const { t } = useLanguage();
     const [farmers, setFarmers] = useState([]);
     const [filteredFarmers, setFilteredFarmers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -43,12 +45,12 @@ const FarmerDirectoryScreen = () => {
             setFilteredFarmers(data || []);
         } catch (error) {
             console.error('Error fetching farmers:', error);
-            Alert.alert('Error', 'Failed to load farmers');
+            Alert.alert(t('error'), t('failed_load_dashboard'));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchFarmers();
@@ -81,7 +83,7 @@ const FarmerDirectoryScreen = () => {
             const data = await getAnimalsForFarmer(farmer._id);
             setFarmerAnimals(data || []);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load animals');
+            Alert.alert(t('error'), t('failed_load_dashboard'));
         } finally {
             setAnimalsLoading(false);
         }
@@ -96,7 +98,7 @@ const FarmerDirectoryScreen = () => {
 
     const submitReport = async () => {
         if (!reportReason || !reportDetails.trim()) {
-            Alert.alert('Error', 'Please select a reason and provide details');
+            Alert.alert(t('error'), t('select_reason_error'));
             return;
         }
 
@@ -107,9 +109,9 @@ const FarmerDirectoryScreen = () => {
                 details: reportDetails
             });
             setReportModalVisible(false);
-            Alert.alert('Success', 'Report submitted successfully');
+            Alert.alert(t('success'), t('report_submitted'));
         } catch (error) {
-            Alert.alert('Error', 'Failed to submit report');
+            Alert.alert(t('error'), t('failed_submit_report'));
         }
     };
 
@@ -117,7 +119,7 @@ const FarmerDirectoryScreen = () => {
         if (phoneNumber) {
             Linking.openURL(`tel:${phoneNumber}`);
         } else {
-            Alert.alert('Error', 'No phone number available');
+            Alert.alert(t('error'), t('no_phone'));
         }
     };
 
@@ -125,7 +127,7 @@ const FarmerDirectoryScreen = () => {
         if (email) {
             Linking.openURL(`mailto:${email}`);
         } else {
-            Alert.alert('Error', 'No email available');
+            Alert.alert(t('error'), t('no_email'));
         }
     };
 
@@ -164,7 +166,7 @@ const FarmerDirectoryScreen = () => {
                     onPress={() => handleViewAnimals(item)}
                 >
                     <Ionicons name="paw" size={16} color="#2563eb" />
-                    <Text style={styles.primaryBtnText}>View Animals</Text>
+                    <Text style={styles.primaryBtnText}>{t('view_animals')}</Text>
                 </TouchableOpacity>
                 <View style={styles.contactActions}>
                     <TouchableOpacity
@@ -193,18 +195,21 @@ const FarmerDirectoryScreen = () => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerTopRow}>
                         <Ionicons name="people" size={16} color="#60a5fa" />
-                        <Text style={styles.headerLabel}>Farmer Management</Text>
+                        <Text style={styles.headerLabel}>{t('farmer_management')}</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Farmer Directory</Text>
+                    <Text style={styles.headerTitle}>{t('farmer_directory')}</Text>
                     <Text style={styles.headerSubtitle}>
-                        Manage <Text style={styles.highlightText}>{farmers.length} assigned farmers</Text> under your supervision.
+                        {t('manage_farmers', { count: farmers.length }).split(/<bold>(.*?)<\/bold>/).map((part, index) => {
+                            if (index === 1) return <Text key={index} style={styles.highlightText}>{part}</Text>;
+                            return <Text key={index}>{part}</Text>;
+                        })}
                     </Text>
 
                     <View style={styles.searchContainer}>
                         <Ionicons name="search" size={20} color="#9ca3af" style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
-                            placeholder="Search by farmer or farm name..."
+                            placeholder={t('search_placeholder')}
                             placeholderTextColor="#9ca3af"
                             value={searchTerm}
                             onChangeText={setSearchTerm}
@@ -227,7 +232,7 @@ const FarmerDirectoryScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="people-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>No farmers found</Text>
+                            <Text style={styles.emptyText}>{t('no_farmers')}</Text>
                         </View>
                     }
                 />
@@ -242,14 +247,14 @@ const FarmerDirectoryScreen = () => {
             >
                 <View style={styles.modalContainer}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Livestock Registry</Text>
+                        <Text style={styles.modalTitle}>{t('livestock_registry')}</Text>
                         <TouchableOpacity onPress={() => setAnimalsModalVisible(false)}>
-                            <Text style={styles.closeBtnText}>Close</Text>
+                            <Text style={styles.closeBtnText}>{t('close')}</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={styles.modalSubHeader}>
                         <Text style={styles.modalSubtitle}>
-                            Animals for {selectedFarmer?.farmName}
+                            {t('animals_for', { farm: selectedFarmer?.farmName })}
                         </Text>
                     </View>
 
@@ -276,7 +281,7 @@ const FarmerDirectoryScreen = () => {
                             )}
                             ListEmptyComponent={
                                 <View style={styles.emptyState}>
-                                    <Text style={styles.emptyText}>No animals found for this farmer.</Text>
+                                    <Text style={styles.emptyText}>{t('no_animals_farmer')}</Text>
                                 </View>
                             }
                         />
@@ -293,41 +298,41 @@ const FarmerDirectoryScreen = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.reportModalContent}>
-                        <Text style={styles.reportTitle}>Report Non-Compliance</Text>
+                        <Text style={styles.reportTitle}>{t('report_non_compliance')}</Text>
                         <Text style={styles.reportSubtitle}>
-                            Report {selectedFarmer?.farmName} to regulatory authority.
+                            {t('report_subtitle', { farm: selectedFarmer?.farmName })}
                         </Text>
 
-                        <Text style={styles.label}>Reason</Text>
+                        <Text style={styles.label}>{t('reason')}</Text>
                         <View style={styles.reasonButtons}>
                             {[
-                                'Suspected Overuse of Antibiotics',
-                                'Poor Record-Keeping',
-                                'Failure to Follow Withdrawal Periods',
-                                'Other'
-                            ].map((reason) => (
+                                'suspected_overuse',
+                                'poor_records',
+                                'failure_withdrawal',
+                                'other'
+                            ].map((reasonKey) => (
                                 <TouchableOpacity
-                                    key={reason}
+                                    key={reasonKey}
                                     style={[
                                         styles.reasonBtn,
-                                        reportReason === reason && styles.activeReasonBtn
+                                        reportReason === reasonKey && styles.activeReasonBtn
                                     ]}
-                                    onPress={() => setReportReason(reason)}
+                                    onPress={() => setReportReason(reasonKey)}
                                 >
                                     <Text style={[
                                         styles.reasonBtnText,
-                                        reportReason === reason && styles.activeReasonBtnText
+                                        reportReason === reasonKey && styles.activeReasonBtnText
                                     ]}>
-                                        {reason}
+                                        {t(reasonKey)}
                                     </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
 
-                        <Text style={styles.label}>Details</Text>
+                        <Text style={styles.label}>{t('details')}</Text>
                         <TextInput
                             style={styles.textArea}
-                            placeholder="Provide specific details..."
+                            placeholder={t('provide_details')}
                             value={reportDetails}
                             onChangeText={setReportDetails}
                             multiline
@@ -339,13 +344,13 @@ const FarmerDirectoryScreen = () => {
                                 style={[styles.modalBtn, styles.cancelBtn]}
                                 onPress={() => setReportModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalBtn, styles.submitReportBtn]}
                                 onPress={submitReport}
                             >
-                                <Text style={styles.submitReportBtnText}>Submit Report</Text>
+                                <Text style={styles.submitReportBtnText}>{t('submit_report')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

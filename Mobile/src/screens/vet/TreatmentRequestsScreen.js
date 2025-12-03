@@ -18,9 +18,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getTreatmentRequests, approveTreatment, rejectTreatment } from '../../services/treatmentService';
 import { useNavigation } from '@react-navigation/native';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const TreatmentRequestsScreen = () => {
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -51,12 +53,12 @@ const TreatmentRequestsScreen = () => {
             setRequests(data || []);
         } catch (error) {
             console.error('Error fetching requests:', error);
-            Alert.alert('Error', 'Failed to load treatment requests');
+            Alert.alert(t('error'), t('failed_load_dashboard'));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchRequests();
@@ -109,11 +111,11 @@ const TreatmentRequestsScreen = () => {
 
             await approveTreatment(selectedRequest._id, updateData);
             setApproveModalVisible(false);
-            Alert.alert('Success', 'Treatment approved successfully');
+            Alert.alert(t('success'), t('treatment_approved'));
             fetchRequests();
         } catch (error) {
             console.error('Approve error:', error);
-            Alert.alert('Error', 'Failed to approve treatment');
+            Alert.alert(t('error'), t('failed_approve'));
         }
     };
 
@@ -126,17 +128,17 @@ const TreatmentRequestsScreen = () => {
 
     const handleReject = async () => {
         if (!rejectionReason.trim()) {
-            Alert.alert('Error', 'Please provide a reason for rejection');
+            Alert.alert(t('error'), t('provide_reason_error'));
             return;
         }
 
         try {
             await rejectTreatment(selectedRequest._id, rejectionReason);
             setRejectModalVisible(false);
-            Alert.alert('Success', 'Treatment rejected');
+            Alert.alert(t('success'), t('treatment_rejected'));
             fetchRequests();
         } catch (error) {
-            Alert.alert('Error', 'Failed to reject treatment');
+            Alert.alert(t('error'), t('failed_reject'));
         }
     };
 
@@ -192,7 +194,7 @@ const TreatmentRequestsScreen = () => {
                 <View style={styles.animalSection}>
                     <View style={styles.sectionTitleRow}>
                         <Ionicons name="paw" size={14} color="#4b5563" />
-                        <Text style={styles.sectionTitle}>Animal Details</Text>
+                        <Text style={styles.sectionTitle}>{t('animal_details')}</Text>
                     </View>
                     <View style={styles.detailsGrid}>
                         <View style={styles.detailItem}>
@@ -200,33 +202,33 @@ const TreatmentRequestsScreen = () => {
                             <Text style={styles.detailValue}>{item.animalId}</Text>
                         </View>
                         <View style={styles.detailItem}>
-                            <Text style={styles.detailLabel}>Species</Text>
+                            <Text style={styles.detailLabel}>{t('species')}</Text>
                             <Text style={styles.detailValue}>{item.animal?.species || 'N/A'}</Text>
                         </View>
                         <View style={styles.detailItem}>
-                            <Text style={styles.detailLabel}>Gender</Text>
+                            <Text style={styles.detailLabel}>{t('gender')}</Text>
                             <Text style={styles.detailValue}>{item.animal?.gender || 'N/A'}</Text>
                         </View>
                         <View style={styles.detailItem}>
-                            <Text style={styles.detailLabel}>Age</Text>
+                            <Text style={styles.detailLabel}>{t('age')}</Text>
                             <Text style={styles.detailValue}>{age}</Text>
                         </View>
                     </View>
                 </View>
 
                 <View style={styles.drugSection}>
-                    <Text style={styles.drugLabel}>DRUG USED</Text>
+                    <Text style={styles.drugLabel}>{t('drug_used')}</Text>
                     <Text style={styles.drugName}>{item.drugName}</Text>
                     <View style={styles.drugDetails}>
-                        <Text style={styles.drugDetailText}>Dosage: {item.dosageAmount} {item.dosageUnit}</Text>
+                        <Text style={styles.drugDetailText}>{t('dosage', { amount: item.dosageAmount, unit: item.dosageUnit })}</Text>
                         <Text style={styles.drugDetailText}>•</Text>
-                        <Text style={styles.drugDetailText}>Withdrawal: {item.withdrawalPeriodDays} days</Text>
+                        <Text style={styles.drugDetailText}>{t('withdrawal_days', { days: item.withdrawalPeriodDays })}</Text>
                     </View>
                 </View>
 
                 {item.reason && (
                     <View style={styles.reasonBox}>
-                        <Text style={styles.reasonLabel}>Rejection Reason:</Text>
+                        <Text style={styles.reasonLabel}>{t('rejection_reason')}</Text>
                         <Text style={styles.reasonText}>{item.reason}</Text>
                     </View>
                 )}
@@ -239,14 +241,14 @@ const TreatmentRequestsScreen = () => {
                                 onPress={() => openApproveModal(item)}
                             >
                                 <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                                <Text style={styles.actionBtnText}>Approve</Text>
+                                <Text style={styles.actionBtnText}>{t('approve')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.actionBtn, styles.rejectBtn]}
                                 onPress={() => openRejectModal(item)}
                             >
                                 <Ionicons name="close-circle" size={18} color="#fff" />
-                                <Text style={styles.actionBtnText}>Reject</Text>
+                                <Text style={styles.actionBtnText}>{t('reject')}</Text>
                             </TouchableOpacity>
                         </>
                     )}
@@ -255,7 +257,7 @@ const TreatmentRequestsScreen = () => {
                         onPress={() => navigation.navigate('AnimalHistory', { animalId: item.animalId })}
                     >
                         <Ionicons name="document-text" size={18} color="#4b5563" />
-                        <Text style={[styles.actionBtnText, { color: '#4b5563' }]}>History</Text>
+                        <Text style={[styles.actionBtnText, { color: '#4b5563' }]}>{t('history')}</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -271,11 +273,14 @@ const TreatmentRequestsScreen = () => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerTopRow}>
                         <Ionicons name="clipboard" size={16} color="#60a5fa" />
-                        <Text style={styles.headerLabel}>Verification Requests</Text>
+                        <Text style={styles.headerLabel}>{t('verification_requests')}</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Treatment Requests</Text>
+                    <Text style={styles.headerTitle}>{t('treatment_requests')}</Text>
                     <Text style={styles.headerSubtitle}>
-                        Review and manage <Text style={styles.highlightText}>{requests.filter(r => (r.status || 'Pending') === 'Pending').length} pending</Text> verification requests.
+                        {t('review_manage_pending', { count: requests.filter(r => (r.status || 'Pending') === 'Pending').length }).split(/<bold>(.*?)<\/bold>/).map((part, index) => {
+                            if (index === 1) return <Text key={index} style={styles.highlightText}>{part}</Text>;
+                            return <Text key={index}>{part}</Text>;
+                        })}
                     </Text>
                 </View>
             </LinearGradient>
@@ -288,7 +293,7 @@ const TreatmentRequestsScreen = () => {
                         onPress={() => setActiveTab(tab)}
                     >
                         <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-                            {tab}
+                            {t(`tab_${tab.toLowerCase()}`)}
                         </Text>
                         {activeTab === tab && <View style={styles.activeIndicator} />}
                     </TouchableOpacity>
@@ -309,7 +314,7 @@ const TreatmentRequestsScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="file-tray-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>No {activeTab !== 'All' ? activeTab.toLowerCase() : ''} requests found</Text>
+                            <Text style={styles.emptyText}>{t('no_requests', { status: activeTab !== 'All' ? activeTab.toLowerCase() : '' })}</Text>
                         </View>
                     }
                 />
@@ -324,11 +329,11 @@ const TreatmentRequestsScreen = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Reject Request</Text>
-                        <Text style={styles.modalSubtitle}>Please provide a reason for rejection:</Text>
+                        <Text style={styles.modalTitle}>{t('reject_request')}</Text>
+                        <Text style={styles.modalSubtitle}>{t('provide_rejection_reason')}</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Reason..."
+                            placeholder={t('reason_placeholder')}
                             value={rejectionReason}
                             onChangeText={setRejectionReason}
                             multiline
@@ -338,13 +343,13 @@ const TreatmentRequestsScreen = () => {
                                 style={[styles.modalBtn, styles.cancelBtn]}
                                 onPress={() => setRejectModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalBtn, styles.confirmRejectBtn]}
                                 onPress={handleReject}
                             >
-                                <Text style={styles.confirmRejectBtnText}>Reject</Text>
+                                <Text style={styles.confirmRejectBtnText}>{t('reject')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -360,16 +365,16 @@ const TreatmentRequestsScreen = () => {
             >
                 <View style={styles.fullScreenModal}>
                     <View style={styles.modalHeader}>
-                        <Text style={styles.modalHeaderTitle}>Review & Approve</Text>
+                        <Text style={styles.modalHeaderTitle}>{t('review_approve')}</Text>
                         <TouchableOpacity onPress={() => setApproveModalVisible(false)}>
-                            <Text style={styles.closeButtonText}>Close</Text>
+                            <Text style={styles.closeButtonText}>{t('close')}</Text>
                         </TouchableOpacity>
                     </View>
 
                     <ScrollView style={styles.modalBody}>
                         {/* Animal Summary */}
                         <View style={styles.summaryCard}>
-                            <Text style={styles.summaryTitle}>Animal Summary</Text>
+                            <Text style={styles.summaryTitle}>{t('animal_summary')}</Text>
                             <Text style={styles.summaryText}>
                                 ID: {selectedRequest?.animalId} • {selectedRequest?.animal?.species}
                             </Text>
@@ -380,7 +385,7 @@ const TreatmentRequestsScreen = () => {
 
                         {/* Form Fields */}
                         <View style={styles.formSection}>
-                            <Text style={styles.label}>Drug Name</Text>
+                            <Text style={styles.label}>{t('drug_name')}</Text>
                             <TextInput
                                 style={styles.inputField}
                                 value={approvalForm.drugName}
@@ -390,7 +395,7 @@ const TreatmentRequestsScreen = () => {
 
                         <View style={styles.row}>
                             <View style={[styles.formSection, { flex: 1, marginRight: 8 }]}>
-                                <Text style={styles.label}>Dose</Text>
+                                <Text style={styles.label}>{t('dose')}</Text>
                                 <TextInput
                                     style={styles.inputField}
                                     value={approvalForm.dose}
@@ -398,7 +403,7 @@ const TreatmentRequestsScreen = () => {
                                 />
                             </View>
                             <View style={[styles.formSection, { flex: 1, marginLeft: 8 }]}>
-                                <Text style={styles.label}>Route</Text>
+                                <Text style={styles.label}>{t('route')}</Text>
                                 <TextInput
                                     style={styles.inputField}
                                     value={approvalForm.route}
@@ -408,7 +413,7 @@ const TreatmentRequestsScreen = () => {
                         </View>
 
                         <View style={styles.formSection}>
-                            <Text style={styles.label}>Withdrawal Start Date</Text>
+                            <Text style={styles.label}>{t('withdrawal_start')}</Text>
                             <TouchableOpacity
                                 style={styles.dateButton}
                                 onPress={() => showDatepicker('start')}
@@ -421,7 +426,7 @@ const TreatmentRequestsScreen = () => {
                         </View>
 
                         <View style={styles.formSection}>
-                            <Text style={styles.label}>Withdrawal End Date</Text>
+                            <Text style={styles.label}>{t('withdrawal_end')}</Text>
                             <TouchableOpacity
                                 style={styles.dateButton}
                                 onPress={() => showDatepicker('end')}
@@ -434,21 +439,21 @@ const TreatmentRequestsScreen = () => {
                         </View>
 
                         <View style={styles.formSection}>
-                            <Text style={styles.label}>Farmer's Notes</Text>
+                            <Text style={styles.label}>{t('farmer_notes')}</Text>
                             <View style={styles.readOnlyBox}>
                                 <Text style={styles.readOnlyText}>
-                                    {selectedRequest?.notes || "No notes provided."}
+                                    {selectedRequest?.notes || t('no_notes')}
                                 </Text>
                             </View>
                         </View>
 
                         <View style={styles.formSection}>
-                            <Text style={styles.label}>Vet's Notes & Instructions</Text>
+                            <Text style={styles.label}>{t('vet_notes_instructions')}</Text>
                             <TextInput
                                 style={[styles.inputField, styles.textArea]}
                                 value={approvalForm.vetNotes}
                                 onChangeText={(text) => setApprovalForm({ ...approvalForm, vetNotes: text })}
-                                placeholder="Add instructions for the farmer..."
+                                placeholder={t('add_instructions')}
                                 multiline
                                 textAlignVertical="top"
                             />
@@ -458,7 +463,7 @@ const TreatmentRequestsScreen = () => {
                             style={styles.confirmApproveButton}
                             onPress={handleConfirmApprove}
                         >
-                            <Text style={styles.confirmApproveButtonText}>Save Changes & Approve</Text>
+                            <Text style={styles.confirmApproveButtonText}>{t('save_approve')}</Text>
                         </TouchableOpacity>
 
                         <View style={{ height: 40 }} />

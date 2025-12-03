@@ -20,8 +20,10 @@ import {
     approveFeedAdministration,
     rejectFeedAdministration
 } from '../../services/vetService';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const FeedAdministrationRequestsScreen = () => {
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -42,12 +44,12 @@ const FeedAdministrationRequestsScreen = () => {
             setRequests(data || []);
         } catch (error) {
             console.error('Error fetching feed requests:', error);
-            Alert.alert('Error', 'Failed to load feed requests');
+            Alert.alert(t('error'), t('failed_load_dashboard'));
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         fetchRequests();
@@ -63,26 +65,26 @@ const FeedAdministrationRequestsScreen = () => {
         try {
             await approveFeedAdministration(selectedRequest._id, vetNotes);
             setApproveModalVisible(false);
-            Alert.alert('Success', 'Feed administration approved');
+            Alert.alert(t('success'), t('feed_approved'));
             fetchRequests();
         } catch (error) {
-            Alert.alert('Error', 'Failed to approve request');
+            Alert.alert(t('error'), t('failed_approve'));
         }
     };
 
     const handleReject = async () => {
         if (!selectedRequest) return;
         if (!rejectionReason.trim()) {
-            Alert.alert('Error', 'Please provide a rejection reason');
+            Alert.alert(t('error'), t('provide_reason_error'));
             return;
         }
         try {
             await rejectFeedAdministration(selectedRequest._id, rejectionReason);
             setRejectModalVisible(false);
-            Alert.alert('Success', 'Feed administration rejected');
+            Alert.alert(t('success'), t('feed_rejected'));
             fetchRequests();
         } catch (error) {
-            Alert.alert('Error', 'Failed to reject request');
+            Alert.alert(t('error'), t('failed_reject'));
         }
     };
 
@@ -133,36 +135,36 @@ const FeedAdministrationRequestsScreen = () => {
                     </View>
                     <View style={[styles.statusBadge, { borderColor: getStatusColor(item.status) }]}>
                         <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                            {item.status === 'Pending Approval' ? 'Pending' : item.status}
+                            {item.status === 'Pending Approval' ? t('tab_pending') : item.status}
                         </Text>
                     </View>
                 </View>
 
                 <View style={styles.detailsSection}>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Feed:</Text>
+                        <Text style={styles.detailLabel}>{t('feed')}</Text>
                         <Text style={styles.detailValue}>{item.feedId?.feedName || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Antimicrobial:</Text>
+                        <Text style={styles.detailLabel}>{t('antimicrobial')}</Text>
                         <Text style={styles.detailValue}>{item.feedId?.antimicrobialName || 'N/A'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Group/Animals:</Text>
+                        <Text style={styles.detailLabel}>{t('group_animals')}</Text>
                         <Text style={styles.detailValue}>{item.groupName || `${animalCount} animal(s)`}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Quantity:</Text>
+                        <Text style={styles.detailLabel}>{t('quantity')}</Text>
                         <Text style={styles.detailValue}>{item.feedQuantityUsed} {item.feedId?.unit || 'kg'}</Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Start Date:</Text>
+                        <Text style={styles.detailLabel}>{t('start_date')}</Text>
                         <Text style={styles.detailValue}>
                             {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'N/A'}
                         </Text>
                     </View>
                     <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Withdrawal End:</Text>
+                        <Text style={styles.detailLabel}>{t('withdrawal_end_short')}</Text>
                         <Text style={styles.detailValue}>
                             {item.withdrawalEndDate ? new Date(item.withdrawalEndDate).toLocaleDateString() : 'TBD'}
                         </Text>
@@ -171,14 +173,14 @@ const FeedAdministrationRequestsScreen = () => {
 
                 {item.notes && (
                     <View style={styles.notesBox}>
-                        <Text style={styles.notesLabel}>Farmer Notes:</Text>
+                        <Text style={styles.notesLabel}>{t('farmer_notes')}</Text>
                         <Text style={styles.notesText}>{item.notes}</Text>
                     </View>
                 )}
 
                 {item.animals && item.animals.length > 0 && (
                     <View style={styles.animalsList}>
-                        <Text style={styles.animalsLabel}>Animals in this Request:</Text>
+                        <Text style={styles.animalsLabel}>{t('animals_in_request')}</Text>
                         <View style={styles.tagsContainer}>
                             {item.animals.map(animal => (
                                 <TouchableOpacity
@@ -200,14 +202,14 @@ const FeedAdministrationRequestsScreen = () => {
                             onPress={() => openApproveModal(item)}
                         >
                             <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                            <Text style={styles.actionBtnText}>Approve</Text>
+                            <Text style={styles.actionBtnText}>{t('approve')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.actionBtn, styles.rejectBtn]}
                             onPress={() => openRejectModal(item)}
                         >
                             <Ionicons name="close-circle" size={18} color="#fff" />
-                            <Text style={styles.actionBtnText}>Reject</Text>
+                            <Text style={styles.actionBtnText}>{t('reject')}</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -224,21 +226,24 @@ const FeedAdministrationRequestsScreen = () => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerTopRow}>
                         <Ionicons name="nutrition" size={16} color="#a78bfa" />
-                        <Text style={styles.headerLabel}>Feed Verification</Text>
+                        <Text style={styles.headerLabel}>{t('feed_verification')}</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Feed Requests</Text>
+                    <Text style={styles.headerTitle}>{t('feed_requests')}</Text>
                     <Text style={styles.headerSubtitle}>
-                        Review and manage <Text style={styles.highlightText}>{requests.filter(r => r.status === 'Pending Approval').length} pending</Text> feed administrations.
+                        {t('review_manage_feed', { count: requests.filter(r => r.status === 'Pending Approval').length }).split(/<bold>(.*?)<\/bold>/).map((part, index) => {
+                            if (index === 1) return <Text key={index} style={styles.highlightText}>{part}</Text>;
+                            return <Text key={index}>{part}</Text>;
+                        })}
                     </Text>
                 </View>
             </LinearGradient>
 
             <View style={styles.tabBar}>
                 {[
-                    { key: 'all', label: 'All' },
-                    { key: 'Pending Approval', label: 'Pending' },
-                    { key: 'Active', label: 'Approved' },
-                    { key: 'Rejected', label: 'Rejected' }
+                    { key: 'all', label: t('tab_all') },
+                    { key: 'Pending Approval', label: t('tab_pending') },
+                    { key: 'Active', label: t('tab_approved') },
+                    { key: 'Rejected', label: t('tab_rejected') }
                 ].map((tab) => (
                     <TouchableOpacity
                         key={tab.key}
@@ -267,7 +272,7 @@ const FeedAdministrationRequestsScreen = () => {
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="nutrition-outline" size={64} color="#d1d5db" />
-                            <Text style={styles.emptyText}>No requests found</Text>
+                            <Text style={styles.emptyText}>{t('no_requests', { status: '' })}</Text>
                         </View>
                     }
                 />
@@ -282,13 +287,13 @@ const FeedAdministrationRequestsScreen = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Approve Feed Administration</Text>
+                        <Text style={styles.modalTitle}>{t('approve_feed')}</Text>
                         <Text style={styles.modalSubtitle}>
-                            Add optional notes for the farmer.
+                            {t('add_optional_notes')}
                         </Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Vet Notes..."
+                            placeholder={t('vet_notes')}
                             value={vetNotes}
                             onChangeText={setVetNotes}
                             multiline
@@ -298,13 +303,13 @@ const FeedAdministrationRequestsScreen = () => {
                                 style={[styles.modalBtn, styles.cancelBtn]}
                                 onPress={() => setApproveModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalBtn, styles.confirmApproveBtn]}
                                 onPress={handleApprove}
                             >
-                                <Text style={styles.confirmApproveBtnText}>Approve</Text>
+                                <Text style={styles.confirmApproveBtnText}>{t('approve')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -320,13 +325,13 @@ const FeedAdministrationRequestsScreen = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Reject Request</Text>
+                        <Text style={styles.modalTitle}>{t('reject_request')}</Text>
                         <Text style={styles.modalSubtitle}>
-                            Please provide a reason for rejection. This will restore inventory.
+                            {t('restore_inventory_note')}
                         </Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Reason..."
+                            placeholder={t('reason_placeholder')}
                             value={rejectionReason}
                             onChangeText={setRejectionReason}
                             multiline
@@ -336,13 +341,13 @@ const FeedAdministrationRequestsScreen = () => {
                                 style={[styles.modalBtn, styles.cancelBtn]}
                                 onPress={() => setRejectModalVisible(false)}
                             >
-                                <Text style={styles.cancelBtnText}>Cancel</Text>
+                                <Text style={styles.cancelBtnText}>{t('cancel')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
                                 style={[styles.modalBtn, styles.confirmRejectBtn]}
                                 onPress={handleReject}
                             >
-                                <Text style={styles.confirmRejectBtnText}>Reject</Text>
+                                <Text style={styles.confirmRejectBtnText}>{t('reject')}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
