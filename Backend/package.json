@@ -21,12 +21,14 @@
     "express": "^5.1.0",
     "groq-sdk": "^0.32.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.4",
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.6",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {

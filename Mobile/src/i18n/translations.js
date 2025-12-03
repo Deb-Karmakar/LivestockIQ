@@ -86,6 +86,7 @@ export const translations = {
         // Animals
         animals_livestock: 'Animals & Livestock',
         herd_management: 'Herd Management',
+        you_have_registered: 'You have registered',
         animals_registered: 'animals registered',
         search_placeholder: 'Search by Tag ID or Name...',
         clear_filter: 'Clear Filter',
@@ -474,6 +475,7 @@ export const translations = {
         // Animals
         animals_livestock: 'पशु और पशुधन',
         herd_management: 'झुंड प्रबंधन',
+        you_have_registered: 'आपने पंजीकृत किया है',
         animals_registered: 'पशु पंजीकृत',
         search_placeholder: 'टैग आईडी या नाम से खोजें...',
         clear_filter: 'फ़िल्टर साफ़ करें',
