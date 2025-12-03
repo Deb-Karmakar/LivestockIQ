@@ -41,14 +41,12 @@ const TreatmentsStack = () => (
 const MoreStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MoreList" component={MoreScreen} />
+        <Stack.Screen name="Treatments" component={TreatmentsStack} />
+        <Stack.Screen name="Reports" component={ReportsScreen} />
         <Stack.Screen name="MRLCompliance" component={MRLComplianceScreen} />
         <Stack.Screen name="Inventory" component={InventoryScreen} />
         <Stack.Screen name="FeedInventory" component={FeedInventoryScreen} />
         <Stack.Screen name="FeedAdmin" component={FeedAdministrationScreen} />
-
-
-
-        <Stack.Screen name="Alerts" component={AlertsScreen} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
     </Stack.Navigator>
@@ -61,18 +59,12 @@ const FarmerTabNavigator = () => {
                 tabBarIcon: ({ focused, color, size }) => {
                     let iconName;
 
-
-
                     if (route.name === 'Dashboard') {
-                        iconName = focused ? 'grid' : 'grid-outline';
+                        iconName = focused ? 'home' : 'home-outline';
                     } else if (route.name === 'Animals') {
                         iconName = focused ? 'paw' : 'paw-outline';
-                    } else if (route.name === 'Treatments') {
-                        iconName = focused ? 'medkit' : 'medkit-outline';
                     } else if (route.name === 'Alerts') {
                         iconName = focused ? 'notifications' : 'notifications-outline';
-                    } else if (route.name === 'Reports') {
-                        iconName = focused ? 'document-text' : 'document-text-outline';
                     } else if (route.name === 'More') {
                         iconName = focused ? 'menu' : 'menu-outline';
                     }
@@ -84,12 +76,10 @@ const FarmerTabNavigator = () => {
                 headerShown: false,
             })}
         >
-            <Tab.Screen name="Dashboard" component={DashboardScreen} />
+            <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
             <Tab.Screen name="Animals" component={AnimalsStack} />
-            <Tab.Screen name="Treatments" component={TreatmentsStack} />
-            <Tab.Screen name="Reports" component={ReportsScreen} />
             <Tab.Screen name="Alerts" component={AlertsScreen} />
-            <Tab.Screen name="More" component={MoreStack} />
+            <Tab.Screen name="More" component={MoreStack} options={{ tabBarLabel: 'Menu' }} />
         </Tab.Navigator>
     );
 };

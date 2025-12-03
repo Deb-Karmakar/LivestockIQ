@@ -17,20 +17,25 @@ const MoreScreen = ({ navigation }) => {
 
     const menuItems = [
         {
-            section: t('compliance_inventory'),
+            section: t('treatment_records'), // Health & Treatments
             items: [
+                { name: t('treatment_records'), icon: 'medkit', screen: 'Treatments', color: '#3b82f6' },
                 { name: t('mrl_compliance'), icon: 'shield-checkmark', screen: 'MRLCompliance', color: '#10b981' },
-                { name: t('drug_inventory'), icon: 'medkit', screen: 'Inventory', color: '#3b82f6' },
+            ],
+        },
+        {
+            section: t('compliance_inventory'), // Inventory & Feed
+            items: [
+                { name: t('drug_inventory'), icon: 'cube', screen: 'Inventory', color: '#6366f1' },
                 { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: '#f59e0b' },
                 { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: '#8b5cf6' },
             ],
         },
         {
-            section: t('reports_support'),
+            section: t('reports_support'), // Analytics & Support
             items: [
                 { name: t('reports'), icon: 'document-text', screen: 'Reports', color: '#06b6d4' },
-                { name: t('alerts'), icon: 'notifications', screen: 'Alerts', color: '#ef4444' },
-                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: '#6366f1' },
+                { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: '#ef4444' },
             ],
         },
         {
