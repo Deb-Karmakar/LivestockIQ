@@ -14,6 +14,9 @@ export const translations = {
         alerts: 'Alerts',
         support: 'Support',
         settings: 'Settings',
+        home: 'Home',
+        animals: 'Animals',
+        menu: 'Menu',
 
         // Profile
         farmer: 'Farmer',
@@ -421,6 +424,9 @@ export const translations = {
         alerts: 'चेतावनी',
         support: 'सहायता',
         settings: 'सेटिंग्स',
+        home: 'होम',
+        animals: 'पशु',
+        menu: 'मेनू',
 
         // Profile
         farmer: 'किसान',

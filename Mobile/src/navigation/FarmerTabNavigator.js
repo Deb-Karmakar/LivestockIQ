@@ -2,6 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Screens
 import DashboardScreen from '../screens/farmer/DashboardScreen';
@@ -55,6 +57,9 @@ const MoreStack = () => (
 );
 
 const FarmerTabNavigator = () => {
+    const { theme } = useTheme();
+    const { t } = useLanguage();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -73,15 +78,19 @@ const FarmerTabNavigator = () => {
 
                     return <Ionicons name={iconName} size={size} color={color} />;
                 },
-                tabBarActiveTintColor: '#10b981',
-                tabBarInactiveTintColor: 'gray',
+                tabBarActiveTintColor: theme.primary,
+                tabBarInactiveTintColor: theme.subtext,
+                tabBarStyle: {
+                    backgroundColor: theme.card,
+                    borderTopColor: theme.border,
+                },
                 headerShown: false,
             })}
         >
-            <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: 'Home' }} />
-            <Tab.Screen name="Animals" component={AnimalsStack} />
-            <Tab.Screen name="Alerts" component={AlertsScreen} />
-            <Tab.Screen name="More" component={MoreStack} options={{ tabBarLabel: 'Menu' }} />
+            <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ tabBarLabel: t('home') }} />
+            <Tab.Screen name="Animals" component={AnimalsStack} options={{ tabBarLabel: t('animals') }} />
+            <Tab.Screen name="Alerts" component={AlertsScreen} options={{ tabBarLabel: t('alerts') }} />
+            <Tab.Screen name="More" component={MoreStack} options={{ tabBarLabel: t('menu') }} />
         </Tab.Navigator>
     );
 };
