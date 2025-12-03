@@ -11,6 +11,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -153,18 +154,26 @@ const DashboardScreen = ({ navigation }) => {
                 <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.primary} />
             }
         >
-            {/* Header */}
-            <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border, borderBottomWidth: 1 }]}>
-                <View style={styles.headerGradient}>
-                    <Text style={[styles.greeting, { color: theme.text }]}>
+            {/* Header – now using the same LinearGradient banner as VetDashboard */}
+            <LinearGradient
+                colors={['#1e293b', '#0f172a']}
+                style={styles.headerLinear}
+            >
+                <View style={styles.headerContent}>
+                    <View style={styles.headerTopRow}>
+                        <Ionicons name="paw" size={16} color="#60a5fa" />
+                        <Text style={styles.headerLabel}>{t('farmer_dashboard') || 'Farmer Dashboard'}</Text>
+                    </View>
+
+                    <Text style={[styles.greeting, { color: '#fff' }]}>
                         {getGreeting()}, {user?.farmOwner?.split(' ')[0] || 'Farmer'}!
                     </Text>
-                    <Text style={[styles.farmName, { color: theme.primary }]}>{user?.farmName || t('your_farm')}</Text>
-                    <Text style={[styles.alertsText, { color: theme.subtext }]}>
-                        You have <Text style={[styles.alertsCount, { color: theme.warning }]}>{alerts.length} alerts</Text> {t('alerts_attention')}
+                    <Text style={[styles.farmName, { color: '#60a5fa' }]}>{user?.farmName || t('your_farm')}</Text>
+                    <Text style={[styles.alertsTextGradient, { color: '#cbd5e1' }]}>
+                        You have <Text style={[styles.alertsCountGradient, { color: theme.warning }]}>{alerts.length} alerts</Text> {t('alerts_attention')}
                     </Text>
                 </View>
-            </View>
+            </LinearGradient>
 
             {/* Stats Grid */}
             <View style={styles.statsGrid}>
@@ -318,11 +327,13 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 14,
     },
-    header: {
-        paddingTop: 50,
-        paddingBottom: 30,
-        paddingHorizontal: 20,
-    },
+
+    /* Header styles now aligned with vet dashboard header */
+    headerLinear: { padding: 20, paddingTop: 60, paddingBottom: 24 },
+    headerContent: {},
+    headerTopRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+    headerLabel: { color: '#60a5fa', fontSize: 14, fontWeight: '600' },
+
     headerGradient: {
         gap: 8,
     },
@@ -338,9 +349,17 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginTop: 4,
     },
+    alertsTextGradient: {
+        fontSize: 14,
+        marginTop: 6,
+    },
     alertsCount: {
         fontWeight: '600',
     },
+    alertsCountGradient: {
+        fontWeight: '600',
+    },
+
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',

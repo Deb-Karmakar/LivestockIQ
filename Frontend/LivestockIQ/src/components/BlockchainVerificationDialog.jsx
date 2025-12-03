@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink, Download } from 'lucide-react';
+import { axiosInstance } from '../contexts/AuthContext';
 import { format } from 'date-fns';
 import { verifyLogOnBlockchain } from '../services/auditService';
 
@@ -34,6 +35,25 @@ const BlockchainVerificationDialog = ({ logId, isOpen, onClose }) => {
     const openBlockchainExplorer = () => {
         if (verification?.blockchainProof?.explorerUrl) {
             window.open(verification.blockchainProof.explorerUrl, '_blank');
+        }
+    };
+
+    const downloadCertificate = async () => {
+        try {
+            const response = await axiosInstance.get(`/audit/blockchain-certificate/${logId}`, {
+                responseType: 'blob',
+            });
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `blockchain-certificate-${logId.substring(0, 8)}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error downloading certificate:', error);
+            alert('Failed to download certificate. Please try again.');
         }
     };
 
@@ -147,13 +167,16 @@ const BlockchainVerificationDialog = ({ logId, isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    <Button
-                        onClick={openBlockchainExplorer}
-                        className="w-full mt-4 bg-blue-600 hover:bg-blue-700"
-                    >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View on Polygon Blockchain Explorer
-                    </Button>
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                        <Button onClick={openBlockchainExplorer} className="bg-blue-600 hover:bg-blue-700">
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            View on Explorer
+                        </Button>
+                        <Button onClick={downloadCertificate} variant="outline" className="border-green-600 text-green-700 hover:bg-green-50">
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Certificate
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Info Box */}

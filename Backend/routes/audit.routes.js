@@ -12,6 +12,7 @@ import {
     verifyLogOnBlockchain,
     getBlockchainSnapshotsController,
     getBlockchainProofForLog,
+    downloadBlockchainCertificate,
 } from '../controllers/blockchainVerification.controller.js';
 
 const router = express.Router();
@@ -38,5 +39,6 @@ router.get('/my-logs', protect, getMyAuditLogs);
 router.get('/verify-blockchain/:logId', protect, verifyLogOnBlockchain);
 router.get('/blockchain-snapshots/:farmerId', protect, getBlockchainSnapshotsController);
 router.get('/blockchain-proof/:logId', protect, getBlockchainProofForLog);
+router.get('/blockchain-certificate/:logId', protect, downloadBlockchainCertificate);
 
 export default router;

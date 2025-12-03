@@ -3,6 +3,7 @@ import {
     getBlockchainSnapshots as getBlockchainSnapshotsService,
 } from '../services/auditLog.service.js';
 import AuditLog from '../models/auditLog.model.js';
+import { generateBlockchainCertificate } from '../utils/pdfGenerator.js';
 
 /**
  * Verify a specific audit log on blockchain
@@ -202,5 +203,57 @@ export const getBlockchainProofForLog = async (req, res) => {
     } catch (error) {
         console.error('Error getting blockchain proof:', error);
         res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
+/**
+ * Download blockchain verification certificate as PDF
+ * @route   GET /api/audit/blockchain-certificate/:logId
+ * @access  Private (Regulator, Admin)
+ */
+export const downloadBlockchainCertificate = async (req, res) => {
+    try {
+        const { logId } = req.params;
+
+        const log = await AuditLog.findById(logId).populate('performedBy', 'farmOwner fullName email').lean();
+        if (!log) return res.status(404).json({ message: 'Audit log not found' });
+
+        const userRole = req.user.role?.toLowerCase();
+        if (userRole !== 'regulator' && userRole !== 'admin') {
+            return res.status(403).json({ message: 'Only regulators and admins can download certificates' });
+        }
+
+        const snapshot = await findBlockchainSnapshotForLog(logId);
+        if (!snapshot) {
+            return res.status(400).json({ message: 'Cannot generate certificate - log not yet anchored to blockchain' });
+        }
+
+        const logDetails = {
+            id: log._id.toString(),
+            eventType: log.eventType,
+            entityType: log.entityType,
+            timestamp: log.timestamp || log.createdAt,
+            performedBy: log.performedBy?.farmOwner || log.performedBy?.fullName || log.performedByRole || 'System',
+        };
+
+        const blockchainProof = {
+            transactionHash: snapshot.dataSnapshot.transactionHash,
+            blockNumber: snapshot.dataSnapshot.blockNumber,
+            merkleRoot: snapshot.dataSnapshot.merkleRoot,
+            explorerUrl: snapshot.dataSnapshot.explorerUrl || `https://amoy.polygonscan.com/tx/${snapshot.dataSnapshot.transactionHash}`,
+            anchorTimestamp: snapshot.timestamp,
+            totalLogsInSnapshot: snapshot.dataSnapshot.totalLogs,
+        };
+
+        const pdfBuffer = await generateBlockchainCertificate(logDetails, blockchainProof);
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="blockchain-certificate-${logId.substring(0, 8)}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('Error generating blockchain certificate:', error);
+        res.status(500).json({ message: 'Failed to generate certificate', error: error.message });
     }
 };
