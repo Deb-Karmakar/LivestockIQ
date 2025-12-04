@@ -20,11 +20,18 @@ export const updateMyProfile = async (profileData) => {
     }
 };
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const getMyHighAmuAlerts = async () => {
     try {
         const response = await api.get('/farmers/high-amu-alerts');
+        await AsyncStorage.setItem('amu_alerts_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('amu_alerts_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch AMU alerts' };
     }
 };

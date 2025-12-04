@@ -20,6 +20,7 @@ import { getMyHighAmuAlerts } from '../../services/farmerService';
 import { differenceInDays, format } from 'date-fns';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
 
 const { width } = Dimensions.get('window');
 
@@ -48,6 +49,7 @@ const SeverityBadge = ({ severity, theme }) => {
 const AlertsScreen = ({ navigation }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [treatments, setTreatments] = useState([]);
     const [amuAlerts, setAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -248,7 +250,12 @@ const AlertsScreen = ({ navigation }) => {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <ScrollView
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.primary} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={() => fetchData(true)}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
                 }
             >
                 {/* Header */}

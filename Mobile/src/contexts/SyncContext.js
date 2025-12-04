@@ -99,6 +99,13 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // MRL Operations
+            case 'SUBMIT_LAB_TEST':
+                await import('../services/mrlService').then(module =>
+                    module.submitLabTest(item.payload)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

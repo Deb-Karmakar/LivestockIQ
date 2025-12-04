@@ -25,10 +25,13 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const MRLComplianceScreen = ({ navigation }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview'); // overview, pending, history
@@ -125,6 +128,8 @@ const MRLComplianceScreen = ({ navigation }) => {
         setUploadModalVisible(true);
     };
 
+    const { addToQueue } = useSync();
+
     const handleSubmitTest = async () => {
         // Validation
         if (!testForm.animalId || !testForm.drugName || !testForm.residueLevelDetected ||
@@ -134,7 +139,7 @@ const MRLComplianceScreen = ({ navigation }) => {
         }
 
         try {
-            await submitLabTest({
+            const testData = {
                 ...testForm,
                 drugName: testForm.drugName.trim(),
                 labName: testForm.labName.trim(),
@@ -144,7 +149,19 @@ const MRLComplianceScreen = ({ navigation }) => {
                 notes: testForm.notes ? testForm.notes.trim() : '',
                 residueLevelDetected: parseFloat(testForm.residueLevelDetected),
                 testDate: testForm.testDate.toISOString(),
-            });
+            };
+
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'SUBMIT_LAB_TEST',
+                    payload: testData,
+                });
+                Alert.alert(t('offline'), t('lab_test_queued'));
+                setUploadModalVisible(false);
+                return;
+            }
+
+            await submitLabTest(testData);
             Alert.alert(t('success'), 'Lab test submitted successfully');
             setUploadModalVisible(false);
             fetchData();
@@ -390,7 +407,14 @@ const MRLComplianceScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
+                }
             >
                 {activeTab === 'overview' && renderOverview()}
                 {activeTab === 'pending' && renderPending()}
