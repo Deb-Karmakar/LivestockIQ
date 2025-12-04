@@ -137,6 +137,13 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // Ticket Operations
+            case 'CREATE_TICKET':
+                await import('../services/ticketService').then(module =>
+                    module.createTicket(item.payload)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

@@ -41,8 +41,13 @@ export const getFarmerAmuReport = async (startDate, endDate) => {
         const response = await api.get('/reports/farmer/amu-data', {
             params: { from: startDate, to: endDate }
         });
+        await AsyncStorage.setItem('report_amu_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('report_amu_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch AMU report' };
     }
 };
@@ -52,8 +57,13 @@ export const getFarmerAnimalHealthReport = async (startDate, endDate) => {
         const response = await api.get('/reports/farmer/animal-health-data', {
             params: { from: startDate, to: endDate }
         });
+        await AsyncStorage.setItem('report_health_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('report_health_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch animal health report' };
     }
 };
@@ -61,8 +71,13 @@ export const getFarmerAnimalHealthReport = async (startDate, endDate) => {
 export const getFarmerHerdDemographics = async () => {
     try {
         const response = await api.get('/reports/farmer/herd-demographics-data');
+        await AsyncStorage.setItem('report_demographics_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('report_demographics_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch herd demographics' };
     }
 };
@@ -72,8 +87,13 @@ export const getFarmerTreatmentHistory = async (startDate, endDate) => {
         const response = await api.get('/reports/farmer/treatment-history-data', {
             params: { from: startDate, to: endDate }
         });
+        await AsyncStorage.setItem('report_treatment_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('report_treatment_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch treatment history' };
     }
 };
@@ -83,8 +103,13 @@ export const getFarmerMrlCompliance = async (startDate, endDate) => {
         const response = await api.get('/reports/farmer/mrl-compliance-data', {
             params: { from: startDate, to: endDate }
         });
+        await AsyncStorage.setItem('report_mrl_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('report_mrl_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch MRL compliance report' };
     }
 };

@@ -16,10 +16,12 @@ import { getMyTickets } from '../../services/ticketService';
 import { useNavigation } from '@react-navigation/native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
 
 const TicketHistoryScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const navigation = useNavigation();
     const [tickets, setTickets] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -233,7 +235,7 @@ const TicketHistoryScreen = () => {
                     keyExtractor={(item) => item._id}
                     renderItem={renderTicket}
                     contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} enabled={isConnected} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="ticket-outline" size={64} color={theme.border} />

@@ -23,10 +23,12 @@ import {
 } from '../../services/farmerService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
 
 const ReportsScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [selectedReport, setSelectedReport] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -84,6 +86,10 @@ const ReportsScreen = () => {
         setLoading(true);
         setReportData(null);
 
+        if (!isConnected) {
+            // Alert.alert(t('offline'), t('viewing_cached_report')); // Optional: notify user
+        }
+
         try {
             const start = startDate.toISOString();
             const end = endDate.toISOString();
@@ -107,6 +113,10 @@ const ReportsScreen = () => {
                     break;
             }
             setReportData(data);
+            if (!isConnected && data) {
+                // If we successfully got data while offline, it's cached
+                // Maybe show a small indicator or toast
+            }
         } catch (error) {
             console.error('Report generation error:', error);
             // You might want to show a toast or alert here
@@ -297,6 +307,11 @@ const ReportsScreen = () => {
                         </>
                     )}
                 </TouchableOpacity>
+                {!isConnected && (
+                    <Text style={{ textAlign: 'center', color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                        {t('offline_mode_cached_data')}
+                    </Text>
+                )}
             </View>
 
             {/* Results */}

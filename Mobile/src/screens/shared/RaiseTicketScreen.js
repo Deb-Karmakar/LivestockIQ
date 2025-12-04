@@ -19,12 +19,16 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const RaiseTicketScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
     const navigation = useNavigation();
     const { user } = useAuth();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         subject: '',
@@ -100,6 +104,33 @@ const RaiseTicketScreen = () => {
                 createdByName: user?.fullName || user?.farmOwner || 'Unknown User',
                 createdByRole: user?.role || 'User'
             };
+
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'CREATE_TICKET',
+                    payload: ticketData
+                });
+                Alert.alert(
+                    t('offline'),
+                    t('ticket_queued'),
+                    [
+                        {
+                            text: 'OK',
+                            onPress: () => {
+                                setFormData({
+                                    subject: '',
+                                    category: '',
+                                    priority: 'Medium',
+                                    description: '',
+                                });
+                                navigation.goBack();
+                            }
+                        }
+                    ]
+                );
+                return;
+            }
+
             const response = await createTicket(ticketData);
             Alert.alert(
                 t('success'),
