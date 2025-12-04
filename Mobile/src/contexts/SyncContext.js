@@ -123,6 +123,13 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // Feed Administration Operations
+            case 'RECORD_FEED_ADMIN':
+                await import('../services/feedAdministrationService').then(module =>
+                    module.recordFeedAdministration(item.payload)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

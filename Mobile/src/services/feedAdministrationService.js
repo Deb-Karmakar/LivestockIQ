@@ -1,8 +1,19 @@
 import api from './api';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const getFeedAdministrations = async (filters = {}) => {
-    const response = await api.get('/feed-admin', { params: filters });
-    return response.data;
+    try {
+        const response = await api.get('/feed-admin', { params: filters });
+        await AsyncStorage.setItem('feed_admin_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('feed_admin_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch feed administrations' };
+    }
 };
 
 export const getFeedAdministrationById = async (id) => {
@@ -26,8 +37,17 @@ export const deleteFeedAdministration = async (id) => {
 };
 
 export const getActivePrograms = async () => {
-    const response = await api.get('/feed-admin/active');
-    return response.data;
+    try {
+        const response = await api.get('/feed-admin/active');
+        await AsyncStorage.setItem('active_programs_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('active_programs_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch active programs' };
+    }
 };
 
 export const completeFeedingProgram = async (id, endDate) => {
@@ -41,6 +61,15 @@ export const getAnimalFeedHistory = async (animalId) => {
 };
 
 export const getWithdrawalStatus = async () => {
-    const response = await api.get('/feed-admin/withdrawal-status');
-    return response.data;
+    try {
+        const response = await api.get('/feed-admin/withdrawal-status');
+        await AsyncStorage.setItem('withdrawal_status_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('withdrawal_status_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch withdrawal status' };
+    }
 };

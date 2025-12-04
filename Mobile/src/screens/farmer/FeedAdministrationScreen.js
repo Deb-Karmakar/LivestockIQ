@@ -26,10 +26,14 @@ import {
 } from '../../services/feedAdministrationService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const FeedAdministrationScreen = ({ navigation }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [administrations, setAdministrations] = useState([]);
@@ -134,6 +138,16 @@ const FeedAdministrationScreen = ({ navigation }) => {
                 notes: form.notes
             };
 
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'RECORD_FEED_ADMIN',
+                    payload: data
+                });
+                Alert.alert(t('offline'), t('feed_admin_queued'));
+                setModalVisible(false);
+                return;
+            }
+
             await recordFeedAdministration(data);
             Alert.alert(t('success'), t('feed_admin_recorded'));
             setModalVisible(false);
@@ -215,7 +229,14 @@ const FeedAdministrationScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
+                }
             >
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>

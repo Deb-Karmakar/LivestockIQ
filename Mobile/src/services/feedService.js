@@ -52,8 +52,17 @@ export const getFeedStats = async () => {
 };
 
 export const getActiveFeed = async () => {
-    const response = await api.get('/feed/active');
-    return response.data;
+    try {
+        const response = await api.get('/feed/active');
+        await AsyncStorage.setItem('active_feed_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('active_feed_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch active feed' };
+    }
 };
 
 export const getExpiringFeed = async (days = 30) => {
