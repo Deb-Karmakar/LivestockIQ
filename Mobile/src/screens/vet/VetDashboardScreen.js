@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
 import { getVetDashboardData } from '../../services/vetService';
 
 const StatCard = ({ title, value, color, subtitle, icon, theme }) => (
@@ -32,6 +33,7 @@ const VetDashboardScreen = ({ navigation }) => {
     const { user } = useAuth();
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState(null);
@@ -105,11 +107,16 @@ const VetDashboardScreen = ({ navigation }) => {
                         </Text>
                     </View>
                 </View>
+                {!isConnected && (
+                    <Text style={{ textAlign: 'center', color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                        {t('offline_mode_cached_data')}
+                    </Text>
+                )}
             </LinearGradient>
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} enabled={isConnected} />}
             >
                 {/* Vet ID Card */}
                 <View style={[styles.idCard, { backgroundColor: `${theme.primary}10`, borderColor: `${theme.primary}30` }]}>
