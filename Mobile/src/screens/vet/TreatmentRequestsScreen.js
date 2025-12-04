@@ -20,11 +20,15 @@ import { getTreatmentRequests, approveTreatment, rejectTreatment } from '../../s
 import { useNavigation } from '@react-navigation/native';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const TreatmentRequestsScreen = () => {
     const navigation = useNavigation();
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -111,6 +115,18 @@ const TreatmentRequestsScreen = () => {
                 status: 'Approved'
             };
 
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'APPROVE_TREATMENT',
+                    payload: { id: selectedRequest._id, data: updateData }
+                });
+                setApproveModalVisible(false);
+                Alert.alert(t('offline'), t('approval_queued'));
+                // Optimistic update
+                setRequests(prev => prev.filter(r => r._id !== selectedRequest._id));
+                return;
+            }
+
             await approveTreatment(selectedRequest._id, updateData);
             setApproveModalVisible(false);
             Alert.alert(t('success'), t('treatment_approved'));
@@ -135,6 +151,18 @@ const TreatmentRequestsScreen = () => {
         }
 
         try {
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'REJECT_TREATMENT',
+                    payload: { id: selectedRequest._id, reason: rejectionReason }
+                });
+                setRejectModalVisible(false);
+                Alert.alert(t('offline'), t('rejection_queued'));
+                // Optimistic update
+                setRequests(prev => prev.filter(r => r._id !== selectedRequest._id));
+                return;
+            }
+
             await rejectTreatment(selectedRequest._id, rejectionReason);
             setRejectModalVisible(false);
             Alert.alert(t('success'), t('treatment_rejected'));
@@ -285,7 +313,14 @@ const TreatmentRequestsScreen = () => {
                         })}
                     </Text>
                 </View>
-            </LinearGradient>
+                {
+                    !isConnected && (
+                        <Text style={{ textAlign: 'center', color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                            {t('offline_mode_cached_data')}
+                        </Text>
+                    )
+                }
+            </LinearGradient >
 
             <View style={[styles.tabBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 {['All', 'Pending', 'Approved', 'Rejected'].map((tab) => (
@@ -306,25 +341,27 @@ const TreatmentRequestsScreen = () => {
                 ))}
             </View>
 
-            {loading ? (
-                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                </View>
-            ) : (
-                <FlatList
-                    data={filteredRequests}
-                    keyExtractor={(item) => item._id}
-                    renderItem={renderRequest}
-                    contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
-                    ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="file-tray-outline" size={64} color={theme.border} />
-                            <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_requests', { status: activeTab !== 'All' ? activeTab.toLowerCase() : '' })}</Text>
-                        </View>
-                    }
-                />
-            )}
+            {
+                loading ? (
+                    <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                        <ActivityIndicator size="large" color={theme.primary} />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredRequests}
+                        keyExtractor={(item) => item._id}
+                        renderItem={renderRequest}
+                        contentContainerStyle={styles.list}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} enabled={isConnected} />}
+                        ListEmptyComponent={
+                            <View style={styles.emptyState}>
+                                <Ionicons name="file-tray-outline" size={64} color={theme.border} />
+                                <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_requests', { status: activeTab !== 'All' ? activeTab.toLowerCase() : '' })}</Text>
+                            </View>
+                        }
+                    />
+                )
+            }
 
             {/* Reject Modal */}
             <Modal
@@ -487,7 +524,7 @@ const TreatmentRequestsScreen = () => {
                     )}
                 </View>
             </Modal>
-        </View>
+        </View >
     );
 };
 

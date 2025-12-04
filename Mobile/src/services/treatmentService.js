@@ -62,8 +62,13 @@ export const rejectTreatment = async (id, reason) => {
 export const getTreatmentRequests = async () => {
     try {
         const response = await api.get('/vets/treatment-requests');
+        await AsyncStorage.setItem('vet_treatment_requests_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('vet_treatment_requests_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch treatment requests' };
     }
 };

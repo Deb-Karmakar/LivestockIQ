@@ -144,6 +144,19 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // Vet Treatment Operations
+            case 'APPROVE_TREATMENT':
+                await import('../services/treatmentService').then(module =>
+                    module.approveTreatment(item.payload.id, item.payload.data)
+                );
+                break;
+
+            case 'REJECT_TREATMENT':
+                await import('../services/treatmentService').then(module =>
+                    module.rejectTreatment(item.payload.id, item.payload.reason)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

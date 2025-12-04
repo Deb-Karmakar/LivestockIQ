@@ -55,8 +55,13 @@ export const deleteAnimal = async (tagId) => {
 export const getAnimalHistory = async (animalId) => {
     try {
         const response = await api.get(`/animals/${animalId}/history`);
+        await AsyncStorage.setItem(`animal_history_${animalId}_cache`, JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem(`animal_history_${animalId}_cache`);
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch animal history' };
     }
 };
