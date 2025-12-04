@@ -31,6 +31,7 @@ const MoreScreen = ({ navigation }) => {
                 { name: t('drug_inventory'), icon: 'cube', screen: 'Inventory', color: theme.info },
                 { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: theme.warning },
                 { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: theme.primary },
+                { name: t('sales'), icon: 'cart', screen: 'Sales', color: theme.success },
             ],
         },
         {
