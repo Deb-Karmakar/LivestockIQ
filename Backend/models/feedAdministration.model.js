@@ -75,7 +75,7 @@ const feedAdministrationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Active', 'Completed', 'Withdrawn', 'Pending Approval'],
+        enum: ['Active', 'Completed', 'Withdrawn', 'Pending Approval', 'Rejected'],
         default: 'Pending Approval'
     },
 

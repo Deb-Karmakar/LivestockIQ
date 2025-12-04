@@ -2,7 +2,9 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNetwork } from './NetworkContext';
 import * as animalService from '../services/animalService';
+
 import * as inventoryService from '../services/inventoryService';
+import * as vetService from '../services/vetService';
 
 const SyncContext = createContext();
 
@@ -16,10 +18,10 @@ export const SyncProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        if (isConnected && syncQueue.length > 0) {
+        if (isConnected) {
             sync();
         }
-    }, [isConnected, syncQueue]);
+    }, [isConnected]);
 
     const loadQueue = async () => {
         try {
@@ -44,6 +46,9 @@ export const SyncProvider = ({ children }) => {
     const addToQueue = async (action) => {
         const newQueue = [...syncQueue, { ...action, id: action.id || Date.now().toString(), timestamp: Date.now() }];
         await saveQueue(newQueue);
+        if (isConnected) {
+            sync();
+        }
     };
 
     const sync = async () => {
@@ -155,6 +160,16 @@ export const SyncProvider = ({ children }) => {
                 await import('../services/treatmentService').then(module =>
                     module.rejectTreatment(item.payload.id, item.payload.reason)
                 );
+                break;
+
+            // Feed Administration Operations
+            // Feed Administration Operations
+            case 'APPROVE_FEED':
+                await vetService.approveFeedAdministration(item.payload.id, item.payload.notes);
+                break;
+
+            case 'REJECT_FEED':
+                await vetService.rejectFeedAdministration(item.payload.id, item.payload.reason);
                 break;
 
             default:

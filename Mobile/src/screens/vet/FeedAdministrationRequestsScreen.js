@@ -22,10 +22,14 @@ import {
 } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const FeedAdministrationRequestsScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const navigation = useNavigation();
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -65,6 +69,20 @@ const FeedAdministrationRequestsScreen = () => {
     const handleApprove = async () => {
         if (!selectedRequest) return;
         try {
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'APPROVE_FEED',
+                    payload: { id: selectedRequest._id, notes: vetNotes }
+                });
+                setApproveModalVisible(false);
+                Alert.alert(t('offline'), t('approval_queued'));
+                // Optimistic update
+                setRequests(prev => prev.map(r =>
+                    r._id === selectedRequest._id ? { ...r, status: 'Active' } : r
+                ));
+                return;
+            }
+
             await approveFeedAdministration(selectedRequest._id, vetNotes);
             setApproveModalVisible(false);
             Alert.alert(t('success'), t('feed_approved'));
@@ -81,6 +99,20 @@ const FeedAdministrationRequestsScreen = () => {
             return;
         }
         try {
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'REJECT_FEED',
+                    payload: { id: selectedRequest._id, reason: rejectionReason }
+                });
+                setRejectModalVisible(false);
+                Alert.alert(t('offline'), t('rejection_queued'));
+                // Optimistic update
+                setRequests(prev => prev.map(r =>
+                    r._id === selectedRequest._id ? { ...r, status: 'Rejected' } : r
+                ));
+                return;
+            }
+
             await rejectFeedAdministration(selectedRequest._id, rejectionReason);
             setRejectModalVisible(false);
             Alert.alert(t('success'), t('feed_rejected'));
@@ -238,7 +270,14 @@ const FeedAdministrationRequestsScreen = () => {
                         })}
                     </Text>
                 </View>
-            </LinearGradient>
+                {
+                    !isConnected && (
+                        <Text style={{ textAlign: 'center', color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                            {t('offline_mode_cached_data')}
+                        </Text>
+                    )
+                }
+            </LinearGradient >
 
             <View style={[styles.tabBar, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
                 {[
@@ -264,25 +303,27 @@ const FeedAdministrationRequestsScreen = () => {
                 ))}
             </View>
 
-            {loading ? (
-                <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-                    <ActivityIndicator size="large" color={theme.primary} />
-                </View>
-            ) : (
-                <FlatList
-                    data={filteredRequests}
-                    keyExtractor={(item) => item._id}
-                    renderItem={renderRequest}
-                    contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
-                    ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Ionicons name="nutrition-outline" size={64} color={theme.border} />
-                            <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_requests', { status: '' })}</Text>
-                        </View>
-                    }
-                />
-            )}
+            {
+                loading ? (
+                    <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+                        <ActivityIndicator size="large" color={theme.primary} />
+                    </View>
+                ) : (
+                    <FlatList
+                        data={filteredRequests}
+                        keyExtractor={(item) => item._id}
+                        renderItem={renderRequest}
+                        contentContainerStyle={styles.list}
+                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} enabled={isConnected} />}
+                        ListEmptyComponent={
+                            <View style={styles.emptyState}>
+                                <Ionicons name="nutrition-outline" size={64} color={theme.border} />
+                                <Text style={[styles.emptyText, { color: theme.subtext }]}>{t('no_requests', { status: '' })}</Text>
+                            </View>
+                        }
+                    />
+                )
+            }
 
             {/* Approve Modal */}
             <Modal
@@ -361,7 +402,7 @@ const FeedAdministrationRequestsScreen = () => {
                     </View>
                 </View>
             </Modal>
-        </View>
+        </View >
     );
 };
 
