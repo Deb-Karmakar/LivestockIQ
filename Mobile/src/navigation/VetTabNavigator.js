@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import VetDashboardScreen from '../screens/vet/VetDashboardScreen';
 import TreatmentRequestsScreen from '../screens/vet/TreatmentRequestsScreen';
 import FarmerDirectoryScreen from '../screens/vet/FarmerDirectoryScreen';
-import VetPlaceholderScreen from '../screens/vet/VetPlaceholderScreen';
 import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
 import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
