@@ -20,6 +20,8 @@ import { getFarmerProfile } from '../../services/farmerService';
 import { getVetDetailsByCode } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const AddTreatmentScreen = ({ navigation }) => {
     const { t } = useLanguage();
@@ -81,6 +83,9 @@ const AddTreatmentScreen = ({ navigation }) => {
         }
     };
 
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
+
     const handleSubmit = async () => {
         if (!formData.animalId || !formData.drugName || !formData.dose) {
             Alert.alert(t('error'), t('fill_required'));
@@ -89,10 +94,22 @@ const AddTreatmentScreen = ({ navigation }) => {
 
         setLoading(true);
         try {
-            await createTreatment({
+            const treatmentData = {
                 ...formData,
                 vetId: vetId, // Associate with the farmer's vet
-            });
+            };
+
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'CREATE_TREATMENT',
+                    payload: treatmentData,
+                });
+                Alert.alert(t('offline'), t('treatment_request_queued'));
+                navigation.goBack();
+                return;
+            }
+
+            await createTreatment(treatmentData);
             Alert.alert(t('success'), t('treatment_submitted'));
             navigation.goBack();
         } catch (error) {

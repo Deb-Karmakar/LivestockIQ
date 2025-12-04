@@ -92,6 +92,13 @@ export const SyncProvider = ({ children }) => {
                 await inventoryService.deleteInventoryItem(item.resourceId);
                 break;
 
+            // Treatment Operations
+            case 'CREATE_TREATMENT':
+                await import('../services/treatmentService').then(module =>
+                    module.requestTreatment(item.payload)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

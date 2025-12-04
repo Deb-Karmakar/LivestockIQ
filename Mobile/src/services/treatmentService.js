@@ -1,11 +1,18 @@
 // Mobile/src/services/treatmentService.js
 import api from './api';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const getTreatments = async (filters = {}) => {
     try {
         const response = await api.get('/treatments', { params: filters });
+        await AsyncStorage.setItem('treatments_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('treatments_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch treatments' };
     }
 };
