@@ -172,6 +172,11 @@ export const SyncProvider = ({ children }) => {
                 await vetService.rejectFeedAdministration(item.payload.id, item.payload.reason);
                 break;
 
+            // Farmer Operations
+            case 'REPORT_FARMER':
+                await vetService.reportFarmer(item.payload);
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

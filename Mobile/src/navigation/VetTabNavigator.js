@@ -39,7 +39,7 @@ const MoreStack = () => (
         <Stack.Screen name="VetMore" component={VetMoreScreen} />
         <Stack.Screen name="Settings" component={VetSettingsScreen} />
         <Stack.Screen name="Reports" component={VetReportsScreen} />
-        <Stack.Screen name="FeedRequests" component={VetPlaceholderScreen} />
+
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
     </Stack.Navigator>

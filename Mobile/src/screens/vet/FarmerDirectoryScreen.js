@@ -17,10 +17,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getMyFarmers, getAnimalsForFarmer, reportFarmer } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const FarmerDirectoryScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [farmers, setFarmers] = useState([]);
     const [filteredFarmers, setFilteredFarmers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -104,6 +108,20 @@ const FarmerDirectoryScreen = () => {
         }
 
         try {
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'REPORT_FARMER',
+                    payload: {
+                        farmerId: selectedFarmer._id,
+                        reason: reportReason,
+                        details: reportDetails
+                    }
+                });
+                setReportModalVisible(false);
+                Alert.alert(t('offline'), t('report_queued'));
+                return;
+            }
+
             await reportFarmer({
                 farmerId: selectedFarmer._id,
                 reason: reportReason,
@@ -217,6 +235,11 @@ const FarmerDirectoryScreen = () => {
                         />
                     </View>
                 </View>
+                {!isConnected && (
+                    <Text style={{ textAlign: 'center', color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                        {t('offline_mode_cached_data')}
+                    </Text>
+                )}
             </LinearGradient>
 
             {loading ? (
@@ -229,7 +252,7 @@ const FarmerDirectoryScreen = () => {
                     keyExtractor={(item) => item._id}
                     renderItem={renderFarmer}
                     contentContainerStyle={styles.list}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} enabled={isConnected} />}
                     ListEmptyComponent={
                         <View style={styles.emptyState}>
                             <Ionicons name="people-outline" size={64} color={theme.border} />
