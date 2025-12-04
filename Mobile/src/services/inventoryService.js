@@ -1,8 +1,18 @@
 import api from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const getInventory = async () => {
-    const response = await api.get('/inventory');
-    return response.data;
+    try {
+        const response = await api.get('/inventory');
+        await AsyncStorage.setItem('inventory_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('inventory_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error;
+    }
 };
 
 export const addInventoryItem = async (itemData) => {

@@ -18,6 +18,8 @@ import { getAnimals, deleteAnimal } from '../../services/animalService';
 import AIHealthTipModal from '../../components/AIHealthTipModal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const AnimalsScreen = ({ navigation }) => {
     const { t } = useLanguage();
@@ -76,6 +78,9 @@ const AnimalsScreen = ({ navigation }) => {
         fetchAnimals();
     };
 
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
+
     const handleDelete = async (animalId) => {
         Alert.alert(
             t('delete_animal_title'),
@@ -87,6 +92,17 @@ const AnimalsScreen = ({ navigation }) => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            if (!isConnected) {
+                                await addToQueue({
+                                    type: 'DELETE_ANIMAL',
+                                    resourceId: animalId,
+                                });
+                                Alert.alert(t('offline'), t('animal_deletion_queued'));
+                                // Optimistically remove from list
+                                setAnimals(prev => prev.filter(a => a._id !== animalId));
+                                return;
+                            }
+
                             await deleteAnimal(animalId);
                             Alert.alert(t('success'), 'Animal deleted successfully');
                             fetchAnimals();

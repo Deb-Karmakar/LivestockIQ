@@ -1,11 +1,17 @@
 // Mobile/src/services/animalService.js
 import api from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const getAnimals = async () => {
     try {
         const response = await api.get('/animals');
+        await AsyncStorage.setItem('animals_cache', JSON.stringify(response.data));
         return response.data;
     } catch (error) {
+        const cachedData = await AsyncStorage.getItem('animals_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
         throw error.response?.data || { message: 'Failed to fetch animals' };
     }
 };

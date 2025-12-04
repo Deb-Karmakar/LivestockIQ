@@ -16,6 +16,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { createAnimal, updateAnimal } from '../../services/animalService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 import BarcodeScannerModal from '../../components/BarcodeScannerModal';
 
@@ -43,6 +45,9 @@ const AddAnimalScreen = ({ navigation, route }) => {
     const genderList = ['Male', 'Female'];
     const weightUnits = ['kg', 'lbs'];
 
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
+
     const handleSubmit = async () => {
         if (!formData.tagId || formData.tagId.length !== 12) {
             Alert.alert(t('error'), t('tag_id_error'));
@@ -59,6 +64,25 @@ const AddAnimalScreen = ({ navigation, route }) => {
                 ...formData,
                 weight: formData.weight ? `${formData.weight} ${formData.weightUnit}` : '',
             };
+
+            if (!isConnected) {
+                if (isEditing) {
+                    await addToQueue({
+                        type: 'UPDATE_ANIMAL',
+                        resourceId: animal._id,
+                        payload: submitData,
+                    });
+                    Alert.alert(t('offline'), t('animal_update_queued'));
+                } else {
+                    await addToQueue({
+                        type: 'CREATE_ANIMAL',
+                        payload: submitData,
+                    });
+                    Alert.alert(t('offline'), t('animal_creation_queued'));
+                }
+                navigation.goBack();
+                return;
+            }
 
             if (isEditing) {
                 await updateAnimal(animal._id, submitData);
