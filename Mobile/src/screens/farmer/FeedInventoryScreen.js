@@ -26,10 +26,13 @@ import {
 } from '../../services/feedService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const FeedInventoryScreen = ({ navigation }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [feedInventory, setFeedInventory] = useState([]);
@@ -130,6 +133,8 @@ const FeedInventoryScreen = ({ navigation }) => {
         setModalVisible(true);
     };
 
+    const { addToQueue } = useSync();
+
     const handleSave = async () => {
         if (!form.feedName || !form.totalQuantity || !form.unit || !form.manufacturer) {
             Alert.alert(t('error'), t('fill_required'));
@@ -151,6 +156,25 @@ const FeedInventoryScreen = ({ navigation }) => {
                 purchaseDate: form.purchaseDate.toISOString(),
                 expiryDate: form.expiryDate.toISOString()
             };
+
+            if (!isConnected) {
+                if (editingItem) {
+                    await addToQueue({
+                        type: 'UPDATE_FEED',
+                        payload: itemData,
+                        resourceId: editingItem._id
+                    });
+                    Alert.alert(t('offline'), t('feed_update_queued'));
+                } else {
+                    await addToQueue({
+                        type: 'ADD_FEED',
+                        payload: itemData
+                    });
+                    Alert.alert(t('offline'), t('feed_add_queued'));
+                }
+                setModalVisible(false);
+                return;
+            }
 
             if (editingItem) {
                 await updateFeedItem(editingItem._id, itemData);
@@ -177,6 +201,17 @@ const FeedInventoryScreen = ({ navigation }) => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            if (!isConnected) {
+                                await addToQueue({
+                                    type: 'DELETE_FEED',
+                                    resourceId: id
+                                });
+                                Alert.alert(t('offline'), t('feed_delete_queued'));
+                                // Optimistically remove from list
+                                setFeedInventory(prev => prev.filter(item => item._id !== id));
+                                return;
+                            }
+
                             await deleteFeedItem(id);
                             fetchData();
                         } catch (error) {
@@ -253,7 +288,14 @@ const FeedInventoryScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
+                }
             >
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>

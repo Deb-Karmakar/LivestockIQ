@@ -106,6 +106,23 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // Feed Operations
+            case 'ADD_FEED':
+                await import('../services/feedService').then(module =>
+                    module.addFeedItem(item.payload)
+                );
+                break;
+            case 'UPDATE_FEED':
+                await import('../services/feedService').then(module =>
+                    module.updateFeedItem(item.resourceId, item.payload)
+                );
+                break;
+            case 'DELETE_FEED':
+                await import('../services/feedService').then(module =>
+                    module.deleteFeedItem(item.resourceId)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

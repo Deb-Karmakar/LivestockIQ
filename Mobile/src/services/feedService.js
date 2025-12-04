@@ -1,9 +1,20 @@
 import api from './api';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const getFeedInventory = async (includeInactive = false) => {
-    const params = includeInactive ? { includeInactive: true } : {};
-    const response = await api.get('/feed', { params });
-    return response.data;
+    try {
+        const params = includeInactive ? { includeInactive: true } : {};
+        const response = await api.get('/feed', { params });
+        await AsyncStorage.setItem('feed_inventory_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('feed_inventory_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch feed inventory' };
+    }
 };
 
 export const getFeedById = async (id) => {
@@ -27,8 +38,17 @@ export const deleteFeedItem = async (id) => {
 };
 
 export const getFeedStats = async () => {
-    const response = await api.get('/feed/stats');
-    return response.data;
+    try {
+        const response = await api.get('/feed/stats');
+        await AsyncStorage.setItem('feed_stats_cache', JSON.stringify(response.data));
+        return response.data;
+    } catch (error) {
+        const cachedData = await AsyncStorage.getItem('feed_stats_cache');
+        if (cachedData) {
+            return JSON.parse(cachedData);
+        }
+        throw error.response?.data || { message: 'Failed to fetch feed stats' };
+    }
 };
 
 export const getActiveFeed = async () => {
