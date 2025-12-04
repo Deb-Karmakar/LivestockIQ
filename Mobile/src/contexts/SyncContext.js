@@ -130,6 +130,13 @@ export const SyncProvider = ({ children }) => {
                 );
                 break;
 
+            // Sales Operations
+            case 'ADD_SALE':
+                await import('../services/salesService').then(module =>
+                    module.addSale(item.payload)
+                );
+                break;
+
             default:
                 console.warn('Unknown sync item type:', item.type);
         }

@@ -19,6 +19,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 import { getAnimals } from '../../services/animalService';
 import { getTreatments } from '../../services/treatmentService';
 import { addSale, getSales } from '../../services/salesService';
@@ -26,6 +28,8 @@ import { addSale, getSales } from '../../services/salesService';
 const SalesScreen = ({ navigation }) => {
     const { theme } = useTheme();
     const { t } = useLanguage();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [animals, setAnimals] = useState([]);
@@ -107,11 +111,24 @@ const SalesScreen = ({ navigation }) => {
 
         try {
             setSubmitting(true);
-            await addSale({
+            const saleData = {
                 ...formData,
                 quantity: parseFloat(formData.quantity),
                 price: parseFloat(formData.price),
-            });
+            };
+
+            if (!isConnected) {
+                await addToQueue({
+                    type: 'ADD_SALE',
+                    payload: saleData
+                });
+                Alert.alert(t('offline'), t('sale_queued'));
+                setModalVisible(false);
+                resetForm();
+                return;
+            }
+
+            await addSale(saleData);
             Alert.alert(t('success'), t('sale_recorded_success'));
             setModalVisible(false);
             resetForm();
@@ -154,7 +171,12 @@ const SalesScreen = ({ navigation }) => {
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <ScrollView
                 refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.primary} />
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={() => fetchData(true)}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
                 }
             >
                 {/* Header */}
