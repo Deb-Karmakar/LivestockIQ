@@ -25,10 +25,14 @@ import {
 } from '../../services/inventoryService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
+import { useSync } from '../../contexts/SyncContext';
 
 const InventoryScreen = ({ navigation }) => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
+    const { addToQueue } = useSync();
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [inventory, setInventory] = useState([]);
@@ -107,6 +111,25 @@ const InventoryScreen = ({ navigation }) => {
                 expiryDate: form.expiryDate.toISOString()
             };
 
+            if (!isConnected) {
+                if (editingItem) {
+                    await addToQueue({
+                        type: 'UPDATE_INVENTORY',
+                        payload: itemData,
+                        resourceId: editingItem._id
+                    });
+                    Alert.alert(t('offline'), t('item_update_queued'));
+                } else {
+                    await addToQueue({
+                        type: 'ADD_INVENTORY',
+                        payload: itemData
+                    });
+                    Alert.alert(t('offline'), t('item_add_queued'));
+                }
+                setModalVisible(false);
+                return;
+            }
+
             if (editingItem) {
                 await updateInventoryItem(editingItem._id, itemData);
                 Alert.alert(t('success'), 'Item updated successfully');
@@ -132,6 +155,17 @@ const InventoryScreen = ({ navigation }) => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            if (!isConnected) {
+                                await addToQueue({
+                                    type: 'DELETE_INVENTORY',
+                                    resourceId: id
+                                });
+                                Alert.alert(t('offline'), t('item_delete_queued'));
+                                // Optimistically remove from list
+                                setInventory(prev => prev.filter(item => item._id !== id));
+                                return;
+                            }
+
                             await deleteInventoryItem(id);
                             fetchData();
                         } catch (error) {
@@ -189,7 +223,14 @@ const InventoryScreen = ({ navigation }) => {
 
             <ScrollView
                 style={styles.content}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.primary} />}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={theme.primary}
+                        enabled={isConnected}
+                    />
+                }
             >
                 {/* Stats Grid */}
                 <View style={styles.statsGrid}>
