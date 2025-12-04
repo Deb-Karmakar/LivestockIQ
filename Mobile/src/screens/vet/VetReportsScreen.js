@@ -21,6 +21,7 @@ import {
 } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNetwork } from '../../contexts/NetworkContext';
 
 const ReportTypeCard = ({ title, description, icon, isSelected, onPress, theme }) => (
     <TouchableOpacity
@@ -78,6 +79,7 @@ const SummaryCard = ({ label, value, icon, trend, t, theme }) => (
 const VetReportsScreen = () => {
     const { t } = useLanguage();
     const { theme } = useTheme();
+    const { isConnected } = useNetwork();
     const [selectedReportType, setSelectedReportType] = useState(null);
     const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 1)));
     const [endDate, setEndDate] = useState(new Date());
@@ -247,6 +249,11 @@ const VetReportsScreen = () => {
                     </View>
                     <Text style={styles.welcomeText}>{t('practice_insights')}</Text>
                     <Text style={styles.subText}>{t('generate_analyze')}</Text>
+                    {!isConnected && (
+                        <Text style={{ color: theme.warning, marginTop: 8, fontSize: 12 }}>
+                            {t('offline_mode_cached_data')}
+                        </Text>
+                    )}
                 </View>
             </LinearGradient>
 
