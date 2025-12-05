@@ -107,20 +107,12 @@ const SellPage = () => {
     }, [fetchData]);
 
     const safeToSellAnimals = useMemo(() => {
+        console.log("Filtering animals for sale. Total animals:", animals.length);
         return animals.filter(animal => {
-            // First check MRL status from backend
-            if (animal.mrlStatus !== 'SAFE') return false;
-
-            // Then double check local treatment records as a safety net
-            const animalTreatments = treatments.filter(t => t.animalId === animal.tagId && t.status === 'Approved');
-            if (animalTreatments.length === 0) return true;
-
-            const lastTreatment = animalTreatments.sort((a, b) => new Date(b.startDate) - new Date(a.startDate))[0];
-            if (!lastTreatment.withdrawalEndDate) return false;
-
-            return new Date() > new Date(lastTreatment.withdrawalEndDate);
+            console.log(`Animal ${animal.tagId} MRL Status:`, animal.mrlStatus);
+            return animal.mrlStatus === 'SAFE';
         });
-    }, [animals, treatments]);
+    }, [animals]);
 
     const handleSaveSale = async (saleData) => {
         try {

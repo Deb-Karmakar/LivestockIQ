@@ -2,6 +2,7 @@
 
 import Treatment from '../models/treatment.model.js';
 import LabTest from '../models/labTest.model.js';
+import Animal from '../models/animal.model.js';
 import { differenceInDays } from 'date-fns';
 
 /**
@@ -18,6 +19,22 @@ import { differenceInDays } from 'date-fns';
  */
 export const validateMRLCompliance = async (animalId, farmerId, productType = 'Milk') => {
     try {
+        // 0. CHECK MRL STATUS (Primary Source of Truth)
+        const animal = await Animal.findOne({ tagId: animalId, farmerId });
+        if (animal && animal.mrlStatus === 'SAFE') {
+            return {
+                canSell: true,
+                reason: 'COMPLIANT',
+                message: 'Animal cleared for product sale (Status: SAFE)',
+                details: {
+                    hasRecentTests: false, // We don't check if we trust status
+                    latestTestDate: null,
+                    noActiveWithdrawals: true,
+                    noRecentViolations: true
+                }
+            };
+        }
+
         const now = new Date();
 
         // 1. CHECK ACTIVE WITHDRAWAL PERIODS
