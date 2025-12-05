@@ -72,6 +72,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use('/downloads', express.static(path.join(__dirname, 'public/downloads')));
 
+// Health check endpoint for Render (responds immediately)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.send('API is running...');

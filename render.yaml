@@ -1,0 +1,38 @@
+# c:\Users\DEB\Test\LivestockIQ\render.yaml
+
+services:
+  # Backend API Service
+  - type: web
+    name: livestockiq-backend
+    runtime: node
+    region: singapore
+    rootDir: Backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+  # Frontend Static Site
+  - type: web
+    name: livestockiq-frontend
+    runtime: static
+    rootDir: Frontend/LivestockIQ
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
