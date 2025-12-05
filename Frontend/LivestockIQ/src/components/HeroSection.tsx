@@ -6,10 +6,8 @@ import dashboardImage from "@assets/generated_images/Livestock_management_dashbo
 const HeroSection = () => {
     const navigate = useNavigate();
 
-    // Use environment variable or fallback to localhost for development
-    // Remove /api suffix if present since static files are served at root level
-    const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
-    const apkDownloadUrl = `${API_URL}/downloads/livestockiq.apk`;
+    // APK download URL - hosted on GitHub Releases for reliable large file downloads
+    const apkDownloadUrl = 'https://github.com/Deb-Karmakar/LivestockIQ/releases/download/v1.0.0/livestockiq.apk';
 
     return (
         <section className="relative bg-gradient-to-br from-green-50 to-white py-20 lg:py-32 overflow-hidden">
