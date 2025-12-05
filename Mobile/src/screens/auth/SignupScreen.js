@@ -240,12 +240,14 @@ const SignupScreen = ({ navigation }) => {
                 <TextInput
                     style={styles.input}
                     placeholder={t('full_name')}
+                    placeholderTextColor="#9ca3af"
                     value={fullName}
                     onChangeText={setFullName}
                 />
                 <TextInput
                     style={styles.input}
                     placeholder={t('email')}
+                    placeholderTextColor="#9ca3af"
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -254,6 +256,7 @@ const SignupScreen = ({ navigation }) => {
                 <TextInput
                     style={styles.input}
                     placeholder={t('phone_number')}
+                    placeholderTextColor="#9ca3af"
                     value={phoneNumber}
                     onChangeText={setPhoneNumber}
                     keyboardType="phone-pad"
@@ -262,6 +265,7 @@ const SignupScreen = ({ navigation }) => {
                     <TextInput
                         style={styles.passwordInput}
                         placeholder={t('password')}
+                        placeholderTextColor="#9ca3af"
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry={!showPassword}
@@ -273,6 +277,7 @@ const SignupScreen = ({ navigation }) => {
                 <TextInput
                     style={styles.input}
                     placeholder={t('confirm_password')}
+                    placeholderTextColor="#9ca3af"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showPassword}
@@ -285,12 +290,14 @@ const SignupScreen = ({ navigation }) => {
                     <TextInput
                         style={styles.input}
                         placeholder={t('farm_name')}
+                        placeholderTextColor="#9ca3af"
                         value={farmName}
                         onChangeText={setFarmName}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder={t('vet_id')}
+                        placeholderTextColor="#9ca3af"
                         value={vetId}
                         onChangeText={setVetId}
                     />
@@ -324,24 +331,28 @@ const SignupScreen = ({ navigation }) => {
                     <TextInput
                         style={styles.input}
                         placeholder={t('license_number')}
+                        placeholderTextColor="#9ca3af"
                         value={licenseNumber}
                         onChangeText={setLicenseNumber}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder={t('university')}
+                        placeholderTextColor="#9ca3af"
                         value={university}
                         onChangeText={setUniversity}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder={t('degree')}
+                        placeholderTextColor="#9ca3af"
                         value={degree}
                         onChangeText={setDegree}
                     />
                     <TextInput
                         style={styles.input}
                         placeholder={t('specialization')}
+                        placeholderTextColor="#9ca3af"
                         value={specialization}
                         onChangeText={setSpecialization}
                     />

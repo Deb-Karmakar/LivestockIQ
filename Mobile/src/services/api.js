@@ -3,7 +3,17 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
+// Production API URL - Update this with your Render backend URL
+const PRODUCTION_API_URL = 'https://livestockiq-backend.onrender.com/api';
+
 const getApiUrl = () => {
+    // Check if running in production (EAS build)
+    if (!__DEV__) {
+        console.log('Running in production mode');
+        return PRODUCTION_API_URL;
+    }
+
+    // Development mode - use local server
     const debuggerHost = Constants.expoConfig?.hostUri;
     const localhost = debuggerHost?.split(':')[0];
 
@@ -20,7 +30,7 @@ console.log('API Base URL:', API_BASE_URL);
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 10000,
+    timeout: 15000, // Increased timeout for production
     headers: {
         'Content-Type': 'application/json',
     },
