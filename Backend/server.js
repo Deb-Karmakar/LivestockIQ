@@ -30,6 +30,7 @@ import vetManagementRoutes from './routes/vetManagement.routes.js';
 import prescriptionReviewRoutes from './routes/prescriptionReview.routes.js';
 import trendsEnhancedRoutes from './routes/trendsEnhanced.routes.js';
 import ttsRoutes from './routes/tts.routes.js';
+import sttRoutes from './routes/stt.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -61,7 +62,8 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Root route
 app.get('/', (req, res) => {
@@ -96,6 +98,7 @@ app.use('/api/regulator/vets', vetManagementRoutes); // Vet management for regul
 app.use('/api/regulator/prescriptions', prescriptionReviewRoutes); // Prescription review for regulators
 app.use('/api/regulator/trends-enhanced', trendsEnhancedRoutes); // Enhanced trends analysis
 app.use('/api/tts', ttsRoutes); // Text-to-speech service
+app.use('/api/stt', sttRoutes); // Speech-to-text service
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported

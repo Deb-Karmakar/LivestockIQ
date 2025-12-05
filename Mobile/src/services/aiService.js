@@ -47,3 +47,22 @@ export const synthesizeSpeech = async (text, language = 'en') => {
         throw error;
     }
 };
+
+/**
+ * Transcribe speech to text using Groq Whisper
+ * @param {string} audioBase64 - Base64 encoded audio
+ * @param {string} language - 'en' or 'hi'
+ * @returns {Promise<{text: string, language: string}>}
+ */
+export const transcribeSpeech = async (audioBase64, language = 'hi') => {
+    try {
+        const { data } = await api.post('/stt/transcribe', {
+            audio: audioBase64,
+            language
+        });
+        return data; // Returns { text: "...", language: "..." }
+    } catch (error) {
+        console.error('Error transcribing speech:', error);
+        throw error;
+    }
+};

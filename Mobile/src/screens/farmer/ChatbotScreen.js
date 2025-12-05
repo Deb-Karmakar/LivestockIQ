@@ -23,9 +23,115 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useNetwork } from '../../contexts/NetworkContext';
-import { sendChatMessage, synthesizeSpeech } from '../../services/aiService';
+import { sendChatMessage, synthesizeSpeech, transcribeSpeech } from '../../services/aiService';
 
 const CHAT_STORAGE_KEY = '@livestockiq_chat_history';
+
+// Simple markdown-like text formatter component
+const FormattedText = ({ content, theme }) => {
+    const lines = content.split('\n');
+
+    return (
+        <View>
+            {lines.map((line, index) => {
+                // Headers
+                if (line.startsWith('### ')) {
+                    return (
+                        <Text key={index} style={{ color: theme.text, fontSize: 15, fontWeight: '600', marginTop: 8, marginBottom: 4 }}>
+                            {line.replace('### ', '')}
+                        </Text>
+                    );
+                }
+                if (line.startsWith('## ')) {
+                    return (
+                        <Text key={index} style={{ color: theme.text, fontSize: 16, fontWeight: 'bold', marginTop: 10, marginBottom: 4 }}>
+                            {line.replace('## ', '')}
+                        </Text>
+                    );
+                }
+                if (line.startsWith('# ')) {
+                    return (
+                        <Text key={index} style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginTop: 12, marginBottom: 6 }}>
+                            {line.replace('# ', '')}
+                        </Text>
+                    );
+                }
+
+                // Bullet points
+                if (line.match(/^[\-\*•]\s/)) {
+                    const bulletContent = line.replace(/^[\-\*•]\s/, '');
+                    return (
+                        <View key={index} style={{ flexDirection: 'row', marginVertical: 2, paddingLeft: 4 }}>
+                            <Text style={{ color: theme.primary, marginRight: 8 }}>•</Text>
+                            <Text style={{ color: theme.text, fontSize: 15, lineHeight: 22, flex: 1 }}>
+                                {formatInlineStyles(bulletContent, theme)}
+                            </Text>
+                        </View>
+                    );
+                }
+
+                // Numbered lists
+                if (line.match(/^\d+\.\s/)) {
+                    const match = line.match(/^(\d+)\.\s(.*)$/);
+                    if (match) {
+                        return (
+                            <View key={index} style={{ flexDirection: 'row', marginVertical: 2, paddingLeft: 4 }}>
+                                <Text style={{ color: theme.primary, marginRight: 8, minWidth: 20 }}>{match[1]}.</Text>
+                                <Text style={{ color: theme.text, fontSize: 15, lineHeight: 22, flex: 1 }}>
+                                    {formatInlineStyles(match[2], theme)}
+                                </Text>
+                            </View>
+                        );
+                    }
+                }
+
+                // Empty lines - add spacing
+                if (line.trim() === '') {
+                    return <View key={index} style={{ height: 8 }} />;
+                }
+
+                // Regular text with inline formatting
+                return (
+                    <Text key={index} style={{ color: theme.text, fontSize: 15, lineHeight: 22, marginVertical: 2 }}>
+                        {formatInlineStyles(line, theme)}
+                    </Text>
+                );
+            })}
+        </View>
+    );
+};
+
+// Helper to format inline bold and italic
+const formatInlineStyles = (text, theme) => {
+    // Simple implementation - just return text for now
+    // Bold: **text**
+    // Italic: *text*
+    const parts = [];
+    let remaining = text;
+    let key = 0;
+
+    // Process bold first (**text**)
+    const boldRegex = /\*\*(.+?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = boldRegex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push(<Text key={key++}>{text.substring(lastIndex, match.index)}</Text>);
+        }
+        parts.push(<Text key={key++} style={{ fontWeight: 'bold' }}>{match[1]}</Text>);
+        lastIndex = match.index + match[0].length;
+    }
+
+    if (parts.length > 0) {
+        if (lastIndex < text.length) {
+            parts.push(<Text key={key++}>{text.substring(lastIndex)}</Text>);
+        }
+        return parts;
+    }
+
+    return text;
+};
 
 const ChatbotScreen = ({ navigation }) => {
     const { theme } = useTheme();
@@ -37,6 +143,9 @@ const ChatbotScreen = ({ navigation }) => {
     const [inputText, setInputText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
+    const [voiceLang, setVoiceLang] = useState('hi'); // Voice input language toggle
 
     // History state
     const [chatHistory, setChatHistory] = useState([]); // List of all chats
@@ -48,6 +157,8 @@ const ChatbotScreen = ({ navigation }) => {
 
     const scrollViewRef = useRef();
     const inputRef = useRef();
+    const recordingRef = useRef(null);
+    const pulseAnim = useRef(new Animated.Value(1)).current;
 
     // Load chat history on mount
     useEffect(() => {
@@ -323,6 +434,125 @@ const ChatbotScreen = ({ navigation }) => {
         }
     };
 
+    // Start pulse animation when recording
+    useEffect(() => {
+        if (isRecording) {
+            Animated.loop(
+                Animated.sequence([
+                    Animated.timing(pulseAnim, {
+                        toValue: 1.3,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(pulseAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                ])
+            ).start();
+        } else {
+            pulseAnim.setValue(1);
+        }
+    }, [isRecording]);
+
+    // Voice input handler
+    const handleVoiceInput = async () => {
+        if (!isConnected) {
+            Alert.alert(
+                language === 'hi' ? 'त्रुटि' : 'Error',
+                language === 'hi' ? 'इंटरनेट कनेक्शन आवश्यक है' : 'Internet connection required'
+            );
+            return;
+        }
+
+        if (isRecording) {
+            // Stop recording
+            try {
+                console.log('Stopping recording...');
+                await recordingRef.current?.stopAndUnloadAsync();
+                const uri = recordingRef.current?.getURI();
+                console.log('Recording URI:', uri);
+
+                setIsRecording(false);
+                setIsTranscribing(true);
+
+                if (uri) {
+                    // Read file as base64
+                    const response = await fetch(uri);
+                    const blob = await response.blob();
+
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                        try {
+                            const base64Audio = reader.result.split(',')[1];
+                            console.log('Sending audio for transcription, size:', base64Audio.length, 'lang:', voiceLang);
+
+                            // Use selected voice language
+                            const result = await transcribeSpeech(base64Audio, voiceLang);
+                            console.log('Transcription result:', result);
+
+                            if (result?.text) {
+                                setInputText(prev => prev + (prev ? ' ' : '') + result.text);
+                            }
+                        } catch (err) {
+                            console.error('Transcription error:', err);
+                            Alert.alert(
+                                language === 'hi' ? 'त्रुटि' : 'Error',
+                                language === 'hi' ? 'आवाज पहचानने में समस्या हुई' : 'Failed to recognize speech'
+                            );
+                        } finally {
+                            setIsTranscribing(false);
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                } else {
+                    setIsTranscribing(false);
+                }
+
+                recordingRef.current = null;
+            } catch (error) {
+                console.error('Stop recording error:', error);
+                setIsRecording(false);
+                setIsTranscribing(false);
+            }
+        } else {
+            // Start recording
+            try {
+                console.log('Requesting audio permissions...');
+                const permission = await Audio.requestPermissionsAsync();
+
+                if (permission.status !== 'granted') {
+                    Alert.alert(
+                        language === 'hi' ? 'अनुमति आवश्यक' : 'Permission Required',
+                        language === 'hi' ? 'माइक्रोफ़ोन की अनुमति दें' : 'Please grant microphone permission'
+                    );
+                    return;
+                }
+
+                await Audio.setAudioModeAsync({
+                    allowsRecordingIOS: true,
+                    playsInSilentModeIOS: true,
+                });
+
+                console.log('Starting recording...');
+                const { recording } = await Audio.Recording.createAsync(
+                    Audio.RecordingOptionsPresets.HIGH_QUALITY
+                );
+
+                recordingRef.current = recording;
+                setIsRecording(true);
+
+            } catch (error) {
+                console.error('Start recording error:', error);
+                Alert.alert(
+                    language === 'hi' ? 'त्रुटि' : 'Error',
+                    language === 'hi' ? 'रिकॉर्डिंग शुरू नहीं हो सकी' : 'Could not start recording'
+                );
+            }
+        }
+    };
+
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         const now = new Date();
@@ -357,12 +587,13 @@ const ChatbotScreen = ({ navigation }) => {
                         </Text>
                     </View>
                 )}
-                <Text style={[
-                    styles.messageText,
-                    { color: isUser ? '#fff' : theme.text },
-                ]}>
-                    {message.content}
-                </Text>
+                {isUser ? (
+                    <Text style={[styles.messageText, { color: '#fff' }]}>
+                        {message.content}
+                    </Text>
+                ) : (
+                    <FormattedText content={message.content} theme={theme} />
+                )}
 
                 {!isUser && !message.isError && (
                     <TouchableOpacity
@@ -481,16 +712,54 @@ const ChatbotScreen = ({ navigation }) => {
                     }
                 ]}
             >
+                {/* Voice Language Toggle */}
+                <TouchableOpacity
+                    style={[
+                        styles.langToggle,
+                        { backgroundColor: voiceLang === 'hi' ? '#FF9800' : '#2196F3' }
+                    ]}
+                    onPress={() => setVoiceLang(voiceLang === 'hi' ? 'en' : 'hi')}
+                    disabled={isRecording}
+                >
+                    <Text style={styles.langToggleText}>
+                        {voiceLang === 'hi' ? 'हि' : 'EN'}
+                    </Text>
+                </TouchableOpacity>
+
+                {/* Microphone Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.micButton,
+                        { backgroundColor: isRecording ? theme.error : theme.background },
+                    ]}
+                    onPress={handleVoiceInput}
+                    disabled={isLoading || isTranscribing}
+                >
+                    {isTranscribing ? (
+                        <ActivityIndicator size="small" color={theme.primary} />
+                    ) : (
+                        <Animated.View style={{ transform: [{ scale: isRecording ? pulseAnim : 1 }] }}>
+                            <Ionicons
+                                name={isRecording ? 'stop' : 'mic'}
+                                size={22}
+                                color={isRecording ? '#fff' : theme.primary}
+                            />
+                        </Animated.View>
+                    )}
+                </TouchableOpacity>
+
                 <TextInput
                     ref={inputRef}
                     style={[styles.input, { backgroundColor: theme.background, color: theme.text }]}
-                    placeholder={language === 'hi' ? 'अपना सवाल लिखें...' : 'Type your message...'}
-                    placeholderTextColor={theme.subtext}
+                    placeholder={isRecording
+                        ? (language === 'hi' ? '🎤 बोलें...' : '🎤 Speak...')
+                        : (language === 'hi' ? 'अपना सवाल लिखें...' : 'Type your message...')}
+                    placeholderTextColor={isRecording ? theme.error : theme.subtext}
                     value={inputText}
                     onChangeText={setInputText}
                     multiline
                     maxLength={500}
-                    editable={!isLoading}
+                    editable={!isLoading && !isRecording}
                     onFocus={scrollToBottom}
                 />
 
@@ -679,6 +948,27 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    micButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'transparent',
+    },
+    langToggle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    langToggleText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
     },
     // Modal styles
     modalOverlay: {
