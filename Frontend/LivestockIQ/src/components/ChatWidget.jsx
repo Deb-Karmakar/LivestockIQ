@@ -40,8 +40,8 @@ export const ChatWidget = () => {
         const historyForAPI = messages.map(msg => ({ role: msg.role, text: msg.text }));
 
         try {
-            const { reply } = await sendMessageToGroq(currentInput, historyForAPI);
-            const aiMessage = { role: 'model', text: reply };
+            const { response } = await sendMessageToGroq(currentInput, historyForAPI);
+            const aiMessage = { role: 'model', text: response };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error) {
             const errorMessage = { role: 'model', text: 'Sorry, I am having trouble connecting. Please try again later.' };

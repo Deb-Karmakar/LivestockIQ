@@ -362,6 +362,35 @@ const ChatbotScreen = ({ navigation }) => {
     // Audio player reference for cloud TTS
     const soundRef = useRef(null);
 
+    // Strip markdown formatting from text for TTS
+    const stripMarkdown = (text) => {
+        return text
+            // Remove headers (# ## ###)
+            .replace(/^#{1,6}\s+/gm, '')
+            // Remove bold (**text** or __text__)
+            .replace(/\*\*([^*]+)\*\*/g, '$1')
+            .replace(/__([^_]+)__/g, '$1')
+            // Remove italic (*text* or _text_)
+            .replace(/\*([^*]+)\*/g, '$1')
+            .replace(/_([^_]+)_/g, '$1')
+            // Remove strikethrough (~~text~~)
+            .replace(/~~([^~]+)~~/g, '$1')
+            // Remove inline code (`code`)
+            .replace(/`([^`]+)`/g, '$1')
+            // Remove links [text](url)
+            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+            // Remove bullet points (- or *)
+            .replace(/^[\-\*•]\s+/gm, '')
+            // Remove numbered lists (1. 2. etc)
+            .replace(/^\d+\.\s+/gm, '')
+            // Remove blockquotes (>)
+            .replace(/^>\s+/gm, '')
+            // Clean up multiple spaces and newlines
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    };
+
     const speakMessage = async (text) => {
         if (isSpeaking) {
             // Stop current playback
@@ -379,11 +408,14 @@ const ChatbotScreen = ({ navigation }) => {
 
         setIsSpeaking(true);
 
+        // Strip markdown before sending to TTS
+        const cleanText = stripMarkdown(text);
+
         // Try Google Cloud TTS first (better Hindi quality)
         if (isConnected) {
             try {
                 console.log('Trying Google TTS...');
-                const result = await synthesizeSpeech(text, language);
+                const result = await synthesizeSpeech(cleanText, language);
 
                 if (result?.audio && result.audio.length > 100) {
                     console.log('Got audio from Google TTS, length:', result.audio.length);
@@ -417,7 +449,7 @@ const ChatbotScreen = ({ navigation }) => {
         // Fallback to device TTS
         console.log('Using device TTS as fallback...');
         try {
-            await Speech.speak(text, {
+            await Speech.speak(cleanText, {
                 language: language === 'hi' ? 'hi-IN' : 'en-US',
                 pitch: 1.0,
                 rate: language === 'hi' ? 0.9 : 0.95,
