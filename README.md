@@ -14,6 +14,7 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **Animal History Tracking**: View complete medical and treatment history for each animal
 - **Status Management**: Mark animals as Active, Sold, or Culled
 - **Age Calculation**: Automatic age calculation from date of birth
+- **MRL (Maximum Residue Limit) Compliance**: Track drug residue limits and safety periods
 
 #### Health & Treatment Management
 - **Treatment Scheduling**: Request and schedule treatments for livestock
@@ -22,6 +23,8 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **Treatment Filtering**: Filter treatments by status, date, and other criteria
 - **Prescription Management**: View and manage veterinary prescriptions
 - **Health Alerts**: Get notified about upcoming treatments and health issues
+- **Medicated Feed Administration**: Track and manage medicated feed programs
+- **WHO AWaRe Drug Classification**: Automatic classification of antibiotics (Access/Watch/Reserve)
 
 #### Inventory & Supply Management
 - **Drug Inventory System**: Track veterinary medicines and supplies
@@ -105,14 +108,17 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 
 #### Data Management & Integration
 - **MongoDB Database**: Scalable NoSQL database with Mongoose ODM
-- **Real-time Synchronization**: Live data updates across all user interfaces
+- **Real-time Synchronization**: Live data updates via Socket.IO across all user interfaces
 - **Data Validation**: Comprehensive server-side and client-side validation
-- **Blockchain Audit System**: Immutable, tamper-proof audit logging with Polygon blockchain integration
-- **Hash Chain Protection**: Cryptographically linked audit logs preventing unauthorized modifications
+- **Blockchain Audit System**: Immutable, tamper-proof audit logging with three layers of protection:
+  - **Layer 1 - Hash Chain**: Each record cryptographically linked to the previous one
+  - **Layer 2 - Merkle Tree**: Batch verification with Merkle roots for efficient validation
+  - **Layer 3 - Blockchain**: Public anchoring to Polygon Amoy testnet for permanent proof
 - **Digital Signatures**: RSA-based digital signatures for veterinarian treatment approvals
-- **Merkle Tree Verification**: Efficient batch verification of audit logs with Merkle roots
-- **Blockchain Anchoring**: Periodic anchoring of audit snapshots to Polygon Amoy testnet
+- **Audit Trail Verification**: Complete verifiability with hash chain integrity checks
+- **Blockchain Certificate Download**: Downloadable blockchain verification certificates
 - **Data Export**: Export data in multiple formats (PDF, CSV, JSON)
+- **WHO AWaRe Drug Database**: Integrated MRL database with 24+ drugs and WHO classifications
 
 #### Communication & Notifications
 - **Email Integration**: Automated email notifications with Nodemailer
@@ -131,10 +137,18 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 #### AI-Powered Features
 - **AI Health Assistant (IQ Buddy)**: Intelligent chatbot powered by Groq/LLaMA for livestock health guidance
 - **Personalized Health Tips**: AI-generated health recommendations based on animal profiles and treatment history
-- **Automated AMU Analysis**: ML-powered antimicrobial usage spike detection and analysis
-- **Peer Comparison Analytics**: Compare farm AMU patterns with similar operations
+- **Automated AMU Analysis**: ML-powered antimicrobial usage spike detection with 6 alert types:
+  - Historical Spike Detection (2x baseline)
+  - Peer Comparison Benchmarking (1.5x peer average)
+  - Absolute Threshold Monitoring (0.5 treatments/animal/month)
+  - Trend Increase Analysis (30% increase over 3 months)
+  - Critical Drug Usage Tracking (40% WHO Watch/Reserve antibiotics)
+  - Sustained High Usage Detection (4+ consecutive weeks)
+- **Peer Comparison Analytics**: Compare farm AMU patterns with similar operations (species/herd size)
 - **Disease Prediction**: Predictive analytics for early disease outbreak detection
 - **Intelligent Alerts**: AI-driven alerts for abnormal treatment patterns and health risks
+- **Speech-to-Text (STT)**: Voice input for hands-free operation
+- **Text-to-Speech (TTS)**: Audio feedback for accessibility
 
 #### Advanced Analytics & Automation
 - **Automated Background Jobs**: Scheduled analysis of treatment patterns and health trends
@@ -149,6 +163,9 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **System Health Monitoring**: Real-time monitoring of application performance and data integrity
 - **Advanced User Management**: Role-based access control with admin privileges
 - **Data Analytics Suite**: Comprehensive analytics tools for system administrators
+- **AMU Configuration Management**: Customizable thresholds for all 6 alert types
+- **Blockchain Management**: Manual blockchain anchoring and verification tools
+- **Support Ticket System**: Integrated help desk and issue tracking
 
 #### Technical Excellence
 - **Offline Capability**: Works with intermittent internet connectivity
@@ -158,38 +175,72 @@ LivestockIQ is a full-stack web application that enables efficient livestock man
 - **Geographic Services**: Location-based features and mapping
 - **Multi-language Support**: Internationalization ready
 - **Microservices Architecture**: Modular backend design with specialized controllers
-- **Background Processing**: Automated job scheduling and execution
-- **AI/ML Integration**: Seamless integration with Groq AI and machine learning models
+- **Background Processing**: Automated job scheduling with node-cron
+  - Daily: Historical spike detection
+  - Weekly: Absolute threshold checks, critical drug monitoring, sustained usage tracking
+  - Monthly: Peer comparison analysis, trend detection
+- **AI/ML Integration**: Seamless integration with Groq AI (LLaMA models) and Google Generative AI
+- **Real-time Communications**: Socket.IO for live updates and notifications
+- **Email Notifications**: Automated email alerts via Nodemailer
 
 ## 🛠️ Tech Stack
 
 ### Backend:
 - **Node.js** - Runtime environment
-- **Express.js** - Web application framework
+- **Express.js 5** - Web application framework
 - **MongoDB** - Database with Mongoose ODM
 - **JWT** - Authentication and authorization
 - **bcryptjs** - Password hashing
-- **PDFKit** - PDF generation
+- **PDFKit** - PDF generation for prescriptions and reports
+- **jsPDF** - Additional PDF generation capabilities
 - **Nodemailer** - Email functionality
 - **CORS** - Cross-origin resource sharing
-- **Groq AI** - AI-powered chat and health recommendations
+- **Socket.IO** - Real-time bidirectional communication
+- **Groq AI** - AI-powered chat and health recommendations (LLaMA models)
+- **Google Generative AI** - Additional AI capabilities
 - **node-cron** - Automated background job scheduling
 - **date-fns** - Advanced date manipulation and formatting
 - **Hardhat** - Ethereum development environment for smart contracts
 - **ethers.js** - Blockchain interaction library
 - **Polygon Amoy** - Blockchain network for immutable audit trail anchoring
+- **QRCode** - QR code generation
+- **EJS** - Email template rendering
+- **Axios** - HTTP client for external API calls
 
 ### Frontend:
 - **React 19** - UI library with modern hooks
-- **Vite** - Build tool and development server
+- **Vite 7** - Build tool and development server
 - **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Modern UI component library
-- **React Router** - Client-side routing
-- **React Query** - Data fetching and state management
+- **shadcn/ui** - Modern UI component library (40+ components)
+- **React Router 7** - Client-side routing
+- **React Query / TanStack Query** - Data fetching and state management
 - **Framer Motion** - Animations and transitions
 - **Axios** - HTTP client
 - **React Hook Form** - Form management
 - **Lucide React** - Icon library
+- **Recharts** - Chart and data visualization
+- **Leaflet** - Interactive maps with heat map support
+- **jsPDF & jsPDF-AutoTable** - Client-side PDF generation
+- **React Hot Toast** - Toast notifications
+- **React Markdown** - Markdown rendering for AI responses
+- **Socket.IO Client** - Real-time communication
+- **Dexie** - IndexedDB wrapper for offline storage
+- **html5-qrcode** - QR/barcode scanning
+- **next-themes** - Dark/light mode support
+- **Vite PWA Plugin** - Progressive Web App capabilities
+
+### Mobile:
+- **React Native 0.81** - Cross-platform mobile framework
+- **Expo SDK 54** - Development platform and tools
+- **React Navigation 7** - Mobile navigation (Stack & Bottom Tabs)
+- **Expo Camera** - Camera access for QR/barcode scanning
+- **Expo Location** - GPS and location services
+- **Expo Notifications** - Push notification support
+- **Expo Speech** - Text-to-speech functionality
+- **AsyncStorage** - Local data persistence
+- **NetInfo** - Network connectivity monitoring
+- **date-fns** - Date manipulation
+- **Expo Linear Gradient** - Gradient UI components
 
 ## 📋 Prerequisites
 
@@ -261,6 +312,12 @@ BLOCKCHAIN_RPC_URL=https://rpc-amoy.polygon.technology/
 BLOCKCHAIN_PRIVATE_KEY=your_polygon_wallet_private_key
 BLOCKCHAIN_CONTRACT_ADDRESS=deployed_audit_contract_address
 BLOCKCHAIN_ENABLED=true
+
+# Google AI Configuration (Optional)
+GOOGLE_API_KEY=your_google_ai_api_key
+
+# Socket.IO Configuration
+CLIENT_URL=http://localhost:5173
 ```
 
 #### Start MongoDB
@@ -337,15 +394,23 @@ Open your browser and go to `http://localhost:5173`
 Use your credentials to log into the system
 
 ### 4. Start Managing Livestock
-- **Farmers**: Add animals, schedule treatments, view prescriptions, get AI health tips
-- **Veterinarians**: Manage treatment requests, write prescriptions, view patient records
-- **Regulators**: Monitor compliance, view analytics, manage system-wide alerts
+- **Farmers**: Add animals, schedule treatments, view prescriptions, get AI health tips, manage inventory, log sales
+- **Veterinarians**: Manage treatment requests, write prescriptions, view patient records, approve treatments with digital signatures
+- **Regulators**: Monitor compliance, view analytics, manage system-wide alerts, access blockchain verification
 
 ### 5. Leverage AI Features
 - **Chat with IQ Buddy**: Click the AI assistant button for instant livestock health guidance
 - **Get Health Tips**: Receive personalized AI recommendations for each animal
-- **Automated Analysis**: System automatically analyzes treatment patterns and alerts for anomalies
-- **Predictive Insights**: Early warning systems for potential health issues
+- **Automated Analysis**: System automatically analyzes treatment patterns with 6 alert types
+- **Predictive Insights**: Early warning systems for disease outbreaks and compliance issues
+- **Voice Commands**: Use speech-to-text for hands-free data entry
+
+### 6. Mobile Access
+- **Download the Mobile App**: Available for iOS and Android via Expo
+- **Offline Capability**: Access critical data without internet connection
+- **QR Scanning**: Quick animal identification using mobile camera
+- **Push Notifications**: Real-time alerts on your mobile device
+- **Location Services**: GPS tracking for field operations
 
 ## 🏗️ Project Structure
 
@@ -353,23 +418,46 @@ Use your credentials to log into the system
 LivestockIQ/
 ├── Backend/
 │   ├── config/
-│   │   └── db.js                        # Database configuration
+│   │   ├── db.js                        # Database configuration
+│   │   ├── groq.js                      # Groq AI configuration
+│   │   ├── seed.js                      # Database seeding utilities
+│   │   └── socket.js                    # Socket.IO configuration
 │   ├── controllers/
 │   │   ├── admin.controller.js          # System administration
 │   │   ├── ai.controller.js             # AI health tips and recommendations
+│   │   ├── amuEnhanced.controller.js    # Enhanced AMU monitoring
 │   │   ├── animal.controller.js         # Animal management
 │   │   ├── audit.controller.js          # Audit trail management
 │   │   ├── auditEnhancements.controller.js # Enhanced audit features
 │   │   ├── auth.controller.js           # Authentication & authorization
+│   │   ├── blockchainVerification.controller.js # Blockchain verification
+│   │   ├── blockchainCertificateDownload.js # Certificate downloads
+│   │   ├── demographicsEnhanced.controller.js # Enhanced demographics
+│   │   ├── email.controller.js          # Email operations
 │   │   ├── farmer.controller.js         # Farmer profile management
+│   │   ├── farmer.reports.controller.js # Farmer-specific reports
+│   │   ├── farmManagement.controller.js # Farm management operations
+│   │   ├── feed.controller.js           # Feed management
+│   │   ├── feedAdministration.controller.js # Medicated feed administration
 │   │   ├── groq.controller.js           # Groq AI chat integration
 │   │   ├── inventory.controller.js      # Inventory management
+│   │   ├── jobs.controller.js           # Background job management
+│   │   ├── mrl.controller.js            # Maximum Residue Limit management
 │   │   ├── prescription.controller.js   # Prescription handling
+│   │   ├── prescriptionReview.controller.js # Prescription review workflow
 │   │   ├── regulator.controller.js      # Regulatory oversight
+│   │   ├── regulatorAlerts.controller.js # Regulatory alert system
 │   │   ├── reports.controller.js        # Report generation
+│   │   ├── reports.analytics.controller.js # Advanced analytics
 │   │   ├── sales.controller.js          # Sales tracking
+│   │   ├── stt.controller.js            # Speech-to-text
+│   │   ├── ticket.controller.js         # Support ticket system
 │   │   ├── treatment.controller.js      # Treatment management
-│   │   └── vet.controller.js            # Veterinarian operations
+│   │   ├── trendsEnhanced.controller.js # Enhanced trend analysis
+│   │   ├── tts.controller.js            # Text-to-speech
+│   │   ├── vet.controller.js            # Veterinarian operations
+│   │   ├── vet.reports.controller.js    # Vet-specific reports
+│   │   └── vetManagement.controller.js  # Vet management operations
 │   ├── middlewares/
 │   │   └── auth.middleware.js           # JWT authentication middleware
 │   ├── models/
@@ -377,12 +465,16 @@ LivestockIQ/
 │   │   ├── auditLog.model.js            # Audit log schema with hash chain
 │   │   ├── complianceAlert.model.js     # Compliance alerts
 │   │   ├── farmer.model.js              # Farmer profile schema
+│   │   ├── feed.model.js                # Medicated feed schema
+│   │   ├── highAmuAlert.model.js        # High AMU alert schema (6 alert types)
 │   │   ├── inventory.model.js           # Inventory item schema
+│   │   ├── mrl.model.js                 # MRL database with WHO AWaRe classification
 │   │   ├── prescription.model.js        # Prescription schema
 │   │   ├── regulator.model.js           # Regulator profile schema
 │   │   ├── sale.model.js                # Sales record schema
+│   │   ├── supportTicket.model.js       # Support ticket schema
 │   │   ├── treatment.model.js           # Treatment record schema
-│   │   └── vet.model.js                 # Veterinarian profile schema with key pairs
+│   │   └── vet.model.js                 # Veterinarian profile schema with RSA key pairs
 │   ├── routes/
 │   │   ├── admin.routes.js              # System administration endpoints
 │   │   ├── ai.routes.js                 # AI health recommendations endpoints
@@ -399,10 +491,16 @@ LivestockIQ/
 │   │   ├── sales.routes.js              # Sales tracking endpoints
 │   │   ├── treatment.routes.js          # Treatment management endpoints
 │   │   └── vet.routes.js                # Veterinarian endpoints
-│   │   ├── jobs/                            # Background processing jobs
-│   │   │   ├── amuAnalysis.js               # AMU spike detection and peer analysis
-│   │   │   ├── blockchainAnchor.js          # Blockchain audit anchoring
-│   │   │   └── diseaseAlertJob.js           # Disease prediction and alerting
+│   ├── jobs/                            # Background processing jobs
+│   │   ├── amuAnalysis.js               # 6-type AMU alert system:
+│   │   │                                  # - Historical spike detection
+│   │   │                                  # - Peer comparison
+│   │   │                                  # - Absolute threshold
+│   │   │                                  # - Trend increase
+│   │   │                                  # - Critical drug usage (WHO AWaRe)
+│   │   │                                  # - Sustained high usage
+│   │   ├── blockchainAnchor.js          # Blockchain audit anchoring
+│   │   └── diseaseAlertJob.js           # Disease prediction and alerting
 │   ├── config/
 │   │   ├── db.js                        # Database configuration
 │   │   ├── groq.js                      # Groq AI configuration
@@ -417,15 +515,21 @@ LivestockIQ/
 │   │   │   ├── createTreatmentPdf.js        # PDF generation for treatments
 │   │   │   ├── crypto.utils.js              # Cryptographic utilities
 │   │   │   └── sendEmail.js                 # Email notification utility
-│   │   ├── contracts/                       # Smart contracts
-│   │   │   └── AuditRegistry.sol            # Solidity smart contract for audit anchoring
-│   │   ├── scripts/                         # Deployment scripts
-│   │   │   └── deploy.js                    # Smart contract deployment script
-│   │   ├── AUDIT_SYSTEM_EXPLAINED.md        # Comprehensive audit system documentation
-│   │   ├── hardhat.config.cjs               # Hardhat configuration for blockchain
-│   │   ├── .env                         # Environment variables
-│   │   ├── package.json                 # Backend dependencies
-│   │   └── server.js                    # Main server entry point
+│   ├── contracts/                       # Smart contracts
+│   │   └── AuditAnchor.sol              # Solidity smart contract for audit anchoring
+│   ├── scripts/                         # Deployment scripts
+│   │   └── deploy.js                    # Smart contract deployment script
+│   ├── seedData/                        # Database seed data
+│   │   └── mrlData.js                   # MRL database with WHO AWaRe classifications
+│   ├── docs/                            # Documentation
+│   │   ├── AUDIT_SYSTEM_EXPLAINED.md    # Complete audit system guide
+│   │   ├── AMU_Alert_System_Documentation.md # AMU alert system details
+│   │   ├── WHO_AWaRe_Classification_Integration.md # WHO drug classifications
+│   │   └── Hackathon_Demo_Guide.md      # Demo and presentation guide
+│   ├── hardhat.config.cjs               # Hardhat configuration for blockchain
+│   ├── .env                             # Environment variables
+│   ├── package.json                     # Backend dependencies
+│   └── server.js                        # Main server entry point
 │
 ├── Frontend/LivestockIQ/
 │   ├── public/
@@ -518,6 +622,29 @@ LivestockIQ/
 │   ├── components.json                  # shadcn/ui components config
 │   └── tsconfig.json                    # TypeScript configuration
 │
+├── Mobile/                              # React Native mobile app
+│   ├── src/
+│   │   ├── contexts/
+│   │   │   └── AuthContext.js           # Authentication context
+│   │   ├── navigation/
+│   │   │   ├── AppNavigator.js          # Main navigator
+│   │   │   ├── FarmerTabNavigator.js    # Farmer tabs
+│   │   │   └── VetTabNavigator.js       # Vet tabs
+│   │   ├── screens/
+│   │   │   ├── auth/                    # Authentication screens
+│   │   │   ├── farmer/                  # Farmer screens
+│   │   │   └── vet/                     # Vet screens
+│   │   └── services/
+│   │       ├── api.js                   # API client
+│   │       ├── authService.js           # Auth API
+│   │       ├── animalService.js         # Animal API
+│   │       └── treatmentService.js      # Treatment API
+│   ├── App.js                           # Mobile app entry
+│   ├── package.json                     # Mobile dependencies
+│   ├── app.json                         # Expo configuration
+│   ├── eas.json                         # Expo Application Services config
+│   └── README.md                        # Mobile app documentation
+│
 ├── .gitignore                           # Git ignore patterns
 └── README.md                            # Project documentation
 ```
@@ -550,6 +677,34 @@ npm run preview
 
 # Run linter
 npm run lint
+```
+
+### Mobile Scripts
+```bash
+cd Mobile
+
+# Start Expo development server
+npm start
+
+# Run on Android emulator
+npm run android
+
+# Run on iOS simulator (Mac only)
+npm run ios
+
+# Run in web browser
+npm run web
+```
+
+### Blockchain Scripts
+```bash
+cd Backend
+
+# Deploy smart contract to Polygon Amoy
+npx hardhat run scripts/deploy.js --network polygon_amoy
+
+# Verify contract on PolygonScan
+npx hardhat verify --network polygon_amoy <CONTRACT_ADDRESS>
 ```
 
 ## 🌐 API Endpoints
@@ -638,6 +793,8 @@ npm run lint
 - `POST /api/groq/chat` - Chat with IQ Buddy AI assistant (Groq-powered)
 - `GET /api/ai/recommendations` - Get personalized recommendations
 - `POST /api/ai/analyze-pattern` - Analyze treatment patterns with AI
+- `POST /api/stt/transcribe` - Speech-to-text transcription
+- `POST /api/tts/synthesize` - Text-to-speech synthesis
 
 ### Blockchain Audit System
 - `GET /api/audit/trail/:entityType/:entityId` - Get audit trail for specific entity
@@ -659,6 +816,27 @@ npm run lint
 - `GET /api/admin/job-status` - Get status of background analysis jobs
 - `POST /api/admin/reset-alerts` - Reset system alerts and notifications
 - `GET /api/admin/analytics` - Access comprehensive system analytics
+
+### MRL (Maximum Residue Limits)
+- `GET /api/mrl` - Get all MRL records with WHO AWaRe classifications
+- `GET /api/mrl/search` - Search MRL database by drug, species, or product type
+- `GET /api/mrl/:id` - Get specific MRL record details
+- `POST /api/mrl` - Create new MRL record (Admin only)
+- `PUT /api/mrl/:id` - Update MRL record (Admin only)
+
+### Medicated Feed
+- `GET /api/feed` - Get all medicated feed administrations
+- `POST /api/feed` - Create new feed administration record
+- `GET /api/feed/:id` - Get specific feed administration details
+- `PUT /api/feed/:id` - Update feed administration
+- `DELETE /api/feed/:id` - Delete feed administration
+
+### Support Tickets
+- `GET /api/tickets` - Get all support tickets
+- `POST /api/tickets` - Create new support ticket
+- `GET /api/tickets/:id` - Get ticket details
+- `PUT /api/tickets/:id` - Update ticket status/response
+- `DELETE /api/tickets/:id` - Close/delete ticket
 
 ## 🚀 Deployment
 
