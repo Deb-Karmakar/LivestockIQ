@@ -1,16 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Play, ArrowRight } from 'lucide-react';
+import { Play, Download, ArrowRight } from 'lucide-react';
 import dashboardImage from "@assets/generated_images/Livestock_management_dashboard_interface_2be16097.png";
 
 const HeroSection = () => {
     const navigate = useNavigate();
 
+    // Use environment variable or fallback to localhost for development
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apkDownloadUrl = `${API_URL}/downloads/livestockiq.apk`;
+
     return (
         <section className="relative bg-gradient-to-br from-green-50 to-white py-20 lg:py-32 overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-            
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 <div className="grid lg:grid-cols-2 gap-12 items-center">
                     {/* Left Content */}
@@ -28,8 +32,8 @@ const HeroSection = () => {
 
                         {/* CTA Buttons */}
                         <div className="flex flex-col sm:flex-row gap-4">
-                            <Button 
-                                size="lg" 
+                            <Button
+                                size="lg"
                                 className="text-lg px-8 py-3"
                                 data-testid="button-join-now"
                                 onClick={() => navigate('/register')}
@@ -37,16 +41,26 @@ const HeroSection = () => {
                                 Join Now
                                 <ArrowRight className="ml-2 h-5 w-5" />
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                size="lg" 
+                            <Button
+                                variant="outline"
+                                size="lg"
                                 className="text-lg px-8 py-3"
                                 data-testid="button-learn-more"
-                                // MODIFIED LINE: Changed console.log to navigate
                                 onClick={() => navigate('/learn-more')}
                             >
                                 <Play className="mr-2 h-5 w-5" />
                                 Learn More
+                            </Button>
+                            <Button
+                                size="lg"
+                                className="text-lg px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                data-testid="button-download-app"
+                                asChild
+                            >
+                                <a href={apkDownloadUrl} download="LivestockIQ.apk">
+                                    <Download className="mr-2 h-5 w-5" />
+                                    Download App
+                                </a>
                             </Button>
                         </div>
 
@@ -71,7 +85,7 @@ const HeroSection = () => {
                                 className="w-full h-auto rounded-lg shadow-2xl"
                                 data-testid="hero-dashboard-image"
                             />
-                            
+
                             {/* Floating UI Elements */}
                             <div className="absolute -top-4 -left-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200">
                                 <div className="flex items-center space-x-2">
@@ -80,7 +94,7 @@ const HeroSection = () => {
                                     <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">ACTIVE</span>
                                 </div>
                             </div>
-                            
+
                             <div className="absolute -bottom-4 -right-4 bg-white rounded-lg shadow-lg p-3 border border-gray-200">
                                 <div className="flex items-center space-x-2">
                                     <span className="text-sm font-medium text-gray-700">Withdrawal-5d</span>
