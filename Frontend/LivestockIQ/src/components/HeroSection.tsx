@@ -7,7 +7,8 @@ const HeroSection = () => {
     const navigate = useNavigate();
 
     // Use environment variable or fallback to localhost for development
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Remove /api suffix if present since static files are served at root level
+    const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
     const apkDownloadUrl = `${API_URL}/downloads/livestockiq.apk`;
 
     return (
