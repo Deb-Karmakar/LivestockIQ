@@ -6,6 +6,9 @@ import Treatment from "../models/treatment.model.js";
 import Inventory from "../models/inventory.model.js";
 import Feed from "../models/feed.model.js";
 import Sale from "../models/sale.model.js";
+import MRL from "../models/mrl.model.js";
+import AmuConfig from "../models/amuConfig.model.js";
+import Farmer from "../models/farmer.model.js";
 import { format, subMonths } from "date-fns";
 
 // Comprehensive LivestockIQ system context for AI chatbot
@@ -68,6 +71,83 @@ You can help farmers with:
 `;
 
 /**
+ * Fetch dynamic regulator context data for the AI chatbot
+ * Includes MRL limits, AMU thresholds, and system compliance statistics
+ */
+const fetchRegulatorContext = async () => {
+  try {
+    const [mrlData, amuConfig, complianceStats] = await Promise.all([
+      // Fetch common MRL limits with WHO AWaRe classifications
+      MRL.find({ isActive: true })
+        .select('drugName species productType mrlLimit unit withdrawalPeriodDays whoAWaReClass')
+        .sort({ drugName: 1 })
+        .limit(20),
+
+      // Fetch current AMU configuration
+      AmuConfig.findOne({ isActive: true }),
+
+      // Fetch system-wide compliance statistics
+      Promise.all([
+        Farmer.countDocuments(),
+        Animal.countDocuments(),
+        Animal.countDocuments({ mrlStatus: 'VIOLATION' }),
+        Animal.countDocuments({ mrlStatus: 'SAFE' }),
+        Animal.countDocuments({ mrlStatus: 'WITHDRAWAL_ACTIVE' })
+      ])
+    ]);
+
+    // Format MRL data
+    let mrlSection = '';
+    if (mrlData && mrlData.length > 0) {
+      const mrlList = mrlData.map(m =>
+        `- ${m.drugName} (${m.species}/${m.productType}): ${m.mrlLimit} ${m.unit}, Withdrawal: ${m.withdrawalPeriodDays} days, AWaRe: ${m.whoAWaReClass}`
+      ).join('\n');
+      mrlSection = `**Active MRL Limits (Common Drugs):**\n${mrlList}`;
+    }
+
+    // Format AMU config
+    let amuSection = '';
+    if (amuConfig) {
+      amuSection = `**Current AMU Monitoring Thresholds:**
+- Historical spike threshold: ${(amuConfig.historicalSpikeThreshold * 100).toFixed(0)}% of average triggers alert
+- Peer comparison threshold: ${(amuConfig.peerComparisonThreshold * 100).toFixed(0)}% above peer average
+- Critical drug (Watch/Reserve) usage threshold: ${(amuConfig.criticalDrugThreshold * 100).toFixed(0)}% of total AMU
+- Absolute intensity threshold: ${amuConfig.absoluteIntensityThreshold} treatments per animal per month
+- Sustained high usage alert: ${amuConfig.sustainedHighUsageDuration} consecutive weeks`;
+    }
+
+    // Format compliance stats
+    const [totalFarms, totalAnimals, violations, safeAnimals, withdrawalActive] = complianceStats;
+    const complianceRate = totalAnimals > 0
+      ? ((safeAnimals / totalAnimals) * 100).toFixed(1)
+      : 100;
+
+    const complianceSection = `**System-Wide Compliance Overview:**
+- Total farms monitored: ${totalFarms}
+- Total animals registered: ${totalAnimals}
+- Current MRL compliance rate: ${complianceRate}%
+- Animals with SAFE status: ${safeAnimals}
+- Animals in withdrawal period: ${withdrawalActive}
+- Active MRL violations: ${violations}`;
+
+    return `
+=== CURRENT REGULATORY DATA (LIVE) ===
+
+${mrlSection}
+
+${amuSection}
+
+${complianceSection}
+
+Note: This data is fetched live from the database and reflects current system status. Use this information to provide accurate, specific answers about MRL limits, withdrawal periods, and compliance status.
+`;
+  } catch (error) {
+    console.warn('Could not fetch regulator context:', error.message);
+    return '';
+  }
+};
+
+/**
  * AI Chatbot endpoint - Interactive conversation with LivestockIQ AI Assistant
  */
 export const chat = async (req, res) => {
@@ -125,7 +205,12 @@ USER'S FARM CONTEXT:
       ? 'IMPORTANT: Respond in Hindi (हिंदी). Use Devanagari script.'
       : 'Respond in English.';
 
+    // Fetch dynamic regulator context (MRL limits, AMU thresholds, compliance stats)
+    const regulatorContext = await fetchRegulatorContext();
+
     const systemMessage = `${LIVESTOCKIQ_SYSTEM_CONTEXT}
+
+${regulatorContext}
 
 ${farmContext}
 

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Bot, Send, X, Loader2 } from 'lucide-react';
 import { sendMessageToGroq } from '../services/chatService';
+import ReactMarkdown from 'react-markdown';
 
 export const ChatWidget = () => {
     const { user } = useAuth();
@@ -21,14 +22,13 @@ export const ChatWidget = () => {
     useEffect(() => {
         if (isOpen && messages.length === 0) {
             const welcomeText = `Hi, I'm IQ Buddy, your LivestockIQ assistant. How can I help you today?`;
-            setMessages([ { role: 'model', text: welcomeText } ]);
+            setMessages([{ role: 'model', text: welcomeText }]);
         }
     }, [isOpen, messages.length]);
 
     const handleSend = async () => {
-        // This is a key diagnostic step.
-        console.log("Send button clicked!"); 
-        
+        console.log("Send button clicked!");
+
         if (!input.trim() || isLoading) return;
 
         const userMessage = { role: 'user', text: input };
@@ -71,16 +71,33 @@ export const ChatWidget = () => {
                             <X className="h-4 w-4" />
                         </Button>
                     </CardHeader>
-                    
+
                     <CardContent className="flex-1 p-4 overflow-y-auto space-y-3">
                         {messages.map((msg, index) => (
                             <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm whitespace-pre-wrap ${ msg.role === 'user' ? 'bg-green-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm' }`}>
-                                    <p>{msg.text}</p>
+                                <div className={`rounded-lg px-3 py-2 max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-green-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
+                                    {msg.role === 'user' ? (
+                                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                                    ) : (
+                                        <div className="prose prose-sm max-w-none">
+                                            <ReactMarkdown
+                                                components={{
+                                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                                                    ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                                                    ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                                                    li: ({ children }) => <li className="mb-0.5">{children}</li>,
+                                                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                                                    code: ({ children }) => <code className="bg-gray-200 px-1 rounded text-xs">{children}</code>,
+                                                }}
+                                            >
+                                                {msg.text}
+                                            </ReactMarkdown>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
-                        
+
                         {isLoading && (
                             <div className="flex justify-start">
                                 <div className="bg-gray-100 rounded-lg px-3 py-2 rounded-bl-sm">
@@ -94,19 +111,19 @@ export const ChatWidget = () => {
                         )}
                         <div ref={messagesEndRef} />
                     </CardContent>
-                    
+
                     <div className="p-2 md:p-4 border-t bg-white">
                         <div className="flex gap-2">
                             <Input
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }} // Corrected onKeyPress
+                                onKeyPress={(e) => { if (e.key === 'Enter') handleSend(); }}
                                 placeholder="Ask about LivestockIQ..."
                                 disabled={isLoading}
                                 className="flex-1 focus-visible:ring-green-500"
                             />
                             <Button
-                                onClick={handleSend} // Corrected onClick
+                                onClick={handleSend}
                                 disabled={isLoading || !input.trim()}
                                 className="bg-green-700 hover:bg-green-800 disabled:bg-gray-300"
                             >
