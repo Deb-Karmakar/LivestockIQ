@@ -37,6 +37,7 @@ const MoreScreen = ({ navigation }) => {
         {
             section: t('reports_support'), // Analytics & Support
             items: [
+                { name: t('ai_assistant'), icon: 'chatbubbles', screen: 'Chatbot', color: '#8B5CF6' },
                 { name: t('reports'), icon: 'document-text', screen: 'Reports', color: theme.info },
                 { name: t('support'), icon: 'help-circle', screen: 'RaiseTicket', color: theme.error },
             ],

@@ -25,6 +25,7 @@
     "mongodb": "^6.20.0",
     "mongoose": "^8.18.1",
     "node-cron": "^4.2.1",
+    "node-fetch": "^2.7.0",
     "nodemailer": "^7.0.6",
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",

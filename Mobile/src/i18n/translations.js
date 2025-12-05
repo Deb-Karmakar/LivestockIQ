@@ -439,6 +439,16 @@ export const translations = {
         sale_recorded_success: 'Sale recorded successfully',
         failed_record_sale: 'Failed to record sale',
         failed_load_sales: 'Failed to load sales data',
+
+        // AI Chatbot
+        ai_assistant: 'AI Assistant',
+        voice_mode: 'Voice Mode',
+        type_message: 'Type your message...',
+        listening: 'Listening...',
+        speaking: 'Speaking...',
+        send: 'Send',
+        clear_chat: 'Clear Chat',
+        thinking: 'Thinking...',
     },
     hi: {
         // Sections
@@ -880,5 +890,15 @@ export const translations = {
         sale_recorded_success: 'बिक्री सफलतापूर्वक दर्ज की गई',
         failed_record_sale: 'बिक्री दर्ज करने में विफल',
         failed_load_sales: 'बिक्री डेटा लोड करने में विफल',
+
+        // AI Chatbot
+        ai_assistant: 'AI सहायक',
+        voice_mode: 'वॉइस मोड',
+        type_message: 'अपना संदेश लिखें...',
+        listening: 'सुन रहा हूं...',
+        speaking: 'बोल रहा हूं...',
+        send: 'भेजें',
+        clear_chat: 'चैट साफ़ करें',
+        thinking: 'सोच रहा हूं...',
     }
 };

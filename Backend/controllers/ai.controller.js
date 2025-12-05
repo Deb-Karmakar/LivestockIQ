@@ -3,7 +3,182 @@
 import { groq } from "../config/groq.js";
 import Animal from "../models/animal.model.js";
 import Treatment from "../models/treatment.model.js";
+import Inventory from "../models/inventory.model.js";
+import Feed from "../models/feed.model.js";
+import Sale from "../models/sale.model.js";
 import { format, subMonths } from "date-fns";
+
+// Comprehensive LivestockIQ system context for AI chatbot
+const LIVESTOCKIQ_SYSTEM_CONTEXT = `
+You are the LivestockIQ AI Assistant - an expert virtual veterinarian and farm management advisor for Indian livestock farmers.
+
+=== ABOUT LIVESTOCKIQ ===
+LivestockIQ is a comprehensive farm management platform designed for Indian livestock farmers. It helps manage:
+1. Animal Management: Track cattle, goats, sheep, pigs, poultry, and buffalo with 12-digit official ear tag IDs
+2. Treatment Records: Veterinarian-approved treatment tracking with drug withdrawal periods
+3. MRL (Maximum Residue Limit) Compliance: Ensures meat and milk products are safe for human consumption
+4. Feed Management: Track medicated and non-medicated feed with antimicrobial content
+5. Drug Inventory: Manage veterinary medicine stock with expiry tracking
+6. Sales Management: Record sale transactions for animals with safe MRL status
+7. Lab Testing: Upload and track residue test results from certified laboratories
+8. AMU (Antimicrobial Usage) Monitoring: Track antibiotic usage following WHO AWaRe classification
+
+=== KEY CONCEPTS ===
+
+**MRL Status (Maximum Residue Limit):**
+- SAFE: Animal products can be sold safely
+- WITHDRAWAL_ACTIVE: Animal is under drug withdrawal period - DO NOT SELL products
+- TEST_REQUIRED: Lab test needed to verify safety
+- PENDING_VERIFICATION: Waiting for lab test verification
+- VIOLATION: Residue levels exceeded safe limits
+
+**WHO AWaRe Drug Classification:**
+- Access: First-line antibiotics with lower resistance risk (preferred)
+- Watch: Higher resistance potential, use with caution
+- Reserve: Last-resort antibiotics for multi-drug resistant infections (avoid unless critical)
+
+**Withdrawal Period:**
+The mandatory waiting time after administering a drug before animal products (milk/meat) can be sold for consumption.
+
+**Feed Types:**
+- Medicated Feed: Contains antimicrobials, requires vet prescription, has withdrawal period
+- Non-Medicated Feed: Regular feed without antimicrobials (Starter, Grower, Finisher, Layer, Breeder)
+
+=== HOW TO HELP USERS ===
+
+You can help farmers with:
+1. **Treatment Questions**: Explain withdrawal periods, drug interactions, dosage guidelines
+2. **MRL Compliance**: Explain when animals are safe for sale, what tests are needed
+3. **Feed Management**: Advise on medicated vs non-medicated feed, proper feeding schedules
+4. **Animal Health**: Provide general health tips for different species (cattle, goat, sheep, etc.)
+5. **Inventory Management**: Help track medicine stock and expiry
+6. **Regulatory Compliance**: Explain FSSAI regulations, proper record-keeping
+7. **Disease Prevention**: Vaccination schedules, biosecurity measures
+8. **Sales Guidance**: When products are safe to sell based on MRL status
+
+=== RESPONSE GUIDELINES ===
+1. Be concise but thorough - farmers are busy
+2. Use practical, actionable advice
+3. Always prioritize animal welfare and food safety
+4. Recommend consulting a veterinarian for serious health issues
+5. Be culturally sensitive to Indian farming practices
+6. Support both English and Hindi languages based on user preference
+7. When discussing drugs, mention the WHO AWaRe classification if relevant
+8. Always emphasize the importance of completing withdrawal periods before selling products
+`;
+
+/**
+ * AI Chatbot endpoint - Interactive conversation with LivestockIQ AI Assistant
+ */
+export const chat = async (req, res) => {
+  try {
+    const { message, language = 'en', conversationHistory = [] } = req.body;
+    const userId = req.user._id;
+    const userRole = req.user.role || 'farmer';
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ message: 'Message is required' });
+    }
+
+    // Fetch user's farm context for personalized responses
+    let farmContext = '';
+    try {
+      const [animalCount, activeWithdrawals, lowStockItems, recentSales] = await Promise.all([
+        Animal.countDocuments({ farmerId: userId }),
+        Treatment.countDocuments({
+          farmerId: userId,
+          status: 'Approved',
+          withdrawalEndDate: { $gt: new Date() }
+        }),
+        Inventory.countDocuments({
+          farmerId: userId,
+          expiryDate: { $lt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+        }),
+        Sale.countDocuments({
+          farmerId: userId,
+          saleDate: { $gte: subMonths(new Date(), 1) }
+        })
+      ]);
+
+      const animalsByStatus = await Animal.aggregate([
+        { $match: { farmerId: userId } },
+        { $group: { _id: '$mrlStatus', count: { $sum: 1 } } }
+      ]);
+
+      const statusSummary = animalsByStatus.map(s => `${s._id}: ${s.count}`).join(', ');
+
+      farmContext = `
+USER'S FARM CONTEXT:
+- Total Animals: ${animalCount}
+- Animals by MRL Status: ${statusSummary || 'No animals yet'}
+- Active Withdrawal Treatments: ${activeWithdrawals}
+- Medicines Expiring Soon: ${lowStockItems}
+- Sales in Last 30 Days: ${recentSales}
+`;
+    } catch (err) {
+      console.warn('Could not fetch farm context:', err.message);
+      farmContext = 'USER\'S FARM CONTEXT: Unable to fetch - user may be new.';
+    }
+
+    // Build conversation messages
+    const languageInstruction = language === 'hi'
+      ? 'IMPORTANT: Respond in Hindi (हिंदी). Use Devanagari script.'
+      : 'Respond in English.';
+
+    const systemMessage = `${LIVESTOCKIQ_SYSTEM_CONTEXT}
+
+${farmContext}
+
+${languageInstruction}
+
+Current Date: ${format(new Date(), 'PPP')}
+User Role: ${userRole}
+`;
+
+    // Build messages array with conversation history
+    const messages = [
+      { role: 'system', content: systemMessage }
+    ];
+
+    // Add previous conversation history (limit to last 10 messages for context)
+    const recentHistory = conversationHistory.slice(-10);
+    for (const msg of recentHistory) {
+      messages.push({
+        role: msg.role === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      });
+    }
+
+    // Add current user message
+    messages.push({ role: 'user', content: message });
+
+    // Call Groq AI
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: messages,
+      temperature: 0.7,
+      max_tokens: 800,
+    });
+
+    const aiResponse = response.choices[0]?.message?.content?.trim();
+
+    if (!aiResponse) {
+      const fallback = language === 'hi'
+        ? 'क्षमा करें, मैं अभी जवाब नहीं दे पा रहा हूं। कृपया पुनः प्रयास करें।'
+        : 'Sorry, I could not generate a response. Please try again.';
+      return res.json({ response: fallback });
+    }
+
+    res.json({
+      response: aiResponse,
+      language: language
+    });
+
+  } catch (error) {
+    console.error('Error in AI chat:', error);
+    res.status(500).json({ message: 'Failed to process chat message' });
+  }
+};
 
 export const generateHealthTip = async (req, res) => {
   try {
@@ -47,17 +222,17 @@ export const generateHealthTip = async (req, res) => {
       Animal Profile:
       - Species: ${animal.species}
       - Age: ${ageInYears} years
-      - Gender: ${animal.gender}
+        - Gender: ${animal.gender}
 
       ${historySummary}
-    `;
+      `;
 
     // 3. Build prompt
     const systemPrompt = `You are an expert veterinarian providing a single, proactive health tip for a farmer in India. 
-    The tip must be short (2-3 sentences max), practical, and based ONLY on the provided animal profile and its history. 
-    Do not repeat the history back to the user. Start your response directly with the tip.`;
+    The tip must be short(2 - 3 sentences max), practical, and based ONLY on the provided animal profile and its history. 
+    Do not repeat the history back to the user.Start your response directly with the tip.`;
 
-    const fullPrompt = `${systemPrompt}\n\nDATA:\n${contextForAI}`;
+    const fullPrompt = `${systemPrompt} \n\nDATA: \n${contextForAI} `;
 
     // 4. Call Groq (using LLaMA 3.1 or Mixtral)
     const response = await groq.chat.completions.create({
@@ -132,25 +307,25 @@ export const generateRegulatorInsights = async (req, res) => {
 
     // 2. Format Data for AI
     const drugSummary = amuByDrugRaw.map(d =>
-      `${d._id.drugName} (${d._id.month}/${d._id.year}): ${d.count}`
+      `${d._id.drugName} (${d._id.month}/${d._id.year}): ${d.count} `
     ).join(', ');
 
     const speciesSummary = amuBySpeciesRaw.map(s =>
-      `${s._id.species} (${s._id.month}/${s._id.year}): ${s.count}`
+      `${s._id.species} (${s._id.month}/${s._id.year}): ${s.count} `
     ).join(', ');
 
     const contextForAI = `
-      AMU by Drug (Last 12 Months): ${drugSummary}
-      AMU by Species (Last 12 Months): ${speciesSummary}
-    `;
+      AMU by Drug(Last 12 Months): ${drugSummary}
+      AMU by Species(Last 12 Months): ${speciesSummary}
+      `;
 
     // 3. Build Prompt
     const systemPrompt = `You are an expert veterinary epidemiologist and regulatory advisor. 
-    Analyze the provided Antimicrobial Usage (AMU) data. 
-    Identify key trends, potential resistance risks (e.g., spikes in specific drugs), and provide 3 actionable recommendations for the regulator.
+    Analyze the provided Antimicrobial Usage(AMU) data. 
+    Identify key trends, potential resistance risks(e.g., spikes in specific drugs), and provide 3 actionable recommendations for the regulator.
     Format your response in Markdown with headers: ## Key Trends, ## Risk Assessment, ## Recommendations.`;
 
-    const fullPrompt = `${systemPrompt}\n\nDATA:\n${contextForAI}`;
+    const fullPrompt = `${systemPrompt} \n\nDATA: \n${contextForAI} `;
 
     // 4. Call Groq
     const response = await groq.chat.completions.create({
@@ -209,8 +384,8 @@ export const generateDemographicsInsights = async (req, res) => {
     ]);
 
     // 2. Format Data for AI
-    const speciesSummary = speciesCount.map(s => `${s._id}: ${s.count}`).join(', ');
-    const regionalSummary = regionalCount.map(r => `${r._id || 'Unknown Region'}: ${r.count}`).join(', ');
+    const speciesSummary = speciesCount.map(s => `${s._id}: ${s.count} `).join(', ');
+    const regionalSummary = regionalCount.map(r => `${r._id || 'Unknown Region'}: ${r.count} `).join(', ');
 
     // Calculate compliance % for context
     let totalAnimals = 0;
@@ -220,7 +395,7 @@ export const generateDemographicsInsights = async (req, res) => {
       const count = m.count;
       totalAnimals += count;
       if (status === 'SAFE' || status === 'NEW') compliantAnimals += count;
-      return `${status}: ${count}`;
+      return `${status}: ${count} `;
     }).join(', ');
 
     const complianceRate = totalAnimals > 0 ? ((compliantAnimals / totalAnimals) * 100).toFixed(1) : 100;
@@ -231,16 +406,16 @@ export const generateDemographicsInsights = async (req, res) => {
       Regional Distribution: ${regionalSummary}
       MRL Status Breakdown: ${mrlSummary}
       Overall MRL Compliance Rate: ${complianceRate}%
-    `;
+        `;
 
     // 3. Build Prompt
     const systemPrompt = `You are an expert veterinary epidemiologist and policy advisor.
     Analyze the provided livestock demographics and MRL compliance data.
     Identify key observations regarding the animal population structure, regional concentration, and safety compliance.
-    Provide 3 strategic recommendations for the regulator to improve monitoring or support specific regions/sectors.
+        Provide 3 strategic recommendations for the regulator to improve monitoring or support specific regions / sectors.
     Format your response in Markdown with headers: ## Population Analysis, ## Compliance Assessment, ## Strategic Recommendations.`;
 
-    const fullPrompt = `${systemPrompt}\n\nDATA:\n${contextForAI}`;
+    const fullPrompt = `${systemPrompt} \n\nDATA: \n${contextForAI} `;
 
     // 4. Call Groq
     const response = await groq.chat.completions.create({

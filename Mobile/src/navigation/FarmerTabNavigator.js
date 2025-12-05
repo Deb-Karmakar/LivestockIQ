@@ -23,6 +23,7 @@ import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
 import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 import SettingsScreen from '../screens/farmer/SettingsScreen';
 import SalesScreen from '../screens/farmer/SalesScreen';
+import ChatbotScreen from '../screens/farmer/ChatbotScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -55,6 +56,7 @@ const MoreStack = () => (
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Sales" component={SalesScreen} />
+        <Stack.Screen name="Chatbot" component={ChatbotScreen} />
     </Stack.Navigator>
 );
 
