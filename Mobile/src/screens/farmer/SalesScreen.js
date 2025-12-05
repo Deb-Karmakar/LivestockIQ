@@ -79,6 +79,10 @@ const SalesScreen = ({ navigation }) => {
 
     const safeToSellAnimals = useMemo(() => {
         return animals.filter(animal => {
+            // First check MRL status from backend
+            if (animal.mrlStatus !== 'SAFE') return false;
+
+            // Then double check local treatment records as a safety net
             const animalTreatments = treatments.filter(t => t.animalId === animal.tagId && t.status === 'Approved');
             if (animalTreatments.length === 0) return true;
 
