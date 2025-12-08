@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 // 1. Remove Tractor from the import
-import { Stethoscope, Building, UserCog, ArrowLeft } from 'lucide-react';
+import { Stethoscope, Building, UserCog, ArrowLeft, FlaskConical } from 'lucide-react';
 
 // 2. Import your video file
 // Note: Adjust the path if your file structure is different.
@@ -59,6 +59,15 @@ const RoleSelectionStep = ({ onSelectRole, onToggleView }) => {
                     playsInline
                     className="w-12 h-12" // Adjusted size for the video, feel free to change
                 />
+            )
+        },
+        {
+            id: 'labTechnician',
+            name: 'Lab Technician',
+            icon: (
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FlaskConical className="w-6 h-6 text-purple-600" />
+                </div>
             )
         },
         {

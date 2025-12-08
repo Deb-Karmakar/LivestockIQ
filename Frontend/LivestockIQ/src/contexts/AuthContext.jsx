@@ -91,6 +91,20 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    // NEW: Function to handle lab technician registration
+    const registerLabTechnician = async (labTechData) => {
+        try {
+            const { data } = await axiosInstance.post('/auth/register/lab-technician', labTechData);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            setUser(data);
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+            navigate('/lab/dashboard');
+        } catch (error) {
+            console.error("Lab Technician registration failed:", error.response?.data?.message || error.message);
+            alert(`Registration failed: ${error.response?.data?.message || 'Server Error'}`);
+        }
+    };
+
     const login = async (email, password) => {
         try {
             const response = await axiosInstance.post('auth/login', { email, password });
@@ -99,12 +113,14 @@ export const AuthProvider = ({ children }) => {
                 setUser(response.data);
                 axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
 
-                // UPDATED: Handle redirect for all three roles
+                // UPDATED: Handle redirect for all roles
                 const { role } = response.data;
                 if (role === 'veterinarian') {
                     navigate('/vet/dashboard');
                 } else if (role === 'regulator') {
                     navigate('/regulator/dashboard');
+                } else if (role === 'labTechnician') {
+                    navigate('/lab/dashboard');
                 } else { // Default to farmer
                     navigate('/farmer/dashboard');
                 }
@@ -128,7 +144,8 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         registerVet,
-        registerRegulator, // EXPORT: Make the new function available
+        registerRegulator,
+        registerLabTechnician,
         logout,
     };
 

@@ -121,7 +121,7 @@ export const registerRegulator = async (req, res) => {
 
 // NEW: Function to register a new Lab Technician
 export const registerLabTechnician = async (req, res) => {
-    const { fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization } = req.body;
+    const { fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization, location } = req.body;
 
     try {
         const labTechExists = await LabTechnician.findOne({ email });
@@ -130,7 +130,7 @@ export const registerLabTechnician = async (req, res) => {
         }
 
         const labTechnician = await LabTechnician.create({
-            fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization
+            fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization, location
         });
 
         if (labTechnician) {
@@ -140,6 +140,7 @@ export const registerLabTechnician = async (req, res) => {
                 email: labTechnician.email,
                 labName: labTechnician.labName,
                 labTechId: labTechnician.labTechId,
+                location: labTechnician.location,
                 role: 'labTechnician',
                 token: generateToken(labTechnician._id, 'labTechnician'),
             });

@@ -41,6 +41,12 @@ const labTechnicianSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    location: {
+        latitude: { type: Number },
+        longitude: { type: Number },
+        state: { type: String },
+        district: { type: String }
+    },
     phoneNumber: {
         type: String,
         trim: true,

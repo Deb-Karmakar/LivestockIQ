@@ -6,6 +6,7 @@ import RoleSelectionStep from '../components/auth/RoleSelectionStep';
 import FarmerSignUpStep from '../components/auth/FarmerSignUpStep';
 import VetSignUpStep from '../components/auth/VetSignUpStep';
 import RegulatorSignUpStep from '../components/auth/RegulatorSignUpStep';
+import LabTechSignUpStep from '../components/auth/LabTechSignUpStep';
 import AdminLogin from '../components/auth/AdminLogin';
 
 const AuthPage = () => {
@@ -39,6 +40,8 @@ const AuthPage = () => {
                 return <VetSignUpStep onBack={handleBackToRoleSelect} />;
             case 'regulator':
                 return <RegulatorSignUpStep onBack={handleBackToRoleSelect} />;
+            case 'labTechnician':
+                return <LabTechSignUpStep onBack={handleBackToRoleSelect} />;
             case 'admin':
                 return <AdminLogin onBack={handleBackToRoleSelect} />;
             default:
