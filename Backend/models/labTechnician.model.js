@@ -68,8 +68,19 @@ const labTechnicianSchema = new mongoose.Schema({
 labTechnicianSchema.pre('save', async function (next) {
     // Generate labTechId if not present
     if (!this.labTechId) {
-        const count = await mongoose.model('LabTechnician').countDocuments();
-        this.labTechId = `LAB${String(count + 1001).padStart(5, '0')}`;
+        // Find the highest existing labTechId to avoid duplicates
+        const lastLabTech = await mongoose.model('LabTechnician')
+            .findOne({}, { labTechId: 1 })
+            .sort({ labTechId: -1 });
+
+        let nextId = 1001; // Start from LAB01001
+        if (lastLabTech && lastLabTech.labTechId) {
+            // Extract the numeric part and increment
+            const lastIdNum = parseInt(lastLabTech.labTechId.replace('LAB', ''));
+            nextId = lastIdNum + 1;
+        }
+
+        this.labTechId = `LAB${String(nextId).padStart(5, '0')}`;
     }
 
     // Hash password if modified

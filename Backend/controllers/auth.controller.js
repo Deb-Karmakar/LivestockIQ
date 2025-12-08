@@ -148,6 +148,13 @@ export const registerLabTechnician = async (req, res) => {
             res.status(400).json({ message: 'Invalid lab technician data' });
         }
     } catch (error) {
+        // Provide more specific error message for duplicate key errors
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern)[0];
+            return res.status(400).json({
+                message: `A lab technician with this ${field} already exists. Please use a different ${field}.`
+            });
+        }
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
