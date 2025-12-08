@@ -100,62 +100,43 @@ const getSpeciesConfig = (species) => {
     return map[species] || map['Cattle'];
 };
 
-// MRL status badge component
-const getMRLStatusBadge = (animal) => {
-    if (!animal.mrlStatus) return null;
-    switch (animal.mrlStatus) {
-        case 'NEW':
-            return (
-                <Badge className="bg-purple-500 hover:bg-purple-600 text-white">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    New Animal
-                </Badge>
-            );
-        case 'SAFE':
-            return (
-                <Badge className="bg-green-500 hover:bg-green-600 text-white">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />
-                    Safe for Sale
-                </Badge>
-            );
-        case 'PENDING_VERIFICATION':
-            return (
-                <div className="flex flex-col items-start gap-1">
-                    <Badge className="bg-blue-500 hover:bg-blue-600 text-white">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Pending Verification
-                    </Badge>
-                    <span className="text-xs text-gray-500 italic">Passed system check</span>
-                </div>
-            );
-        case 'TEST_REQUIRED':
-            return (
-                <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                    <Clock className="w-3 h-3 mr-1" />
-                    Test Required
-                </Badge>
-            );
-        case 'VIOLATION':
-            return (
-                <Badge className="bg-red-500 hover:bg-red-600 text-white">
-                    <XCircle className="w-3 h-3 mr-1" />
-                    MRL Violation
-                </Badge>
-            );
-        case 'WITHDRAWAL_ACTIVE':
+// Simplified Animal Status Tag Component
+// Only shows: "New" (newly logged, no treatments) or "Under Withdrawal" (active treatment withdrawal)
+const getAnimalStatusTag = (animal) => {
+    // Check if under withdrawal (active treatment with withdrawal period)
+    if (animal.withdrawalEndDate) {
+        const withdrawalEnd = new Date(animal.withdrawalEndDate);
+        const now = new Date();
+        if (withdrawalEnd > now) {
+            // Calculate days remaining
+            const daysRemaining = Math.ceil((withdrawalEnd - now) / (1000 * 60 * 60 * 24));
             return (
                 <Badge className="bg-orange-500 hover:bg-orange-600 text-white">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Under Withdrawal
+                    <Clock className="w-3 h-3 mr-1" />
+                    Under Withdrawal ({daysRemaining}d)
                 </Badge>
             );
-        default:
-            return (
-                <Badge variant="secondary">
-                    No Recent Treatments
-                </Badge>
-            );
+        }
     }
+
+    // Check if animal is new (created within last 7 days AND has no treatments/withdrawal history)
+    if (animal.createdAt && !animal.withdrawalEndDate) {
+        const createdDate = new Date(animal.createdAt);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        if (createdDate >= sevenDaysAgo) {
+            return (
+                <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    New
+                </Badge>
+            );
+        }
+    }
+
+    // No tag for animals that have completed withdrawal or are not new
+    return null;
 };
 
 // Enhanced Animal Card Component
@@ -222,7 +203,7 @@ const AnimalCard = ({ animal, onEdit, onDelete, onViewHistory, onViewTip, onRequ
                     </div>
                 </div>
 
-                {getMRLStatusBadge(animal)}
+                {getAnimalStatusTag(animal)}
 
                 {/* Notes if present */}
                 {animal.notes && (

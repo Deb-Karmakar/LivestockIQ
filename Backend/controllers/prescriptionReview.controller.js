@@ -139,7 +139,7 @@ export const getPrescriptionDetails = async (req, res) => {
             .populate('farmerId', 'farmName farmOwner email phoneNumber location')
             .populate({
                 path: 'treatmentId',
-                select: 'drugName animalId vetSigned updatedAt dosage dosageUnit diagnosis instructions'
+                select: 'drugName animalId vetSigned updatedAt dose route notes drugClass status'
             })
             .populate({
                 path: 'feedAdministrationId',
@@ -190,10 +190,11 @@ export const getPrescriptionDetails = async (req, res) => {
         if (prescription.treatmentId) {
             mappedPrescription.drugName = prescription.treatmentId.drugName;
             mappedPrescription.animalId = { tagId: prescription.treatmentId.animalId };
-            mappedPrescription.dosage = prescription.treatmentId.dosage;
-            mappedPrescription.dosageUnit = prescription.treatmentId.dosageUnit;
-            mappedPrescription.diagnosis = prescription.treatmentId.diagnosis;
-            mappedPrescription.instructions = prescription.treatmentId.instructions;
+            // Map Treatment fields to expected frontend field names
+            mappedPrescription.dosage = prescription.treatmentId.dose || 'N/A';
+            mappedPrescription.dosageUnit = prescription.treatmentId.route || '';
+            mappedPrescription.diagnosis = prescription.treatmentId.drugClass || 'Treatment';
+            mappedPrescription.instructions = prescription.treatmentId.notes || 'No additional instructions';
         } else if (prescription.feedAdministrationId) {
             mappedPrescription.drugName = prescription.feedAdministrationId.feedId?.antimicrobialName;
             const animalIds = prescription.feedAdministrationId.animalIds || [];
@@ -202,7 +203,13 @@ export const getPrescriptionDetails = async (req, res) => {
             mappedPrescription.dosage = prescription.feedAdministrationId.antimicrobialDoseTotal;
             mappedPrescription.dosageUnit = 'mg (Total)';
             mappedPrescription.diagnosis = 'Feed Medication';
-            mappedPrescription.instructions = prescription.feedAdministrationId.notes;
+            mappedPrescription.instructions = prescription.feedAdministrationId.notes || 'No additional instructions';
+        } else {
+            // Fallback for direct prescriptions (if any)
+            mappedPrescription.dosage = 'N/A';
+            mappedPrescription.dosageUnit = '';
+            mappedPrescription.diagnosis = 'N/A';
+            mappedPrescription.instructions = 'No additional instructions';
         }
 
         res.status(200).json({

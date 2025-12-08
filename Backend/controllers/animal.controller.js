@@ -63,19 +63,50 @@ export const getMyAnimals = async (req, res) => {
         // Find all animals that belong to the logged-in farmer
         const animals = await Animal.find({ farmerId: req.user._id }).sort({ createdAt: -1 });
 
-        // Calculate MRL status for each animal
-        const animalsWithMRLStatus = await Promise.all(
-            animals.map(async (animal) => {
-                const mrlStatus = await calculateAnimalMRLStatus(animal, req.user._id);
-                return {
-                    ...animal.toObject(),
-                    mrlStatus: mrlStatus.mrlStatus,
-                    mrlStatusMessage: mrlStatus.statusMessage,
-                    canSellProducts: mrlStatus.canSellProducts
-                };
-            })
-        );
-        res.json(animalsWithMRLStatus);
+        // Get animal tag IDs for treatment lookup
+        const animalTagIds = animals.map(a => a.tagId);
+
+        // Find the latest approved treatment with withdrawal end date for each animal
+        const latestTreatments = await Treatment.aggregate([
+            {
+                $match: {
+                    animalId: { $in: animalTagIds },
+                    status: 'Approved',
+                    withdrawalEndDate: { $exists: true, $ne: null }
+                }
+            },
+            { $sort: { withdrawalEndDate: -1 } },
+            {
+                $group: {
+                    _id: '$animalId',
+                    withdrawalEndDate: { $first: '$withdrawalEndDate' },
+                    drugName: { $first: '$drugName' }
+                }
+            }
+        ]);
+
+        // Create a map for quick lookup
+        const withdrawalMap = {};
+        latestTreatments.forEach(t => {
+            withdrawalMap[t._id] = {
+                withdrawalEndDate: t.withdrawalEndDate,
+                drugName: t.drugName
+            };
+        });
+
+        // Add withdrawal data to each animal
+        const animalsWithStatus = animals.map(animal => {
+            const animalObj = animal.toObject();
+            const withdrawalInfo = withdrawalMap[animal.tagId];
+
+            return {
+                ...animalObj,
+                withdrawalEndDate: withdrawalInfo?.withdrawalEndDate || null,
+                lastTreatmentDrug: withdrawalInfo?.drugName || null
+            };
+        });
+
+        res.json(animalsWithStatus);
     } catch (error) {
         console.error('Get animals error:', error);
         res.status(500).json({ message: `Server Error: ${error.message}` });

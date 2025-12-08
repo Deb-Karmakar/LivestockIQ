@@ -116,8 +116,24 @@ export const updateTreatmentByVet = async (req, res) => {
         console.log('[DEBUG] Step 1: Found treatment record.');
 
         const farmer = await Farmer.findById(treatment.farmerId);
-        if (farmer.vetId !== req.user.vetId) {
-            console.log('[DEBUG] Authorization FAILED.');
+        if (!farmer) {
+            console.log('[DEBUG] Authorization FAILED: Farmer not found.');
+            return res.status(404).json({ message: 'Farmer not found' });
+        }
+
+        // Debug logging for vetId comparison
+        console.log(`[DEBUG] farmer.vetId: "${farmer.vetId}" (type: ${typeof farmer.vetId})`);
+        console.log(`[DEBUG] req.user.vetId: "${req.user.vetId}" (type: ${typeof req.user.vetId})`);
+        console.log(`[DEBUG] req.user._id: "${req.user._id}"`);
+
+        // Check authorization - compare vetId strings OR check if vet owns the farmer
+        const isAuthorized = (farmer.vetId && req.user.vetId && farmer.vetId === req.user.vetId) ||
+            (farmer.vetId && req.user._id && farmer.vetId.toString() === req.user._id.toString());
+
+        if (!isAuthorized) {
+            console.log('[DEBUG] Authorization FAILED: VetId mismatch.');
+            console.log(`[DEBUG] Comparison 1 (vetId strings): "${farmer.vetId}" === "${req.user.vetId}" = ${farmer.vetId === req.user.vetId}`);
+            console.log(`[DEBUG] Comparison 2 (ObjectId): "${farmer.vetId}" === "${req.user._id}" = ${farmer.vetId?.toString() === req.user._id?.toString()}`);
             return res.status(401).json({ message: 'Not authorized to modify this treatment' });
         }
         console.log('[DEBUG] Step 2: Vet authorized.');
