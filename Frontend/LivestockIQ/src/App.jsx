@@ -52,6 +52,7 @@ import FarmerDirectoryPage from "./pages/vet/FarmerDirectoryPage";
 import VetReportsPage from "./pages/vet/VetReportsPage";
 import VetSettingsPage from "./pages/vet/VetSettingsPage";
 import VetVisitRequestsPage from "./pages/vet/VetVisitRequestsPage";
+import OfflineTreatmentsPage from "./pages/vet/OfflineTreatmentsPage";
 
 // Regulator Page Imports
 import RegulatorAppLayout from "./components/layout/RegulatorAppLayout";
@@ -246,6 +247,7 @@ function App() {
                 <Route path="feed-requests" element={<FeedAdministrationRequestsPage />} />
                 <Route path="visit-requests" element={<VetVisitRequestsPage />} />
                 <Route path="farmers" element={<FarmerDirectoryPage />} />
+                <Route path="offline-treatments" element={<OfflineTreatmentsPage />} />
                 <Route path="reports" element={<VetReportsPage />} />
                 <Route path="settings" element={<VetSettingsPage />} />
               </Route>

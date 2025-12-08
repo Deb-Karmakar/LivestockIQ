@@ -34,6 +34,7 @@ import sttRoutes from './routes/stt.routes.js';
 import vetVisitRequestRoutes from './routes/vetVisitRequest.routes.js';
 import labTechnicianRoutes from './routes/labTechnician.routes.js';
 import mrlAnalysisRoutes from './routes/mrlAnalysis.routes.js';
+import offlineTreatmentRoutes from './routes/offlineTreatment.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -117,6 +118,7 @@ app.use('/api/stt', sttRoutes); // Speech-to-text service
 app.use('/api/vet-visits', vetVisitRequestRoutes); // Vet visit request system
 app.use('/api/lab', labTechnicianRoutes); // Lab Technician MRL test upload
 app.use('/api/regulator/mrl-analysis', mrlAnalysisRoutes); // MRL Analysis for regulators
+app.use('/api/vet/offline-treatments', offlineTreatmentRoutes); // Offline treatment records for non-registered farmers
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported

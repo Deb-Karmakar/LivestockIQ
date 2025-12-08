@@ -16,17 +16,19 @@ import {
     Users,
     Package,
     HelpCircle,
-    Stethoscope
+    Stethoscope,
+    UserPlus
 } from 'lucide-react';
 
 // --- Vet Navigation Links Configuration ---
 
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/vet/dashboard', icon: LayoutDashboard },
-    { name: 'Requests', path: '/vet/requests', icon: ClipboardList },
+    // { name: 'Requests', path: '/vet/requests', icon: ClipboardList },
     { name: 'Visit Requests', path: '/vet/visit-requests', icon: Stethoscope },
-    { name: 'Feed Requests', path: '/vet/feed-requests', icon: Package },
+    // { name: 'Feed Requests', path: '/vet/feed-requests', icon: Package },
     { name: 'Farmers', path: '/vet/farmers', icon: Users },
+    { name: 'Offline Treatments', path: '/vet/offline-treatments', icon: UserPlus },
     { name: 'Reports', path: '/vet/reports', icon: FileText },
 ];
 

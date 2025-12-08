@@ -12,7 +12,7 @@ const auditLogSchema = new mongoose.Schema({
     entityType: {
         type: String,
         required: true,
-        enum: ['Animal', 'Treatment', 'Sale', 'Prescription', 'Inventory', 'Farmer', 'Veterinarian', 'MerkleSnapshot', 'Feed', 'FeedAdministration'],
+        enum: ['Animal', 'Treatment', 'Sale', 'Prescription', 'Inventory', 'Farmer', 'Veterinarian', 'MerkleSnapshot', 'Feed', 'FeedAdministration', 'OfflineTreatment'],
     },
 
     // Reference to the actual entity (optional for system events like blockchain anchors)
