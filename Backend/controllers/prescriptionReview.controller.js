@@ -4,6 +4,7 @@ import Prescription from '../models/prescription.model.js';
 import Veterinarian from '../models/vet.model.js';
 import Farmer from '../models/farmer.model.js';
 import Animal from '../models/animal.model.js';
+import OfflineTreatment from '../models/offlineTreatment.model.js';
 
 /**
  * @desc    Get all prescriptions with filtering
@@ -23,28 +24,44 @@ export const getAllPrescriptions = async (req, res) => {
             limit = 50
         } = req.query;
 
-        // Build query
-        const query = {};
+        // Build query for regular prescriptions
+        const prescriptionQuery = {};
 
         if (search) {
-            query.$or = [
+            prescriptionQuery.$or = [
                 { drugName: { $regex: search, $options: 'i' } },
                 { diagnosis: { $regex: search, $options: 'i' } }
             ];
         }
-        if (vetId) query.vetId = vetId;
-        if (farmId) query.farmerId = farmId;
-        if (drugName) query.drugName = { $regex: drugName, $options: 'i' };
+        if (vetId) prescriptionQuery.vetId = vetId;
+        if (farmId) prescriptionQuery.farmerId = farmId;
+        if (drugName) prescriptionQuery.drugName = { $regex: drugName, $options: 'i' };
         if (startDate || endDate) {
-            query.createdAt = {};
-            if (startDate) query.createdAt.$gte = new Date(startDate);
-            if (endDate) query.createdAt.$lte = new Date(endDate);
+            prescriptionQuery.createdAt = {};
+            if (startDate) prescriptionQuery.createdAt.$gte = new Date(startDate);
+            if (endDate) prescriptionQuery.createdAt.$lte = new Date(endDate);
         }
 
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        // Build query for offline treatments
+        const offlineQuery = {};
+        if (search) {
+            offlineQuery.$or = [
+                { farmerName: { $regex: search, $options: 'i' } },
+                { diagnosis: { $regex: search, $options: 'i' } },
+                { 'prescriptions.drugName': { $regex: search, $options: 'i' } }
+            ];
+        }
+        if (vetId) offlineQuery.vetId = vetId;
+        if (drugName) offlineQuery['prescriptions.drugName'] = { $regex: drugName, $options: 'i' };
+        if (startDate || endDate) {
+            offlineQuery.treatmentDate = {};
+            if (startDate) offlineQuery.treatmentDate.$gte = new Date(startDate);
+            if (endDate) offlineQuery.treatmentDate.$lte = new Date(endDate);
+        }
 
-        const [prescriptions, totalPrescriptions] = await Promise.all([
-            Prescription.find(query)
+        // Fetch both regular prescriptions and offline treatments
+        const [prescriptions, offlineTreatments, totalPrescriptions, totalOffline] = await Promise.all([
+            Prescription.find(prescriptionQuery)
                 .populate('vetId', 'fullName licenseNumber email')
                 .populate('farmerId', 'farmName farmOwner email')
                 .populate({
@@ -55,14 +72,16 @@ export const getAllPrescriptions = async (req, res) => {
                     path: 'feedAdministrationId',
                     populate: { path: 'feedId', select: 'antimicrobialName' }
                 })
-                .skip(skip)
-                .limit(parseInt(limit))
                 .sort({ createdAt: -1 })
                 .lean(),
-            Prescription.countDocuments(query)
+            OfflineTreatment.find(offlineQuery)
+                .sort({ treatmentDate: -1 })
+                .lean(),
+            Prescription.countDocuments(prescriptionQuery),
+            OfflineTreatment.countDocuments(offlineQuery)
         ]);
 
-        // Map prescriptions to include treatment/feed details at top level
+        // Map regular prescriptions
         const mappedPrescriptions = prescriptions.map(p => {
             let drugName = 'Unknown Drug';
             let animalId = null;
@@ -79,13 +98,11 @@ export const getAllPrescriptions = async (req, res) => {
                 }
             } else if (p.feedAdministrationId) {
                 drugName = p.feedAdministrationId.feedId?.antimicrobialName || 'Feed Medication';
-                // For feed, show list of animal IDs or count if too many
                 const animalIds = p.feedAdministrationId.animalIds || [];
                 const display = animalIds.length > 5
                     ? `${animalIds.slice(0, 5).join(', ')}... (+${animalIds.length - 5} more)`
                     : animalIds.join(', ');
                 animalId = { tagId: display };
-                // Feed admins are vet approved by definition if they are here (mostly)
                 if (p.feedAdministrationId.vetApproved) {
                     digitalSignature = {
                         signedAt: p.feedAdministrationId.vetApprovalDate,
@@ -101,18 +118,56 @@ export const getAllPrescriptions = async (req, res) => {
                 ...p,
                 drugName,
                 animalId,
-                digitalSignature
+                digitalSignature,
+                isOffline: false
             };
         });
 
+        // Map offline treatments to prescription format
+        const mappedOfflineTreatments = offlineTreatments.map(ot => {
+            const drugNames = ot.prescriptions.map(p => p.drugName).join(', ');
+
+            return {
+                _id: ot._id,
+                vetId: { _id: ot.vetId, fullName: ot.vetName, email: ot.vetEmail },
+                farmerId: { farmName: ot.farmName || 'N/A', farmOwner: ot.farmerName },
+                drugName: drugNames || 'Multiple Drugs',
+                animalId: { tagId: ot.animalTagId || `${ot.animalSpecies} (Offline)` },
+                diagnosis: ot.diagnosis,
+                createdAt: ot.treatmentDate,
+                digitalSignature: null,
+                isOffline: true,
+                offlineData: {
+                    farmerName: ot.farmerName,
+                    farmerPhone: ot.farmerPhone,
+                    animalSpecies: ot.animalSpecies,
+                    prescriptionCount: ot.prescriptions.length,
+                    emailSent: ot.emailSent
+                }
+            };
+        });
+
+        // Merge and sort all records
+        const allRecords = [...mappedPrescriptions, ...mappedOfflineTreatments]
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Apply pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const paginatedRecords = allRecords.slice(skip, skip + parseInt(limit));
+        const totalRecords = totalPrescriptions + totalOffline;
+
         res.status(200).json({
             success: true,
-            data: mappedPrescriptions,
+            data: paginatedRecords,
             pagination: {
                 currentPage: parseInt(page),
-                totalPages: Math.ceil(totalPrescriptions / parseInt(limit)),
-                totalItems: totalPrescriptions,
-                itemsPerPage: parseInt(limit)
+                totalPages: Math.ceil(totalRecords / parseInt(limit)),
+                totalItems: totalRecords,
+                itemsPerPage: parseInt(limit),
+                breakdown: {
+                    regularPrescriptions: totalPrescriptions,
+                    offlineTreatments: totalOffline
+                }
             }
         });
     } catch (error) {
@@ -134,7 +189,8 @@ export const getPrescriptionDetails = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const prescription = await Prescription.findById(id)
+        // First try to find in regular prescriptions
+        let prescription = await Prescription.findById(id)
             .populate('vetId', 'fullName licenseNumber email phoneNumber university degree cryptoKeys.publicKey')
             .populate('farmerId', 'farmName farmOwner email phoneNumber location')
             .populate({
@@ -147,75 +203,129 @@ export const getPrescriptionDetails = async (req, res) => {
             })
             .lean();
 
-        if (!prescription) {
+        if (prescription) {
+            // Handle regular prescription
+            let signatureVerification = null;
+
+            if (prescription.digitalSignature && prescription.vetId?.cryptoKeys?.publicKey) {
+                signatureVerification = {
+                    hasSignature: true,
+                    hasPublicKey: true,
+                    signedBy: prescription.vetId.fullName,
+                    signedAt: prescription.digitalSignature.signedAt,
+                    signature: prescription.digitalSignature.signature
+                };
+            } else if (prescription.treatmentId?.vetSigned) {
+                signatureVerification = {
+                    hasSignature: true,
+                    hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
+                    signedBy: prescription.vetId?.fullName || 'Veterinarian',
+                    signedAt: prescription.treatmentId.updatedAt,
+                    signature: 'Verified via Treatment Record'
+                };
+            } else if (prescription.feedAdministrationId?.vetApproved) {
+                signatureVerification = {
+                    hasSignature: true,
+                    hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
+                    signedBy: prescription.vetId?.fullName || 'Veterinarian',
+                    signedAt: prescription.feedAdministrationId.vetApprovalDate,
+                    signature: 'Verified via Feed Approval'
+                };
+            }
+
+            let mappedPrescription = { ...prescription, signatureVerification };
+
+            if (prescription.treatmentId) {
+                mappedPrescription.drugName = prescription.treatmentId.drugName;
+                mappedPrescription.animalId = { tagId: prescription.treatmentId.animalId };
+                mappedPrescription.dosage = prescription.treatmentId.dose || 'N/A';
+                mappedPrescription.dosageUnit = prescription.treatmentId.route || '';
+                mappedPrescription.diagnosis = prescription.treatmentId.drugClass || 'Treatment';
+                mappedPrescription.instructions = prescription.treatmentId.notes || 'No additional instructions';
+            } else if (prescription.feedAdministrationId) {
+                mappedPrescription.drugName = prescription.feedAdministrationId.feedId?.antimicrobialName;
+                const animalIds = prescription.feedAdministrationId.animalIds || [];
+                mappedPrescription.animalId = { tagId: animalIds.join(', ') };
+                mappedPrescription.dosage = prescription.feedAdministrationId.antimicrobialDoseTotal;
+                mappedPrescription.dosageUnit = 'mg (Total)';
+                mappedPrescription.diagnosis = 'Feed Medication';
+                mappedPrescription.instructions = prescription.feedAdministrationId.notes || 'No additional instructions';
+            } else {
+                mappedPrescription.dosage = 'N/A';
+                mappedPrescription.dosageUnit = '';
+                mappedPrescription.diagnosis = 'N/A';
+                mappedPrescription.instructions = 'No additional instructions';
+            }
+
+            mappedPrescription.isOffline = false;
+
+            return res.status(200).json({
+                success: true,
+                data: mappedPrescription
+            });
+        }
+
+        // If not found in prescriptions, try offline treatments
+        const offlineTreatment = await OfflineTreatment.findById(id).lean();
+
+        if (!offlineTreatment) {
             return res.status(404).json({
                 success: false,
                 message: 'Prescription not found'
             });
         }
 
-        // Check if digital signature exists and is valid
-        let signatureVerification = null;
-
-        // Check either existing digitalSignature or treatment vetSigned status
-        if (prescription.digitalSignature && prescription.vetId?.cryptoKeys?.publicKey) {
-            signatureVerification = {
-                hasSignature: true,
-                hasPublicKey: true,
-                signedBy: prescription.vetId.fullName,
-                signedAt: prescription.digitalSignature.signedAt,
-                signature: prescription.digitalSignature.signature
-            };
-        } else if (prescription.treatmentId?.vetSigned) {
-            signatureVerification = {
-                hasSignature: true,
-                hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
-                signedBy: prescription.vetId?.fullName || 'Veterinarian',
-                signedAt: prescription.treatmentId.updatedAt,
-                signature: 'Verified via Treatment Record'
-            };
-        } else if (prescription.feedAdministrationId?.vetApproved) {
-            signatureVerification = {
-                hasSignature: true,
-                hasPublicKey: !!prescription.vetId?.cryptoKeys?.publicKey,
-                signedBy: prescription.vetId?.fullName || 'Veterinarian',
-                signedAt: prescription.feedAdministrationId.vetApprovalDate,
-                signature: 'Verified via Feed Approval'
-            };
-        }
-
-        // Map details
-        let mappedPrescription = { ...prescription, signatureVerification };
-
-        if (prescription.treatmentId) {
-            mappedPrescription.drugName = prescription.treatmentId.drugName;
-            mappedPrescription.animalId = { tagId: prescription.treatmentId.animalId };
-            // Map Treatment fields to expected frontend field names
-            mappedPrescription.dosage = prescription.treatmentId.dose || 'N/A';
-            mappedPrescription.dosageUnit = prescription.treatmentId.route || '';
-            mappedPrescription.diagnosis = prescription.treatmentId.drugClass || 'Treatment';
-            mappedPrescription.instructions = prescription.treatmentId.notes || 'No additional instructions';
-        } else if (prescription.feedAdministrationId) {
-            mappedPrescription.drugName = prescription.feedAdministrationId.feedId?.antimicrobialName;
-            const animalIds = prescription.feedAdministrationId.animalIds || [];
-            // Show all animals in details view
-            mappedPrescription.animalId = { tagId: animalIds.join(', ') };
-            mappedPrescription.dosage = prescription.feedAdministrationId.antimicrobialDoseTotal;
-            mappedPrescription.dosageUnit = 'mg (Total)';
-            mappedPrescription.diagnosis = 'Feed Medication';
-            mappedPrescription.instructions = prescription.feedAdministrationId.notes || 'No additional instructions';
-        } else {
-            // Fallback for direct prescriptions (if any)
-            mappedPrescription.dosage = 'N/A';
-            mappedPrescription.dosageUnit = '';
-            mappedPrescription.diagnosis = 'N/A';
-            mappedPrescription.instructions = 'No additional instructions';
-        }
+        // Map offline treatment to prescription detail format
+        const mappedOffline = {
+            _id: offlineTreatment._id,
+            vetId: {
+                _id: offlineTreatment.vetId,
+                fullName: offlineTreatment.vetName,
+                email: offlineTreatment.vetEmail,
+                licenseNumber: 'N/A',
+                cryptoKeys: { publicKey: null }
+            },
+            farmerId: {
+                farmName: offlineTreatment.farmName || 'Offline Farm',
+                farmOwner: offlineTreatment.farmerName,
+                email: null,
+                phoneNumber: offlineTreatment.farmerPhone,
+                location: { address: offlineTreatment.farmerAddress }
+            },
+            drugName: offlineTreatment.prescriptions.map(p => p.drugName).join(', '),
+            animalId: {
+                tagId: offlineTreatment.animalTagId || `${offlineTreatment.animalSpecies} (Offline)`
+            },
+            diagnosis: offlineTreatment.diagnosis,
+            dosage: 'See Prescriptions Below',
+            dosageUnit: '',
+            instructions: offlineTreatment.generalNotes || 'No additional instructions',
+            createdAt: offlineTreatment.treatmentDate,
+            signatureVerification: null,
+            isOffline: true,
+            offlineData: {
+                farmerName: offlineTreatment.farmerName,
+                farmerPhone: offlineTreatment.farmerPhone,
+                farmerAddress: offlineTreatment.farmerAddress,
+                farmName: offlineTreatment.farmName,
+                animalSpecies: offlineTreatment.animalSpecies,
+                animalBreed: offlineTreatment.animalBreed,
+                animalAge: offlineTreatment.animalAge,
+                animalWeight: offlineTreatment.animalWeight,
+                symptoms: offlineTreatment.symptoms,
+                prescriptions: offlineTreatment.prescriptions,
+                followUpDate: offlineTreatment.followUpDate,
+                totalCost: offlineTreatment.totalCost,
+                emailSent: offlineTreatment.emailSent,
+                emailSentAt: offlineTreatment.emailSentAt
+            }
+        };
 
         res.status(200).json({
             success: true,
-            data: mappedPrescription
+            data: mappedOffline
         });
+
     } catch (error) {
         console.error('Error in getPrescriptionDetails:', error);
         res.status(500).json({
