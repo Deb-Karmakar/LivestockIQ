@@ -27,17 +27,17 @@ import {
 const primaryNavLinks = [
     { name: 'Dashboard', path: '/farmer/dashboard', icon: LayoutDashboard },
     { name: 'Animals', path: '/farmer/animals', icon: PawPrint },
-    { name: 'Treatments', path: '/farmer/treatments', icon: HeartPulse },
-    { name: 'Sales', path: '/farmer/sales', icon: ShoppingCart },
+    //{ name: 'Treatments', path: '/farmer/treatments', icon: HeartPulse },
+    //{ name: 'Sales', path: '/farmer/sales', icon: ShoppingCart },
     { name: 'Alerts', path: '/farmer/alerts', icon: Bell },
 ];
 
 // Links for the secondary mobile drawer menu
 const secondaryNavLinks = [
-    { name: 'MRL Compliance', path: '/farmer/mrl-compliance', icon: ShieldCheck },
-    { name: 'Drug Inventory', path: '/farmer/inventory', icon: Pill },
-    { name: 'Feed Inventory', path: '/farmer/feed-inventory', icon: Package },
-    { name: 'Feed Admin', path: '/farmer/feed-administration', icon: ClipboardCheck },
+    //{ name: 'MRL Compliance', path: '/farmer/mrl-compliance', icon: ShieldCheck },
+    //{ name: 'Drug Inventory', path: '/farmer/inventory', icon: Pill },
+    //{ name: 'Feed Inventory', path: '/farmer/feed-inventory', icon: Package },
+    //{ name: 'Feed Admin', path: '/farmer/feed-administration', icon: ClipboardCheck },
     { name: 'Reports', path: '/farmer/reports', icon: FileText },
     { name: 'Support', path: '/farmer/support/raise-ticket', icon: HelpCircle },
     { name: 'Settings', path: '/farmer/settings', icon: Settings },

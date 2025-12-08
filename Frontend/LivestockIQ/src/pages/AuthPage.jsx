@@ -50,7 +50,7 @@ const AuthPage = () => {
         <div className="min-h-screen relative">
             {/* Animated Background */}
             <AnimatedBackground />
-            
+
             {/* Content with proper z-index to appear above background */}
             <div className="relative z-10">
                 {renderContent()}

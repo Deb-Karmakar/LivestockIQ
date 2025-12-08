@@ -261,3 +261,176 @@ export const updateTreatmentByVet = async (req, res) => {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
+
+// @desc    Add treatment by Vet (auto-approved, with withdrawal period)
+// @route   POST /api/treatments/vet-entry
+export const addTreatmentByVet = async (req, res) => {
+    console.log(`\n--- VET TREATMENT ENTRY STARTED ---`);
+    try {
+        const {
+            farmerId,
+            animalId,
+            drugName,
+            drugClass,
+            dose,
+            route,
+            withdrawalDays,
+            withdrawalStartDate,
+            notes
+        } = req.body;
+
+        // Validate required fields
+        if (!farmerId || !animalId || !drugName || !withdrawalDays) {
+            return res.status(400).json({
+                message: 'Farmer, animal, drug name, and withdrawal period are required'
+            });
+        }
+
+        // Get farmer and verify vet supervises them
+        const farmer = await Farmer.findById(farmerId);
+        if (!farmer) {
+            return res.status(404).json({ message: 'Farmer not found' });
+        }
+
+        if (farmer.vetId !== req.user.vetId) {
+            return res.status(403).json({ message: 'You are not authorized to treat this farmer\'s animals' });
+        }
+
+        // Verify animal belongs to this farmer
+        const animal = await Animal.findOne({ tagId: animalId, farmerId });
+        if (!animal) {
+            return res.status(404).json({ message: 'Animal not found or does not belong to this farmer' });
+        }
+
+        // Calculate withdrawal end date
+        const startDate = withdrawalStartDate ? new Date(withdrawalStartDate) : new Date();
+        const withdrawalEndDate = new Date(startDate);
+        withdrawalEndDate.setDate(withdrawalEndDate.getDate() + parseInt(withdrawalDays));
+
+        // Create treatment (auto-approved since vet is entering)
+        const treatment = await Treatment.create({
+            farmerId,
+            animalId,
+            drugName,
+            drugClass: drugClass || 'Unclassified',
+            dose: dose || '',
+            route: route || '',
+            startDate,
+            withdrawalEndDate,
+            vetId: req.user.vetId,
+            vetSigned: true,
+            status: 'Approved', // Auto-approved
+            notes: notes || '',
+            vetNotes: `Treatment entered directly by veterinarian.`,
+        });
+
+        console.log(`[DEBUG] Treatment created by vet: ${treatment._id}`);
+
+        // Create audit log
+        const { createAuditLog } = await import('../services/auditLog.service.js');
+        await createAuditLog({
+            eventType: 'CREATE',
+            entityType: 'Treatment',
+            entityId: treatment._id,
+            farmerId: farmerId,
+            performedBy: req.user._id,
+            performedByRole: 'Vet',
+            performedByModel: 'Veterinarian',
+            dataSnapshot: treatment.toObject(),
+            metadata: {
+                ipAddress: req.ip,
+                userAgent: req.get('user-agent'),
+                notes: `Vet-initiated treatment for animal ${animalId}`,
+            },
+        });
+
+        // Create prescription
+        const vet = await Veterinarian.findById(req.user._id);
+        const prescription = await Prescription.create({
+            treatmentId: treatment._id,
+            farmerId: farmer._id,
+            vetId: vet._id,
+        });
+        console.log(`[DEBUG] Prescription created: ${prescription._id}`);
+
+        // Generate and send prescription PDF to farmer
+        try {
+            const pdfDataForFarmer = { ...treatment.toObject(), animal };
+            const pdfBuffer = await generatePrescriptionPdfBuffer(pdfDataForFarmer, farmer, vet);
+
+            const subject = `🔔 New Treatment & Withdrawal Period for Animal: ${animalId}`;
+            const html = `
+                <p>Hello ${farmer.farmOwner},</p>
+                <p>Dr. ${vet.fullName} has administered a treatment and issued a prescription for your animal (ID: <strong>${animalId}</strong>).</p>
+                <h3>Treatment Details:</h3>
+                <ul>
+                    <li><strong>Drug:</strong> ${drugName}</li>
+                    <li><strong>Dose:</strong> ${dose || 'As prescribed'}</li>
+                    <li><strong>Route:</strong> ${route || 'As administered'}</li>
+                </ul>
+                <h3>⚠️ Withdrawal Period Active</h3>
+                <p>Your animal is now under a <strong>${withdrawalDays}-day withdrawal period</strong>.</p>
+                <ul>
+                    <li><strong>Start Date:</strong> ${startDate.toLocaleDateString()}</li>
+                    <li><strong>End Date:</strong> ${withdrawalEndDate.toLocaleDateString()}</li>
+                </ul>
+                <p style="color: red;"><strong>Do not sell any products from this animal until the withdrawal period ends.</strong></p>
+                <p>The official prescription is attached to this email.</p>
+                <p>Thank you for using LivestockIQ.</p>
+            `;
+
+            await sendEmail({
+                to: farmer.email,
+                subject: subject,
+                html: html,
+                attachments: [{
+                    filename: `Prescription_${animalId}_${Date.now()}.pdf`,
+                    content: pdfBuffer,
+                    contentType: 'application/pdf',
+                }],
+            });
+            console.log(`[DEBUG] Prescription email sent to farmer: ${farmer.email}`);
+        } catch (emailError) {
+            console.error('[DEBUG] Failed to send prescription email:', emailError.message);
+            // Don't fail the whole request if email fails
+        }
+
+        // Send WebSocket notification to farmer
+        try {
+            const { sendAlertToFarmer } = await import('../services/websocket.service.js');
+            sendAlertToFarmer(farmerId, {
+                type: 'WITHDRAWAL_ACTIVE',
+                severity: 'warning',
+                title: '⚠️ Withdrawal Period Started',
+                message: `${drugName} treatment for ${animal.name || animalId}. Withdrawal ends ${withdrawalEndDate.toLocaleDateString()}.`,
+                data: {
+                    treatmentId: treatment._id,
+                    animalId,
+                    animalName: animal.name || animalId,
+                    drugName,
+                    withdrawalEndDate,
+                    withdrawalDays: parseInt(withdrawalDays),
+                },
+                action: {
+                    type: 'navigate',
+                    url: '/farmer/animals'
+                }
+            });
+        } catch (wsError) {
+            console.error('[DEBUG] WebSocket notification failed:', wsError.message);
+        }
+
+        console.log('--- VET TREATMENT ENTRY COMPLETED SUCCESSFULLY ---');
+        res.status(201).json({
+            message: 'Treatment recorded successfully. Farmer has been notified.',
+            treatment,
+            prescription,
+            withdrawalEndDate
+        });
+
+    } catch (error) {
+        console.error('--- VET TREATMENT ENTRY FAILED ---');
+        console.error(error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};

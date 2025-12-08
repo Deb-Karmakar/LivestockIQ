@@ -15,7 +15,8 @@ import {
     BrainCircuit, Loader2, Search, Calendar, Weight, User2,
     Sparkles, RefreshCw, Users, Filter, Grid3X3, List,
     ChevronRight, Heart, Activity, TrendingUp, CheckCircle2,
-    AlertTriangle, Clock, Eye, ArrowUpRight, Package, XCircle
+    AlertTriangle, Clock, Eye, ArrowUpRight, Package, XCircle,
+    Stethoscope
 } from "lucide-react";
 import BarcodeScannerDialog from "../../components/animals/BarcodeScannerDialog";
 import AnimalHistoryDialog from '../../components/AnimalHistoryDialog';
@@ -23,6 +24,7 @@ import { getAnimals, addAnimal, updateAnimal, deleteAnimal } from '../../service
 import { getAnimalHealthTip } from '../../services/aiService';
 import { useToast } from '../../hooks/use-toast';
 import { format } from 'date-fns';
+import { createVetVisitRequest } from '../../services/vetVisitService';
 
 // Animated counter component (matching Dashboard)
 const AnimatedCounter = ({ value, duration = 1000 }) => {
@@ -157,7 +159,7 @@ const getMRLStatusBadge = (animal) => {
 };
 
 // Enhanced Animal Card Component
-const AnimalCard = ({ animal, onEdit, onDelete, onViewHistory, onViewTip }) => {
+const AnimalCard = ({ animal, onEdit, onDelete, onViewHistory, onViewTip, onRequestVetVisit }) => {
     const speciesConfig = getSpeciesConfig(animal.species);
 
     return (
@@ -231,50 +233,62 @@ const AnimalCard = ({ animal, onEdit, onDelete, onViewHistory, onViewTip }) => {
                 )}
             </CardContent>
 
-            <CardFooter className="flex gap-2 pt-4 border-t bg-gray-50/50">
+            <CardFooter className="flex flex-col gap-2 pt-4 border-t bg-gray-50/50">
+                {/* Request Vet Visit - Visible Button */}
                 <Button
-                    onClick={onEdit}
+                    onClick={onRequestVetVisit}
                     variant="outline"
                     size="sm"
-                    className="flex-1 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
+                    className="w-full hover:bg-teal-50 hover:text-teal-700 hover:border-teal-200 transition-all"
                 >
-                    <Edit className="h-4 w-4 mr-1.5" />
-                    Edit
+                    <Stethoscope className="h-4 w-4 mr-1.5" />
+                    Request Vet Visit
                 </Button>
-                <Button
-                    onClick={onViewHistory}
-                    variant="outline"
-                    size="sm"
-                    className="flex-1 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all"
-                >
-                    <FileText className="h-4 w-4 mr-1.5" />
-                    History
-                </Button>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="px-2.5 hover:bg-gray-100">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>More Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                            onClick={onViewTip}
-                            className="text-blue-600 focus:bg-blue-50 focus:text-blue-700"
-                        >
-                            <BrainCircuit className="mr-2 h-4 w-4" />
-                            AI Health Tip
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={onDelete}
-                            className="text-red-600 focus:bg-red-50 focus:text-red-700"
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Record
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex gap-2 w-full">
+                    <Button
+                        onClick={onEdit}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 transition-all"
+                    >
+                        <Edit className="h-4 w-4 mr-1.5" />
+                        Edit
+                    </Button>
+                    <Button
+                        onClick={onViewHistory}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200 transition-all"
+                    >
+                        <FileText className="h-4 w-4 mr-1.5" />
+                        History
+                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="px-2.5 hover:bg-gray-100">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>More Actions</DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={onViewTip}
+                                className="text-blue-600 focus:bg-blue-50 focus:text-blue-700"
+                            >
+                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                AI Health Tip
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                onClick={onDelete}
+                                className="text-red-600 focus:bg-red-50 focus:text-red-700"
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Record
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </CardFooter>
         </Card>
     );
@@ -291,6 +305,7 @@ const AnimalsPage = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [speciesFilter, setSpeciesFilter] = useState("all");
     const [viewMode, setViewMode] = useState("grid");
+    const [vetVisitAnimal, setVetVisitAnimal] = useState(null); // For vet visit request dialog
     const { toast } = useToast();
 
     const fetchAnimals = useCallback(async (isRefresh = false) => {
@@ -374,6 +389,10 @@ const AnimalsPage = () => {
 
     const handleViewTipClick = (animal) => {
         setTipAnimal(animal);
+    };
+
+    const handleRequestVetVisit = (animal) => {
+        setVetVisitAnimal(animal);
     };
 
     // Filter animals based on search and species
@@ -538,6 +557,7 @@ const AnimalsPage = () => {
                                         onDelete={() => handleDeleteAnimal(animal._id)}
                                         onViewHistory={() => setViewingHistoryOf(animal.tagId)}
                                         onViewTip={() => handleViewTipClick(animal)}
+                                        onRequestVetVisit={() => handleRequestVetVisit(animal)}
                                     />
                                 ))}
                             </div>
@@ -587,6 +607,17 @@ const AnimalsPage = () => {
                 animal={tipAnimal}
                 isOpen={!!tipAnimal}
                 onClose={() => setTipAnimal(null)}
+            />
+
+            {/* Vet Visit Request Dialog */}
+            <VetVisitRequestDialog
+                animal={vetVisitAnimal}
+                isOpen={!!vetVisitAnimal}
+                onClose={() => setVetVisitAnimal(null)}
+                onSuccess={() => {
+                    setVetVisitAnimal(null);
+                    toast({ title: "Request Sent", description: "Your vet visit request has been submitted. You will be notified when the vet responds." });
+                }}
             />
         </div>
     );
@@ -947,6 +978,184 @@ const HealthTipDialog = ({ animal, isOpen, onClose }) => {
                         Got it, thanks!
                     </Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+// Vet Visit Request Dialog Component
+const VetVisitRequestDialog = ({ animal, isOpen, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        reason: '',
+        notes: '',
+        urgency: 'Normal'
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    // Reset form when dialog opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({ reason: '', notes: '', urgency: 'Normal' });
+        }
+    }, [isOpen]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!formData.reason.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a reason for the visit.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await createVetVisitRequest({
+                animalId: animal.tagId,
+                reason: formData.reason,
+                notes: formData.notes,
+                urgency: formData.urgency
+            });
+            onSuccess();
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to submit request. Please try again.'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
+                            <Stethoscope className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <DialogTitle>Request Vet Visit</DialogTitle>
+                            <DialogDescription>
+                                Request a veterinarian visit for {animal?.name || animal?.tagId}
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+                <form onSubmit={handleSubmit}>
+                    <div className="space-y-4 py-4">
+                        {/* Animal Info */}
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-xl border">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-amber-100 rounded-lg">
+                                    <img
+                                        src={getSpeciesConfig(animal?.species).image}
+                                        alt={animal?.species}
+                                        className="w-8 h-8 object-contain"
+                                    />
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-gray-900">{animal?.tagId}</p>
+                                    <p className="text-sm text-gray-500">{animal?.name ? `${animal.name} • ` : ''}{animal?.species}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Reason */}
+                        <div className="space-y-2">
+                            <Label htmlFor="reason" className="text-sm font-medium">
+                                Reason for Visit <span className="text-red-500">*</span>
+                            </Label>
+                            <Select
+                                value={formData.reason}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, reason: value }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select reason..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="General Health Checkup">General Health Checkup</SelectItem>
+                                    <SelectItem value="Animal appears sick">Animal appears sick</SelectItem>
+                                    <SelectItem value="Vaccination required">Vaccination required</SelectItem>
+                                    <SelectItem value="Pregnancy check">Pregnancy check</SelectItem>
+                                    <SelectItem value="Injury treatment">Injury treatment</SelectItem>
+                                    <SelectItem value="Not eating properly">Not eating properly</SelectItem>
+                                    <SelectItem value="Respiratory issues">Respiratory issues</SelectItem>
+                                    <SelectItem value="Skin condition">Skin condition</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Notes (Optional) */}
+                        <div className="space-y-2">
+                            <Label htmlFor="notes" className="text-sm font-medium">
+                                Additional Notes <span className="text-gray-400">(Optional)</span>
+                            </Label>
+                            <Textarea
+                                id="notes"
+                                value={formData.notes}
+                                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                placeholder="Describe any symptoms or observations about the animal..."
+                                rows={3}
+                            />
+                        </div>
+
+                        {/* Urgency */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium">Urgency Level</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {['Normal', 'Urgent', 'Emergency'].map((level) => (
+                                    <Button
+                                        key={level}
+                                        type="button"
+                                        variant={formData.urgency === level ? 'default' : 'outline'}
+                                        size="sm"
+                                        className={
+                                            formData.urgency === level
+                                                ? level === 'Emergency' ? 'bg-red-600 hover:bg-red-700' :
+                                                    level === 'Urgent' ? 'bg-orange-500 hover:bg-orange-600' :
+                                                        'bg-teal-600 hover:bg-teal-700'
+                                                : ''
+                                        }
+                                        onClick={() => setFormData(prev => ({ ...prev, urgency: level }))}
+                                    >
+                                        {level}
+                                    </Button>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                {formData.urgency === 'Emergency' && '⚠️ Your vet will be notified immediately'}
+                                {formData.urgency === 'Urgent' && 'Vet will prioritize your request'}
+                                {formData.urgency === 'Normal' && 'Standard scheduling applies'}
+                            </p>
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="bg-teal-600 hover:bg-teal-700"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <Stethoscope className="mr-2 h-4 w-4" />
+                                    Request Visit
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

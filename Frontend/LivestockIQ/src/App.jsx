@@ -51,6 +51,7 @@ import TreatmentRequestsPage from "./pages/vet/TreatmentRequestsPage";
 import FarmerDirectoryPage from "./pages/vet/FarmerDirectoryPage";
 import VetReportsPage from "./pages/vet/VetReportsPage";
 import VetSettingsPage from "./pages/vet/VetSettingsPage";
+import VetVisitRequestsPage from "./pages/vet/VetVisitRequestsPage";
 
 // Regulator Page Imports
 import RegulatorAppLayout from "./components/layout/RegulatorAppLayout";
@@ -72,6 +73,12 @@ import PrescriptionsPage from "./pages/regulator/PrescriptionsPage";
 import AuditTrailsPage from "./pages/regulator/AuditTrailsPage";
 import FarmAuditTrailPage from "./pages/regulator/FarmAuditTrailPage";
 import UserOversightPage from "./pages/regulator/UserOversightPage";
+
+// Lab Technician Page Imports
+import LabAppLayout from "./components/layout/LabAppLayout";
+import LabDashboardPage from "./pages/lab/LabDashboardPage";
+import UploadMRLTestPage from "./pages/lab/UploadMRLTestPage";
+import TestHistoryPage from "./pages/lab/TestHistoryPage";
 
 // --- Google Analytics Integration ---
 
@@ -150,6 +157,14 @@ const AdminRoute = ({ children }) => {
   return children;
 }
 
+const LabRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (user?.role !== 'labTechnician') {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 // --- Main App Component ---
 
 function App() {
@@ -160,6 +175,7 @@ function App() {
     if (user?.role === 'veterinarian') return <Navigate to="/vet/dashboard" />;
     if (user?.role === 'regulator') return <Navigate to="/regulator/dashboard" />;
     if (user?.role === 'admin') return <Navigate to="/admin/dashboard" />;
+    if (user?.role === 'labTechnician') return <Navigate to="/lab/dashboard" />;
     return <Navigate to="/farmer/dashboard" />;
   }
 
@@ -227,6 +243,7 @@ function App() {
                 <Route path="support/raise-ticket" element={<RaiseTicketPage />} />
                 <Route path="support/history" element={<TicketHistoryPage />} />
                 <Route path="feed-requests" element={<FeedAdministrationRequestsPage />} />
+                <Route path="visit-requests" element={<VetVisitRequestsPage />} />
                 <Route path="farmers" element={<FarmerDirectoryPage />} />
                 <Route path="reports" element={<VetReportsPage />} />
                 <Route path="settings" element={<VetSettingsPage />} />
@@ -283,6 +300,23 @@ function App() {
                 <Route path="audits" element={<AuditsPage />} />
                 <Route path="support" element={<SupportPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
+              </Route>
+
+              {/* Protected Lab Technician Routes */}
+              <Route
+                path="/lab"
+                element={
+                  <ProtectedRoute>
+                    <LabRoute>
+                      <LabAppLayout />
+                    </LabRoute>
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Navigate to="dashboard" replace />} />
+                <Route path="dashboard" element={<LabDashboardPage />} />
+                <Route path="upload-test" element={<UploadMRLTestPage />} />
+                <Route path="test-history" element={<TestHistoryPage />} />
               </Route>
 
               {/* 404 Fallback */}

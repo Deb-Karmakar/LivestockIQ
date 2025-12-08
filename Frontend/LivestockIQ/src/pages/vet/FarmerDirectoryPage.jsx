@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Phone, Mail, MoreVertical, ShieldAlert, Sparkles, Users as UsersIcon } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Search, Phone, Mail, MoreVertical, ShieldAlert, Sparkles, Users as UsersIcon, Syringe, Loader2 } from 'lucide-react';
 import { axiosInstance } from '../../contexts/AuthContext';
-import { getAnimalsForFarmer, reportFarmer, getMyFarmers } from '../../services/vetService';
+import { getAnimalsForFarmer, reportFarmer, getMyFarmers, addTreatmentByVet } from '../../services/vetService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -34,6 +35,7 @@ const FarmerDirectoryPage = () => {
     const [farmerAnimals, setFarmerAnimals] = useState([]);
     const [animalsLoading, setAnimalsLoading] = useState(false);
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+    const [treatmentAnimal, setTreatmentAnimal] = useState(null); // For Add Treatment dialog
     const { toast } = useToast();
 
     useEffect(() => {
@@ -88,6 +90,17 @@ const FarmerDirectoryPage = () => {
         setSelectedFarmer(null);
         setFarmerAnimals([]);
         setIsReportDialogOpen(false);
+        setTreatmentAnimal(null);
+    };
+
+    const handleAddTreatment = (farmer, animal) => {
+        setSelectedFarmer(farmer);
+        setTreatmentAnimal(animal);
+    };
+
+    const handleTreatmentSuccess = () => {
+        setTreatmentAnimal(null);
+        toast({ title: 'Treatment Recorded', description: 'Treatment has been saved and the farmer has been notified of the withdrawal period.' });
     };
 
     if (loading) {
@@ -186,20 +199,34 @@ const FarmerDirectoryPage = () => {
                 </Card>
             )}
 
-            <FarmerAnimalsDialog isOpen={!!selectedFarmer && !isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} animals={farmerAnimals} loading={animalsLoading} />
+            <FarmerAnimalsDialog
+                isOpen={!!selectedFarmer && !isReportDialogOpen && !treatmentAnimal}
+                onClose={closeDialogs}
+                farmer={selectedFarmer}
+                animals={farmerAnimals}
+                loading={animalsLoading}
+                onAddTreatment={(animal) => handleAddTreatment(selectedFarmer, animal)}
+            />
             <ReportFarmerDialog isOpen={isReportDialogOpen} onClose={closeDialogs} farmer={selectedFarmer} onSubmit={handleReportSubmit} />
+            <AddTreatmentDialog
+                isOpen={!!treatmentAnimal}
+                onClose={() => setTreatmentAnimal(null)}
+                farmer={selectedFarmer}
+                animal={treatmentAnimal}
+                onSuccess={handleTreatmentSuccess}
+            />
         </div>
     );
 };
 
-const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
+const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading, onAddTreatment }) => {
     if (!isOpen) return null;
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>Animal Registry for {farmer?.farmName}</DialogTitle>
-                    <CardDescription>A complete list of livestock for {farmer?.farmOwner}.</CardDescription>
+                    <CardDescription>Select an animal to add a treatment record.</CardDescription>
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto">
                     {loading ? (
@@ -214,6 +241,7 @@ const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
                                     <TableHead>Name</TableHead>
                                     <TableHead>Species</TableHead>
                                     <TableHead>Age</TableHead>
+                                    <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -223,10 +251,20 @@ const FarmerAnimalsDialog = ({ isOpen, onClose, farmer, animals, loading }) => {
                                         <TableCell>{animal.name || 'N/A'}</TableCell>
                                         <TableCell>{animal.species}</TableCell>
                                         <TableCell>{calculateAge(animal.dob)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button
+                                                size="sm"
+                                                className="bg-teal-600 hover:bg-teal-700"
+                                                onClick={() => onAddTreatment(animal)}
+                                            >
+                                                <Syringe className="h-4 w-4 mr-1" />
+                                                Add Treatment
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan="4" className="text-center h-24">This farmer has not logged any animals yet.</TableCell>
+                                        <TableCell colSpan="5" className="text-center h-24">This farmer has not logged any animals yet.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -280,6 +318,231 @@ const ReportFarmerDialog = ({ isOpen, onClose, farmer, onSubmit }) => {
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
                     <Button variant="destructive" onClick={handleSubmit}>Submit Report</Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+const AddTreatmentDialog = ({ isOpen, onClose, farmer, animal, onSuccess }) => {
+    const [formData, setFormData] = useState({
+        drugName: '',
+        drugClass: 'Unclassified',
+        dose: '',
+        route: 'Intramuscular',
+        withdrawalDays: '',
+        withdrawalStartDate: new Date().toISOString().split('T')[0],
+        notes: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { toast } = useToast();
+
+    // Reset form when dialog opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                drugName: '',
+                drugClass: 'Unclassified',
+                dose: '',
+                route: 'Intramuscular',
+                withdrawalDays: '',
+                withdrawalStartDate: new Date().toISOString().split('T')[0],
+                notes: ''
+            });
+        }
+    }, [isOpen]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!formData.drugName || !formData.withdrawalDays) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Drug name and withdrawal period are required.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await addTreatmentByVet({
+                farmerId: farmer._id,
+                animalId: animal.tagId,
+                ...formData
+            });
+            onSuccess();
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: error.response?.data?.message || 'Failed to add treatment. Please try again.'
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen || !animal) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
+                            <Syringe className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                            <DialogTitle>Add Treatment</DialogTitle>
+                            <DialogDescription>
+                                For {animal?.name || animal?.tagId} ({farmer?.farmOwner})
+                            </DialogDescription>
+                        </div>
+                    </div>
+                </DialogHeader>
+                <form onSubmit={handleSubmit}>
+                    <div className="space-y-4 py-4">
+                        {/* Animal Info */}
+                        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-3 rounded-xl border">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Animal:</span>
+                                <span className="font-medium">{animal?.tagId} - {animal?.name || 'Unnamed'}</span>
+                            </div>
+                            <div className="flex justify-between text-sm mt-1">
+                                <span className="text-gray-500">Species:</span>
+                                <span>{animal?.species}</span>
+                            </div>
+                        </div>
+
+                        {/* Drug Name */}
+                        <div className="space-y-2">
+                            <Label htmlFor="drugName">Drug Name <span className="text-red-500">*</span></Label>
+                            <Input
+                                id="drugName"
+                                value={formData.drugName}
+                                onChange={(e) => setFormData(prev => ({ ...prev, drugName: e.target.value }))}
+                                placeholder="e.g., Amoxicillin"
+                            />
+                        </div>
+
+                        {/* Drug Class */}
+                        <div className="space-y-2">
+                            <Label htmlFor="drugClass">WHO AWaRe Class</Label>
+                            <Select
+                                value={formData.drugClass}
+                                onValueChange={(value) => setFormData(prev => ({ ...prev, drugClass: value }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select class..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Access">Access (Low resistance risk)</SelectItem>
+                                    <SelectItem value="Watch">Watch (Higher resistance risk)</SelectItem>
+                                    <SelectItem value="Reserve">Reserve (Last resort)</SelectItem>
+                                    <SelectItem value="Unclassified">Unclassified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Dose and Route */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="dose">Dose</Label>
+                                <Input
+                                    id="dose"
+                                    value={formData.dose}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, dose: e.target.value }))}
+                                    placeholder="e.g., 10mg/kg"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="route">Route</Label>
+                                <Select
+                                    value={formData.route}
+                                    onValueChange={(value) => setFormData(prev => ({ ...prev, route: value }))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Oral">Oral</SelectItem>
+                                        <SelectItem value="Intramuscular">Intramuscular (IM)</SelectItem>
+                                        <SelectItem value="Subcutaneous">Subcutaneous (SC)</SelectItem>
+                                        <SelectItem value="Intravenous">Intravenous (IV)</SelectItem>
+                                        <SelectItem value="Topical">Topical</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        {/* Withdrawal Period */}
+                        <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl space-y-3">
+                            <h4 className="font-medium text-orange-800 flex items-center gap-2">
+                                Withdrawal Period
+                            </h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="withdrawalDays">Duration (Days) <span className="text-red-500">*</span></Label>
+                                    <Input
+                                        id="withdrawalDays"
+                                        type="number"
+                                        min="1"
+                                        value={formData.withdrawalDays}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, withdrawalDays: e.target.value }))}
+                                        placeholder="e.g., 14"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="withdrawalStartDate">Start Date</Label>
+                                    <Input
+                                        id="withdrawalStartDate"
+                                        type="date"
+                                        value={formData.withdrawalStartDate}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, withdrawalStartDate: e.target.value }))}
+                                    />
+                                </div>
+                            </div>
+                            {formData.withdrawalDays && (
+                                <p className="text-sm text-orange-700">
+                                    Products from this animal cannot be sold until{' '}
+                                    <strong>
+                                        {new Date(new Date(formData.withdrawalStartDate).getTime() + formData.withdrawalDays * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                    </strong>
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Notes */}
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Notes (Optional)</Label>
+                            <Textarea
+                                id="notes"
+                                value={formData.notes}
+                                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                                placeholder="Additional notes about this treatment..."
+                                rows={2}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="bg-teal-600 hover:bg-teal-700"
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Syringe className="mr-2 h-4 w-4" />
+                                    Save Treatment
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </form>
             </DialogContent>
         </Dialog>
     );

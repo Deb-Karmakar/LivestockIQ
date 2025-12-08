@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
                 localStorage.setItem('userInfo', JSON.stringify(response.data));
                 setUser(response.data);
                 axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-                
+
                 // UPDATED: Handle redirect for all three roles
                 const { role } = response.data;
                 if (role === 'veterinarian') {

@@ -2,6 +2,7 @@ import Farmer from '../models/farmer.model.js';
 import Veterinarian from '../models/vet.model.js';
 import Regulator from '../models/regulator.model.js';
 import Admin from '../models/admin.model.js';
+import LabTechnician from '../models/labTechnician.model.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -118,6 +119,38 @@ export const registerRegulator = async (req, res) => {
     }
 };
 
+// NEW: Function to register a new Lab Technician
+export const registerLabTechnician = async (req, res) => {
+    const { fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization } = req.body;
+
+    try {
+        const labTechExists = await LabTechnician.findOne({ email });
+        if (labTechExists) {
+            return res.status(400).json({ message: 'Lab Technician with this email already exists' });
+        }
+
+        const labTechnician = await LabTechnician.create({
+            fullName, email, password, labName, labCertificationNumber, labLocation, phoneNumber, specialization
+        });
+
+        if (labTechnician) {
+            res.status(201).json({
+                _id: labTechnician._id,
+                fullName: labTechnician.fullName,
+                email: labTechnician.email,
+                labName: labTechnician.labName,
+                labTechId: labTechnician.labTechId,
+                role: 'labTechnician',
+                token: generateToken(labTechnician._id, 'labTechnician'),
+            });
+        } else {
+            res.status(400).json({ message: 'Invalid lab technician data' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
@@ -142,6 +175,11 @@ export const loginUser = async (req, res) => {
         if (!user) {
             user = await Admin.findOne({ email });
             if (user) { role = 'admin'; }
+        }
+
+        if (!user) {
+            user = await LabTechnician.findOne({ email });
+            if (user) { role = 'labTechnician'; }
         }
 
         // If a user was found in any collection, check the password
@@ -169,6 +207,11 @@ export const loginUser = async (req, res) => {
             }
             if (role === 'admin') {
                 responsePayload.fullName = user.fullName;
+            }
+            if (role === 'labTechnician') {
+                responsePayload.fullName = user.fullName;
+                responsePayload.labTechId = user.labTechId;
+                responsePayload.labName = user.labName;
             }
 
             return res.json(responsePayload);

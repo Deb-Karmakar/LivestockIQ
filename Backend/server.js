@@ -31,6 +31,8 @@ import prescriptionReviewRoutes from './routes/prescriptionReview.routes.js';
 import trendsEnhancedRoutes from './routes/trendsEnhanced.routes.js';
 import ttsRoutes from './routes/tts.routes.js';
 import sttRoutes from './routes/stt.routes.js';
+import vetVisitRequestRoutes from './routes/vetVisitRequest.routes.js';
+import labTechnicianRoutes from './routes/labTechnician.routes.js';
 import { startAmuAnalysisJob } from './jobs/amuAnalysis.js';
 import { startDiseasePredictionJob } from './jobs/diseaseAlertJob.js';
 import { startBlockchainAnchorJob } from './jobs/blockchainAnchor.js';
@@ -111,6 +113,8 @@ app.use('/api/regulator/prescriptions', prescriptionReviewRoutes); // Prescripti
 app.use('/api/regulator/trends-enhanced', trendsEnhancedRoutes); // Enhanced trends analysis
 app.use('/api/tts', ttsRoutes); // Text-to-speech service
 app.use('/api/stt', sttRoutes); // Speech-to-text service
+app.use('/api/vet-visits', vetVisitRequestRoutes); // Vet visit request system
+app.use('/api/lab', labTechnicianRoutes); // Lab Technician MRL test upload
 
 // Debugging route
 import Farmer from './models/farmer.model.js'; // ✅ Ensure Farmer is imported

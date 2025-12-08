@@ -5,6 +5,7 @@ import Veterinarian from '../models/vet.model.js';
 import Farmer from '../models/farmer.model.js';
 import Regulator from '../models/regulator.model.js';
 import Admin from '../models/admin.model.js';
+import LabTechnician from '../models/labTechnician.model.js';
 
 const protect = async (req, res, next) => {
     let token;
@@ -14,11 +15,12 @@ const protect = async (req, res, next) => {
             token = req.headers.authorization.split(' ')[1];
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Search all FOUR collections to find the user
+            // Search all FIVE collections to find the user
             req.user = await Veterinarian.findById(decoded.id).select('-password') ||
                 await Farmer.findById(decoded.id).select('-password') ||
                 await Regulator.findById(decoded.id).select('-password') ||
-                await Admin.findById(decoded.id).select('-password');
+                await Admin.findById(decoded.id).select('-password') ||
+                await LabTechnician.findById(decoded.id).select('-password');
 
             if (!req.user) {
                 return res.status(401).json({ message: 'Not authorized, user not found' });
@@ -32,6 +34,7 @@ const protect = async (req, res, next) => {
                 if (req.user.licenseNumber) req.user.role = 'veterinarian';
                 else if (req.user.farmName) req.user.role = 'farmer';
                 else if (req.user.agencyName) req.user.role = 'regulator';
+                else if (req.user.labTechId) req.user.role = 'labTechnician';
                 else if (req.user.email === 'admin@livestockiq.com') req.user.role = 'admin';
             }
 
@@ -63,6 +66,15 @@ const protectAdmin = (req, res, next) => {
     }
 };
 
+// Middleware to protect routes for lab technicians only
+const protectLabTechnician = (req, res, next) => {
+    if (req.user && req.user.role === 'labTechnician') {
+        next();
+    } else {
+        res.status(401).json({ message: 'Not authorized. Access restricted to lab technicians.' });
+    }
+};
+
 // Middleware to protect routes for admins OR regulators
 const protectAdminOrRegulator = (req, res, next) => {
     if (req.user && (req.user.role === 'admin' || req.user.role === 'regulator')) {
@@ -72,4 +84,5 @@ const protectAdminOrRegulator = (req, res, next) => {
     }
 };
 
-export { protect, protectRegulator, protectAdmin, protectAdminOrRegulator };
+export { protect, protectRegulator, protectAdmin, protectLabTechnician, protectAdminOrRegulator };
+

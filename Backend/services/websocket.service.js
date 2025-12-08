@@ -302,3 +302,58 @@ export const sendWeeklySummaryAlert = (farmerId, data) => {
         }
     });
 };
+
+/**
+ * Send vet visit request alert to vet
+ */
+export const sendVetVisitRequestAlert = (vetId, data) => {
+    sendAlertToVet(vetId, {
+        type: 'VET_VISIT_REQUEST',
+        severity: data.urgency === 'Emergency' ? 'critical' : data.urgency === 'Urgent' ? 'warning' : 'info',
+        title: '🏥 New Farm Visit Request',
+        message: `${data.farmerName} requested a visit for ${data.animalName}`,
+        data: {
+            visitRequestId: data.visitRequestId,
+            farmerId: data.farmerId,
+            farmerName: data.farmerName,
+            farmName: data.farmName,
+            animalId: data.animalId,
+            animalName: data.animalName,
+            reason: data.reason,
+            urgency: data.urgency
+        },
+        action: {
+            type: 'navigate',
+            url: '/vet/visit-requests'
+        }
+    });
+};
+
+/**
+ * Send vet visit response alert to farmer
+ */
+export const sendVetVisitResponseAlert = (farmerId, data) => {
+    const isAccepted = data.status === 'Accepted';
+
+    sendAlertToFarmer(farmerId, {
+        type: 'VET_VISIT_RESPONSE',
+        severity: isAccepted ? 'success' : 'warning',
+        title: isAccepted ? '✅ Vet Visit Scheduled' : '❌ Vet Visit Declined',
+        message: isAccepted
+            ? `${data.vetName} will visit on ${new Date(data.scheduledDate).toLocaleDateString()}`
+            : `${data.vetName} declined the visit request`,
+        data: {
+            visitRequestId: data.visitRequestId,
+            animalId: data.animalId,
+            animalName: data.animalName,
+            status: data.status,
+            scheduledDate: data.scheduledDate,
+            vetName: data.vetName,
+            vetNotes: data.vetNotes
+        },
+        action: {
+            type: 'navigate',
+            url: '/farmer/animals'
+        }
+    });
+};

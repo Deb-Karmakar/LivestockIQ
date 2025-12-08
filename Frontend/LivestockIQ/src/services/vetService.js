@@ -157,3 +157,14 @@ export const rejectFeedAdministration = async (id, rejectionReason) => {
         throw error;
     }
 };
+
+// Add treatment directly by vet (auto-approved)
+export const addTreatmentByVet = async (treatmentData) => {
+    try {
+        const { data } = await axiosInstance.post('/treatments/vet-entry', treatmentData);
+        return data;
+    } catch (error) {
+        console.error("Error adding treatment by vet:", error);
+        throw error;
+    }
+};
