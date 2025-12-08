@@ -7,7 +7,8 @@ import {
     getMRLAnalysisDashboard,
     getAllLabTests,
     reviewLabTest,
-    getFilterOptions
+    getFilterOptions,
+    exportMRLDataToCSV
 } from '../controllers/mrlAnalysis.controller.js';
 
 const router = express.Router();
@@ -27,5 +28,8 @@ router.get('/filters', getFilterOptions);
 
 // Review (approve/reject/flag) a test
 router.patch('/tests/:id/review', reviewLabTest);
+
+// Export MRL data to CSV
+router.get('/export-csv', exportMRLDataToCSV);
 
 export default router;

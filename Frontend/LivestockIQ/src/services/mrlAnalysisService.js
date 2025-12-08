@@ -45,3 +45,29 @@ export const getFilterOptions = async () => {
         throw error;
     }
 };
+
+// Export MRL data to CSV
+export const exportMRLDataCSV = async (filters = {}) => {
+    try {
+        const { data } = await axiosInstance.get('/regulator/mrl-analysis/export-csv', {
+            params: filters,
+            responseType: 'blob' // Important: treat response as binary data
+        });
+
+        // Create a downloadable link
+        const url = window.URL.createObjectURL(new Blob([data], { type: 'text/csv' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `mrl-analysis-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        return true;
+    } catch (error) {
+        console.error("Error exporting CSV:", error);
+        throw error;
+    }
+};
+

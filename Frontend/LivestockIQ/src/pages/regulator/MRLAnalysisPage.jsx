@@ -31,10 +31,11 @@ import {
     BarChart3,
     PieChart,
     Activity,
-    Loader2
+    Loader2,
+    Download
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie, LineChart, Line, AreaChart, Area } from 'recharts';
-import { getMRLAnalysisDashboard, getAllLabTests, reviewLabTest, getFilterOptions } from '../../services/mrlAnalysisService';
+import { getMRLAnalysisDashboard, getAllLabTests, reviewLabTest, getFilterOptions, exportMRLDataCSV } from '../../services/mrlAnalysisService';
 import { useToast } from '../../hooks/use-toast';
 
 const COLORS = ['#22c55e', '#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -104,6 +105,16 @@ const MRLAnalysisPage = () => {
             if (activeTab === 'tests') fetchTests();
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to review test' });
+        }
+    };
+
+    const handleExportCSV = async () => {
+        try {
+            toast({ title: 'Exporting...', description: 'Preparing your CSV download' });
+            await exportMRLDataCSV(filters);
+            toast({ title: 'Success', description: 'CSV exported successfully' });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to export CSV' });
         }
     };
 
@@ -497,6 +508,9 @@ const MRLAnalysisPage = () => {
                                     </SelectContent>
                                 </Select>
                                 <Button onClick={() => fetchTests()}><Search className="w-4 h-4 mr-2" />Search</Button>
+                                <Button variant="outline" onClick={handleExportCSV} className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200">
+                                    <Download className="w-4 h-4 mr-2" />Export CSV
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>

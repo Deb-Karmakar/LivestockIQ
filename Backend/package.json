@@ -20,6 +20,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "groq-sdk": "^0.32.0",
+    "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^3.0.4",
     "mongodb": "^6.20.0",

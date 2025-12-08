@@ -4,6 +4,8 @@
 import LabTestUpload from '../models/labTestUpload.model.js';
 import LabTechnician from '../models/labTechnician.model.js';
 import Farmer from '../models/farmer.model.js';
+import pkg from 'json2csv';
+const { Parser } = pkg;
 
 /**
  * @desc    Get comprehensive MRL analysis dashboard data
@@ -323,3 +325,66 @@ export const getFilterOptions = async (req, res) => {
         res.status(500).json({ message: `Server Error: ${error.message}` });
     }
 };
+
+/**
+ * @desc    Export MRL data to CSV
+ * @route   GET /api/regulator/mrl-analysis/export-csv
+ * @access  Private (Regulator)
+ */
+export const exportMRLDataToCSV = async (req, res) => {
+    try {
+        const { status, isPassed, species, drug, labName, sortBy = 'testDate', sortOrder = 'desc' } = req.query;
+
+        // Build query (same as getAllLabTests)
+        let query = {};
+        if (status && status !== 'all') query.status = status;
+        if (isPassed !== undefined && isPassed !== 'all') query.isPassed = isPassed === 'true';
+        if (species && species !== 'all') query.animalSpecies = species;
+        if (drug) query.drugOrSubstanceTested = { $regex: drug, $options: 'i' };
+        if (labName) query.labName = { $regex: labName, $options: 'i' };
+
+        const sortOptions = {};
+        sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+        // Fetch ALL matching tests (no pagination limit)
+        const tests = await LabTestUpload.find(query)
+            .sort(sortOptions)
+            .lean();
+
+        // Define CSV fields
+        const fields = [
+            { label: 'Test Report Number', value: 'testReportNumber' },
+            { label: 'Animal Tag ID', value: 'animalTagId' },
+            { label: 'Animal Species', value: 'animalSpecies' },
+            { label: 'Farm Name', value: 'farmName' },
+            { label: 'Farmer Email', value: 'farmerEmail' },
+            { label: 'Drug/Substance Tested', value: 'drugOrSubstanceTested' },
+            { label: 'Residue Level Detected', value: 'residueLevelDetected' },
+            { label: 'MRL Threshold', value: 'mrlThreshold' },
+            { label: 'Unit', value: 'unit' },
+            { label: 'Test Result', value: row => row.isPassed ? 'PASS' : 'FAIL' },
+            { label: 'Lab Name', value: 'labName' },
+            { label: 'Lab Tech ID', value: 'labTechId' },
+            { label: 'Test Date', value: row => row.testDate ? new Date(row.testDate).toLocaleDateString() : '' },
+            { label: 'Sample Collection Date', value: row => row.sampleCollectionDate ? new Date(row.sampleCollectionDate).toLocaleDateString() : '' },
+            { label: 'Status', value: 'status' },
+            { label: 'Regulator Reviewed', value: row => row.regulatorReviewed ? 'Yes' : 'No' },
+            { label: 'Review Notes', value: 'notes' }
+        ];
+
+        // Convert to CSV
+        const parser = new Parser({ fields });
+        const csv = parser.parse(tests);
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=mrl-analysis-${new Date().toISOString().split('T')[0]}.csv`);
+
+        res.send(csv);
+
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        res.status(500).json({ message: `Server Error: ${error.message}` });
+    }
+};
+
