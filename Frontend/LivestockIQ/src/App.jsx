@@ -73,6 +73,7 @@ import PrescriptionsPage from "./pages/regulator/PrescriptionsPage";
 import AuditTrailsPage from "./pages/regulator/AuditTrailsPage";
 import FarmAuditTrailPage from "./pages/regulator/FarmAuditTrailPage";
 import UserOversightPage from "./pages/regulator/UserOversightPage";
+import MRLAnalysisPage from "./pages/regulator/MRLAnalysisPage";
 
 // Lab Technician Page Imports
 import LabAppLayout from "./components/layout/LabAppLayout";
@@ -280,6 +281,7 @@ function App() {
                 <Route path="demographics" element={<DemographicsPageEnhanced />} />
                 <Route path="map" element={<MapViewPage />} />
                 <Route path="reports" element={<RegulatorReportsPage />} />
+                <Route path="mrl-analysis" element={<MRLAnalysisPage />} />
                 <Route path="settings" element={<RegulatorSettingsPage />} />
               </Route>
 

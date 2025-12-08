@@ -21,6 +21,7 @@ import {
     BriefcaseMedical,
     ShieldCheck,
     UserCog,
+    FlaskConical,
 } from 'lucide-react';
 
 // --- Regulator Navigation Links Configuration ---
@@ -37,10 +38,11 @@ const secondaryNavLinks = [
     { name: 'Demographics', path: '/regulator/demographics', icon: Users2 },
     { name: 'Map View', path: '/regulator/map', icon: Map },
     { name: 'Prescriptions', path: '/regulator/prescriptions', icon: BriefcaseMedical },
+    { name: 'MRL Analysis', path: '/regulator/mrl-analysis', icon: FlaskConical },
     { name: 'Audit Trails', path: '/regulator/audit-trails', icon: ShieldCheck },
     { name: 'User Oversight', path: '/regulator/users', icon: UserCog },
     { name: 'Reports', path: '/regulator/reports', icon: FileText },
-    { name: 'MRL Verifications', path: '/regulator/mrl-verifications', icon: FileCheck },
+    // { name: 'MRL Verifications', path: '/regulator/mrl-verifications', icon: FileCheck },
     { name: 'AMU Management', path: '/regulator/amu-management', icon: ShieldCheck },
     { name: 'Alerts', path: '/regulator/alerts', icon: AlertCircle },
     { name: 'Support', path: '/regulator/support/raise-ticket', icon: HelpCircle },
