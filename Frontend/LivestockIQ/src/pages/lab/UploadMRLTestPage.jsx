@@ -98,17 +98,17 @@ const UploadMRLTestPage = () => {
     return (
         <div className="space-y-8 pb-8 max-w-3xl mx-auto">
             {/* Header Section */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-3xl p-8 text-white">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 rounded-3xl p-8 text-white">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
 
                 <div className="relative space-y-2">
-                    <div className="flex items-center gap-2 text-purple-300 text-sm font-medium">
+                    <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium">
                         <Sparkles className="w-4 h-4" />
                         <span>MRL Compliance</span>
                     </div>
                     <h1 className="text-3xl lg:text-4xl font-bold">Upload MRL Test Result</h1>
-                    <p className="text-purple-200">Enter test results for an animal to update their MRL compliance status</p>
+                    <p className="text-emerald-200">Enter test results for an animal to update their MRL compliance status</p>
                 </div>
             </div>
 
@@ -133,7 +133,7 @@ const UploadMRLTestPage = () => {
                         <Button
                             onClick={handleAnimalSearch}
                             disabled={searchLoading || formData.animalId.length < 12}
-                            className="bg-purple-600 hover:bg-purple-700"
+                            className="bg-emerald-600 hover:bg-emerald-700"
                         >
                             {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                         </Button>
@@ -332,7 +332,7 @@ const UploadMRLTestPage = () => {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    className="bg-purple-600 hover:bg-purple-700"
+                                    className="bg-emerald-600 hover:bg-emerald-700"
                                     disabled={isSubmitting}
                                 >
                                     {isSubmitting ? (

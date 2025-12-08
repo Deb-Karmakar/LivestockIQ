@@ -55,18 +55,18 @@ const TestHistoryPage = () => {
     return (
         <div className="space-y-8 pb-8">
             {/* Header Section */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-3xl p-8 text-white">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 rounded-3xl p-8 text-white">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
 
                 <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-purple-300 text-sm font-medium">
+                        <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium">
                             <Sparkles className="w-4 h-4" />
                             <span>Test History</span>
                         </div>
                         <h1 className="text-3xl lg:text-4xl font-bold">MRL Test History</h1>
-                        <p className="text-purple-200">View all tests you have uploaded</p>
+                        <p className="text-emerald-200">View all tests you have uploaded</p>
                     </div>
                 </div>
             </div>
@@ -117,7 +117,7 @@ const TestHistoryPage = () => {
                 <CardContent>
                     {loading ? (
                         <div className="flex justify-center items-center py-12">
-                            <div className="w-8 h-8 border-4 border-gray-200 rounded-full border-t-purple-600 animate-spin" />
+                            <div className="w-8 h-8 border-4 border-gray-200 rounded-full border-t-emerald-600 animate-spin" />
                         </div>
                     ) : filteredTests.length > 0 ? (
                         <div className="overflow-x-auto">
@@ -187,7 +187,7 @@ const TestHistoryPage = () => {
                             <FlaskConical className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                             <p>No tests found</p>
                             <Button
-                                className="mt-4 bg-purple-600 hover:bg-purple-700"
+                                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
                                 onClick={() => navigate('/lab/upload-test')}
                             >
                                 Upload a Test

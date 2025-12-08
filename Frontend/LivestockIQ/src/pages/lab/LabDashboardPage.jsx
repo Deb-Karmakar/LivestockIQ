@@ -56,27 +56,27 @@ const LabDashboardPage = () => {
     return (
         <div className="space-y-8 pb-8">
             {/* Header Section */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-purple-900 rounded-3xl p-8 text-white">
+            <div className="relative overflow-hidden bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 rounded-3xl p-8 text-white">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
-                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl" />
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl" />
 
                 <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                     <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-purple-300 text-sm font-medium">
+                        <div className="flex items-center gap-2 text-emerald-300 text-sm font-medium">
                             <Sparkles className="w-4 h-4" />
                             <span>Lab Portal</span>
                         </div>
                         <h1 className="text-3xl lg:text-4xl font-bold">
                             Welcome, {labTech.fullName || 'Lab Technician'}
                         </h1>
-                        <p className="text-purple-200 max-w-md">
+                        <p className="text-emerald-200 max-w-md">
                             {labTech.labName} • ID: {labTech.labTechId}
                         </p>
                     </div>
                     <Button
                         size="lg"
-                        className="bg-white text-purple-700 hover:bg-purple-50 shadow-lg"
+                        className="bg-white text-emerald-700 hover:bg-emerald-50 shadow-lg"
                         onClick={() => navigate('/lab/upload-test')}
                     >
                         <Plus className="w-5 h-5 mr-2" />
@@ -90,8 +90,8 @@ const LabDashboardPage = () => {
                 <Card className="border-0 shadow-lg">
                     <CardContent className="p-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <FlaskConical className="w-6 h-6 text-purple-600" />
+                            <div className="p-3 bg-emerald-100 rounded-xl">
+                                <FlaskConical className="w-6 h-6 text-emerald-600" />
                             </div>
                             <div>
                                 <p className="text-sm text-gray-500">Total Tests</p>
@@ -183,7 +183,7 @@ const LabDashboardPage = () => {
                             <FlaskConical className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                             <p>No tests uploaded yet</p>
                             <Button
-                                className="mt-4 bg-purple-600 hover:bg-purple-700"
+                                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
                                 onClick={() => navigate('/lab/upload-test')}
                             >
                                 Upload Your First Test
