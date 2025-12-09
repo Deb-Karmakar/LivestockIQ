@@ -54,7 +54,7 @@ const AlertsScreen = ({ navigation }) => {
     const [amuAlerts, setAmuAlerts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState('amu');
+    const [activeTab, setActiveTab] = useState('all');
     const [selectedAlert, setSelectedAlert] = useState(null);
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -113,7 +113,12 @@ const AlertsScreen = ({ navigation }) => {
             setAmuAlerts(Array.isArray(amuData) ? amuData : []);
         } catch (error) {
             console.error('Error fetching alerts:', error);
+            if (error.response) {
+                console.error('Error response:', error.response.status, error.response.data);
+            }
         } finally {
+            console.log('Fetched treatments:', treatments.length);
+            console.log('Fetched AMU alerts:', amuAlerts.length);
             setLoading(false);
             setRefreshing(false);
         }
@@ -286,6 +291,14 @@ const AlertsScreen = ({ navigation }) => {
                 {/* Tabs */}
                 <View style={[styles.tabContainer, { backgroundColor: theme.card }]}>
                     <TouchableOpacity
+                        style={[styles.tab, activeTab === 'all' && { backgroundColor: theme.background }]}
+                        onPress={() => setActiveTab('all')}
+                    >
+                        <Text style={[styles.tabText, { color: theme.subtext }, activeTab === 'all' && { color: theme.text, fontWeight: 'bold' }]}>
+                            {t('all')}
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
                         style={[styles.tab, activeTab === 'amu' && { backgroundColor: theme.background }]}
                         onPress={() => setActiveTab('amu')}
                     >
@@ -303,8 +316,78 @@ const AlertsScreen = ({ navigation }) => {
                     </TouchableOpacity>
                 </View>
 
+
                 {/* Content */}
-                {activeTab === 'amu' ? (
+                {activeTab === 'all' ? (
+                    <View style={styles.listContainer}>
+                        {/* AMU Alerts Section */}
+                        {amuAlerts.length > 0 && (
+                            <View style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('amu_alerts')}</Text>
+                                {amuAlerts.map(renderAmuAlert)}
+                            </View>
+                        )}
+
+                        {/* Operational Alerts Section */}
+                        {(pendingTreatments.length > 0 || withdrawalAlerts.length > 0) && (
+                            <View style={styles.section}>
+                                <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('operational')}</Text>
+                                {pendingTreatments.length > 0 && (
+                                    <View style={{ marginBottom: 10 }}>
+                                        <Text style={[styles.operationalSubtitle, { color: theme.subtext, marginBottom: 8 }]}>{t('pending_approvals')}</Text>
+                                        {pendingTreatments.map(treatment => (
+                                            <View key={treatment._id} style={[styles.operationalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                                                <View>
+                                                    <Text style={[styles.operationalTitle, { color: theme.text }]}>{t('animal_label')} {treatment.animalId}</Text>
+                                                    <Text style={[styles.operationalSubtitle, { color: theme.subtext }]}>{t('drug_name_label')}: {treatment.drugName}</Text>
+                                                </View>
+                                                <TouchableOpacity
+                                                    style={[styles.viewButton, { backgroundColor: theme.background }]}
+                                                    onPress={() => navigation.navigate('Treatments')}
+                                                >
+                                                    <Text style={[styles.viewButtonText, { color: theme.text }]}>{t('view')}</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                        ))}
+                                    </View>
+                                )}
+                                {withdrawalAlerts.map(treatment => {
+                                    const daysLeft = differenceInDays(new Date(treatment.withdrawalEndDate), new Date());
+                                    return (
+                                        <View key={treatment._id} style={[styles.operationalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
+                                            <View>
+                                                <Text style={[styles.operationalTitle, { color: theme.text }]}>{t('animal_label')} {treatment.animalId}</Text>
+                                                <Text style={[styles.operationalSubtitle, { color: theme.subtext }]}>
+                                                    {daysLeft} {daysLeft !== 1 ? t('days_remaining') : t('day_remaining')}
+                                                </Text>
+                                            </View>
+                                            <View style={[
+                                                styles.statusBadge,
+                                                { backgroundColor: daysLeft <= 2 ? theme.error + '20' : theme.background }
+                                            ]}>
+                                                <Text style={[
+                                                    styles.statusText,
+                                                    { color: daysLeft <= 2 ? theme.error : theme.subtext }
+                                                ]}>
+                                                    {daysLeft <= 2 ? t('critical') : t('warning')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+
+                        {/* Empty State */}
+                        {amuAlerts.length === 0 && pendingTreatments.length === 0 && withdrawalAlerts.length === 0 && (
+                            <View style={styles.emptyState}>
+                                <Ionicons name="checkmark-circle" size={48} color={theme.success} />
+                                <Text style={[styles.emptyStateTitle, { color: theme.text }]}>{t('all_clear')}</Text>
+                                <Text style={[styles.emptyStateText, { color: theme.subtext }]}>{t('no_active_alerts')}</Text>
+                            </View>
+                        )}
+                    </View>
+                ) : activeTab === 'amu' ? (
                     <View style={styles.listContainer}>
                         {amuAlerts.length > 0 ? (
                             amuAlerts.map(renderAmuAlert)
