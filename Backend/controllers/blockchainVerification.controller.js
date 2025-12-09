@@ -31,6 +31,39 @@ export const verifyLogOnBlockchain = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to verify this audit log' });
         }
 
+        // Check if this audit log has immediate blockchain verification in its metadata
+        // (for entities like lab tests that are anchored during creation)
+        console.log(`[DEBUG] Checking blockchain verification for log ${logId}`);
+        console.log(`[DEBUG] Log metadata:`, JSON.stringify(log.metadata, null, 2));
+        console.log(`[DEBUG] Has blockchain metadata?`, log.metadata?.blockchain?.verified);
+
+        if (log.metadata?.blockchain?.verified === true) {
+            const blockchainProof = {
+                transactionHash: log.metadata.blockchain.transactionHash,
+                blockNumber: log.metadata.blockchain.blockNumber,
+                merkleRoot: log.currentHash, // The entity's hash was anchored
+                explorerUrl: log.metadata.blockchain.explorerUrl ||
+                    `https://amoy.polygonscan.com/tx/${log.metadata.blockchain.transactionHash}`,
+                anchorTimestamp: log.createdAt,
+                totalLogsInSnapshot: 1, // Individual entity anchoring
+            };
+
+            return res.json({
+                isValid: true,
+                message: 'Entity verified on blockchain (immediate anchoring)',
+                logDetails: {
+                    id: log._id,
+                    eventType: log.eventType,
+                    entityType: log.entityType,
+                    timestamp: log.timestamp,
+                    currentHash: log.currentHash,
+                    performedBy: log.performedByRole,
+                },
+                blockchainProof,
+            });
+        }
+
+        // If not immediately anchored, check for batch snapshot anchoring
         // Find blockchain snapshot containing this log
         const snapshot = await findBlockchainSnapshotForLog(logId);
 
@@ -61,7 +94,7 @@ export const verifyLogOnBlockchain = async (req, res) => {
 
         res.json({
             isValid: true,
-            message: 'Audit log verified on blockchain',
+            message: 'Audit log verified on blockchain (batch snapshot)',
             logDetails: {
                 id: log._id,
                 eventType: log.eventType,
@@ -223,11 +256,6 @@ export const downloadBlockchainCertificate = async (req, res) => {
             return res.status(403).json({ message: 'Only regulators and admins can download certificates' });
         }
 
-        const snapshot = await findBlockchainSnapshotForLog(logId);
-        if (!snapshot) {
-            return res.status(400).json({ message: 'Cannot generate certificate - log not yet anchored to blockchain' });
-        }
-
         const logDetails = {
             id: log._id.toString(),
             eventType: log.eventType,
@@ -236,14 +264,35 @@ export const downloadBlockchainCertificate = async (req, res) => {
             performedBy: log.performedBy?.farmOwner || log.performedBy?.fullName || log.performedByRole || 'System',
         };
 
-        const blockchainProof = {
-            transactionHash: snapshot.dataSnapshot.transactionHash,
-            blockNumber: snapshot.dataSnapshot.blockNumber,
-            merkleRoot: snapshot.dataSnapshot.merkleRoot,
-            explorerUrl: snapshot.dataSnapshot.explorerUrl || `https://amoy.polygonscan.com/tx/${snapshot.dataSnapshot.transactionHash}`,
-            anchorTimestamp: snapshot.timestamp,
-            totalLogsInSnapshot: snapshot.dataSnapshot.totalLogs,
-        };
+        let blockchainProof;
+
+        // Check if this audit log has immediate blockchain verification in metadata
+        if (log.metadata?.blockchain?.verified === true) {
+            blockchainProof = {
+                transactionHash: log.metadata.blockchain.transactionHash,
+                blockNumber: log.metadata.blockchain.blockNumber,
+                merkleRoot: log.currentHash,
+                explorerUrl: log.metadata.blockchain.explorerUrl ||
+                    `https://amoy.polygonscan.com/tx/${log.metadata.blockchain.transactionHash}`,
+                anchorTimestamp: log.createdAt,
+                totalLogsInSnapshot: 1,
+            };
+        } else {
+            // Fall back to batch snapshot anchoring
+            const snapshot = await findBlockchainSnapshotForLog(logId);
+            if (!snapshot) {
+                return res.status(400).json({ message: 'Cannot generate certificate - log not yet anchored to blockchain' });
+            }
+
+            blockchainProof = {
+                transactionHash: snapshot.dataSnapshot.transactionHash,
+                blockNumber: snapshot.dataSnapshot.blockNumber,
+                merkleRoot: snapshot.dataSnapshot.merkleRoot,
+                explorerUrl: snapshot.dataSnapshot.explorerUrl || `https://amoy.polygonscan.com/tx/${snapshot.dataSnapshot.transactionHash}`,
+                anchorTimestamp: snapshot.timestamp,
+                totalLogsInSnapshot: snapshot.dataSnapshot.totalLogs,
+            };
+        }
 
         const pdfBuffer = await generateBlockchainCertificate(logDetails, blockchainProof);
 

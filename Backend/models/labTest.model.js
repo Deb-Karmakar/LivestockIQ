@@ -114,6 +114,27 @@ const labTestSchema = new mongoose.Schema({
     violationResolved: {
         type: Boolean,
         default: false
+    },
+    // Blockchain verification fields
+    blockchainHash: {
+        type: String,
+        // Transaction hash from blockchain
+    },
+    blockNumber: {
+        type: Number,
+        // Block number where test was anchored
+    },
+    blockchainTimestamp: {
+        type: Date,
+        // When the test was anchored on-chain
+    },
+    blockchainVerified: {
+        type: Boolean,
+        default: false
+    },
+    blockchainExplorerUrl: {
+        type: String,
+        // Link to view the transaction on blockchain explorer
     }
 }, {
     timestamps: true

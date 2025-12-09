@@ -186,5 +186,91 @@ export const verifyMerkleRootOnChain = async (farmerId, merkleRoot) => {
     }
 };
 
+/**
+ * Anchor a lab test to the blockchain
+ * @param {Object} labTestData - Lab test data to anchor
+ * @returns {Object} Transaction details
+ */
+export const anchorLabTest = async (labTestData) => {
+    try {
+        if (!contract) {
+            const initialized = initializeBlockchain();
+            if (!initialized) {
+                throw new Error('Blockchain not initialized');
+            }
+        }
+
+        const crypto = await import('crypto');
+
+        // Create a deterministic hash of the lab test data
+        const testDataString = JSON.stringify({
+            testId: labTestData._id.toString(),
+            animalId: labTestData.animalId,
+            drugName: labTestData.drugName,
+            sampleType: labTestData.sampleType,
+            productType: labTestData.productType,
+            residueLevelDetected: labTestData.residueLevelDetected,
+            unit: labTestData.unit,
+            mrlThreshold: labTestData.mrlThreshold,
+            testDate: labTestData.testDate,
+            labName: labTestData.labName,
+            testReportNumber: labTestData.testReportNumber,
+            isPassed: labTestData.isPassed,
+            testedBy: labTestData.testedBy,
+        });
+
+        const labTestHash = crypto.createHash('sha256').update(testDataString).digest('hex');
+        const hashBytes32 = `0x${labTestHash}`;
+
+        console.log(`📡 Anchoring Lab Test to Polygon Amoy...`);
+        console.log(`   Test ID: ${labTestData._id}`);
+        console.log(`   Animal: ${labTestData.animalId}`);
+        console.log(`   Drug: ${labTestData.drugName}`);
+        console.log(`   Hash: ${labTestHash.substring(0, 16)}...`);
+
+        // Anchor to blockchain using the same contract method
+        // We'll use anchorSnapshot with a single "log" (the lab test)
+        const tx = await contract.anchorSnapshot(
+            hashBytes32,
+            labTestData.farmerId.toString(),
+            1 // logCount = 1 for a single lab test
+        );
+
+        console.log(`⏳ Transaction sent: ${tx.hash}`);
+
+        // Wait for confirmation
+        const receipt = await tx.wait();
+        console.log(`✅ Confirmed in block ${receipt.blockNumber}`);
+
+        // Extract snapshot ID from event
+        const event = receipt.logs.find(log => {
+            try {
+                const parsed = contract.interface.parseLog(log);
+                return parsed.name === 'SnapshotAnchored';
+            } catch {
+                return false;
+            }
+        });
+
+        let snapshotId = null;
+        if (event) {
+            const parsed = contract.interface.parseLog(event);
+            snapshotId = parsed.args.id.toString();
+        }
+
+        return {
+            success: true,
+            transactionHash: receipt.hash,
+            blockNumber: receipt.blockNumber,
+            snapshotId: snapshotId,
+            labTestHash: labTestHash,
+            explorerUrl: `https://amoy.polygonscan.com/tx/${receipt.hash}`
+        };
+    } catch (error) {
+        console.error('❌ Lab test blockchain anchoring failed:', error.message);
+        throw error;
+    }
+};
+
 // Initialize on module load
 initializeBlockchain();

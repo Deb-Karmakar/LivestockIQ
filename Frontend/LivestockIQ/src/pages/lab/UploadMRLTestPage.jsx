@@ -77,11 +77,29 @@ const UploadMRLTestPage = () => {
         setIsSubmitting(true);
         try {
             const result = await uploadMRLTest(formData);
+
+            // Show blockchain verification status
+            let description = result.message;
+            if (result.blockchain?.verified) {
+                description += ` 🔗 Blockchain verified!`;
+            }
+
             toast({
-                title: result.isPassed ? 'Test Passed' : 'Test Failed',
-                description: result.message,
+                title: result.isPassed ? '✅ Test Passed' : '❌ Test Failed',
+                description: description,
                 variant: result.isPassed ? 'default' : 'destructive'
             });
+
+            // If blockchain verified, show additional notification
+            if (result.blockchain?.verified) {
+                setTimeout(() => {
+                    toast({
+                        title: '🔐 Blockchain Anchored',
+                        description: `Test result has been recorded on Polygon blockchain. Transaction: ${result.blockchain.transactionHash.substring(0, 10)}...`,
+                    });
+                }, 1000);
+            }
+
             navigate('/lab/test-history');
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: error.response?.data?.message || 'Failed to upload test' });

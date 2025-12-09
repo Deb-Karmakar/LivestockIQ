@@ -88,7 +88,35 @@ export const uploadMRLTest = async (req, res) => {
 
         console.log(`[LAB] MRL Test uploaded by ${req.user.fullName}: Animal ${animalId}, Drug ${drugName}, Passed: ${isPassed}`);
 
+        // Anchor to blockchain (non-blocking)
+        let blockchainData = null;
+        try {
+            const { anchorLabTest } = await import('../services/blockchain.service.js');
+            blockchainData = await anchorLabTest(labTest);
+
+            // Update lab test with blockchain details
+            labTest.blockchainHash = blockchainData.transactionHash;
+            labTest.blockNumber = blockchainData.blockNumber;
+            labTest.blockchainTimestamp = new Date();
+            labTest.blockchainVerified = true;
+            labTest.blockchainExplorerUrl = blockchainData.explorerUrl;
+            await labTest.save();
+
+            console.log(`✅ Lab test anchored to blockchain: ${blockchainData.transactionHash}`);
+        } catch (error) {
+            console.warn(`⚠️  Blockchain anchoring failed (continuing without it): ${error.message}`);
+            // Continue without blockchain - don't fail the upload
+        }
+
         // Create audit log
+        console.log(`[DEBUG UPLOAD] blockchainData:`, blockchainData);
+        console.log(`[DEBUG UPLOAD] Creating audit log with metadata.blockchain:`, blockchainData ? {
+            transactionHash: blockchainData.transactionHash,
+            blockNumber: blockchainData.blockNumber,
+            explorerUrl: blockchainData.explorerUrl,
+            verified: true
+        } : { verified: false, reason: 'Blockchain not available' });
+
         await createAuditLog({
             eventType: 'CREATE',
             entityType: 'LabTest',
@@ -102,6 +130,15 @@ export const uploadMRLTest = async (req, res) => {
                 ipAddress: req.ip,
                 userAgent: req.get('user-agent'),
                 notes: `MRL test for ${drugName} on animal ${animalId}`,
+                blockchain: blockchainData ? {
+                    transactionHash: blockchainData.transactionHash,
+                    blockNumber: blockchainData.blockNumber,
+                    explorerUrl: blockchainData.explorerUrl,
+                    verified: true
+                } : {
+                    verified: false,
+                    reason: 'Blockchain not available'
+                }
             },
         });
 
@@ -131,7 +168,16 @@ export const uploadMRLTest = async (req, res) => {
         res.status(201).json({
             message: `MRL test uploaded successfully. Result: ${isPassed ? 'PASSED' : 'FAILED'}`,
             labTest,
-            isPassed
+            isPassed,
+            blockchain: blockchainData ? {
+                verified: true,
+                transactionHash: blockchainData.transactionHash,
+                blockNumber: blockchainData.blockNumber,
+                explorerUrl: blockchainData.explorerUrl
+            } : {
+                verified: false,
+                message: 'Blockchain verification not available'
+            }
         });
 
     } catch (error) {

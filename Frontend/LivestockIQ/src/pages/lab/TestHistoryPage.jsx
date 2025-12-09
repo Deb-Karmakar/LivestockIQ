@@ -16,7 +16,8 @@ import {
     Sparkles,
     ExternalLink,
     Filter,
-    RefreshCw
+    RefreshCw,
+    Shield
 } from 'lucide-react';
 import { getMyMRLTests } from '../../services/labService';
 import { useToast } from '../../hooks/use-toast';
@@ -132,6 +133,7 @@ const TestHistoryPage = () => {
                                         <TableHead>Result</TableHead>
                                         <TableHead>Date</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead>Blockchain</TableHead>
                                         <TableHead></TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -165,6 +167,23 @@ const TestHistoryPage = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline">{test.status}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {test.blockchainVerified ? (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-emerald-600 hover:text-emerald-700"
+                                                        onClick={() => window.open(test.blockchainExplorerUrl, '_blank')}
+                                                        title="View on blockchain"
+                                                    >
+                                                        <Shield className="w-4 h-4" />
+                                                    </Button>
+                                                ) : (
+                                                    <Badge variant="outline" className="text-gray-400">
+                                                        No
+                                                    </Badge>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 {test.certificateUrl && (

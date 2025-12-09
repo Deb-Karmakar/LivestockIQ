@@ -12,7 +12,7 @@ const auditLogSchema = new mongoose.Schema({
     entityType: {
         type: String,
         required: true,
-        enum: ['Animal', 'Treatment', 'Sale', 'Prescription', 'Inventory', 'Farmer', 'Veterinarian', 'MerkleSnapshot', 'Feed', 'FeedAdministration', 'OfflineTreatment'],
+        enum: ['Animal', 'Treatment', 'Sale', 'Prescription', 'Inventory', 'Farmer', 'Veterinarian', 'MerkleSnapshot', 'Feed', 'FeedAdministration', 'OfflineTreatment', 'LabTest'],
     },
 
     // Reference to the actual entity (optional for system events like blockchain anchors)
@@ -39,14 +39,14 @@ const auditLogSchema = new mongoose.Schema({
     performedByModel: {
         type: String,
         required: false,
-        enum: ['Farmer', 'Veterinarian', 'Regulator', 'Admin', 'System'],
+        enum: ['Farmer', 'Veterinarian', 'Regulator', 'Admin', 'System', 'LabTechnician'],
     },
 
     // Role of the user who performed the action
     performedByRole: {
         type: String,
         required: false,
-        enum: ['Farmer', 'Vet', 'Veterinarian', 'Regulator', 'Admin', 'System'],
+        enum: ['Farmer', 'Vet', 'Veterinarian', 'Regulator', 'Admin', 'System', 'Lab Technician'],
     },
 
     // When the action occurred
@@ -104,6 +104,24 @@ const auditLogSchema = new mongoose.Schema({
         // Additional notes or context
         notes: {
             type: String,
+        },
+        // Blockchain verification data for immediately-anchored entities
+        blockchain: {
+            verified: {
+                type: Boolean,
+            },
+            transactionHash: {
+                type: String,
+            },
+            blockNumber: {
+                type: Number,
+            },
+            explorerUrl: {
+                type: String,
+            },
+            reason: {
+                type: String,
+            },
         },
     },
 }, {

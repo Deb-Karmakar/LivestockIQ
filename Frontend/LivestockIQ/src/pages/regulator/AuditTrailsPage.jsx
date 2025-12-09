@@ -256,6 +256,11 @@ const AuditTrailsPage = () => {
                                         const performedByIdentity = log.performedBy?.fullName || log.performedBy?.farmOwner || log.performedBy?.email;
                                         const isSystemAnchor = log.eventType === 'BLOCKCHAIN_ANCHOR' && !performedByIdentity;
 
+                                        // Check if this log has blockchain verification data in metadata
+                                        const hasBlockchainData = log.metadata?.blockchain?.verified === true;
+                                        const blockchainTxHash = log.metadata?.blockchain?.transactionHash;
+                                        const blockchainExplorerUrl = log.metadata?.blockchain?.explorerUrl;
+
                                         return (
                                             <tr key={log._id} className="border-b hover:bg-gray-50 transition-colors">
                                                 <td className="p-4">
