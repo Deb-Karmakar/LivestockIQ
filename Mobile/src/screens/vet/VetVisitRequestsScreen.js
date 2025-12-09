@@ -65,11 +65,11 @@ const VetVisitRequestsScreen = ({ navigation }) => {
     const acceptedCount = requests.filter(r => r.status === 'Accepted').length;
 
     const statusFilters = [
-        { value: 'all', label: 'All' },
-        { value: 'Requested', label: 'Pending' },
-        { value: 'Accepted', label: 'Accepted' },
-        { value: 'Completed', label: 'Completed' },
-        { value: 'Declined', label: 'Declined' },
+        { value: 'all', label: t('filter_all') },
+        { value: 'Requested', label: t('filter_pending') },
+        { value: 'Accepted', label: t('filter_accepted') },
+        { value: 'Completed', label: t('filter_completed') },
+        { value: 'Declined', label: t('filter_declined') },
     ];
 
     const getUrgencyStyle = (urgency) => {
@@ -102,7 +102,7 @@ const VetVisitRequestsScreen = ({ navigation }) => {
         return (
             <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
                 <ActivityIndicator size="large" color={theme.primary} />
-                <Text style={[styles.loadingText, { color: theme.subtext }]}>Loading visit requests...</Text>
+                <Text style={[styles.loadingText, { color: theme.subtext }]}>{t('loading_visit_requests')}</Text>
             </View>
         );
     }
@@ -114,12 +114,12 @@ const VetVisitRequestsScreen = ({ navigation }) => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerBadge}>
                         <Ionicons name="sparkles" size={14} color="#14b8a6" />
-                        <Text style={styles.headerBadgeText}>Farm Visits</Text>
+                        <Text style={styles.headerBadgeText}>{t('farm_visits')}</Text>
                     </View>
-                    <Text style={styles.headerTitle}>Visit Requests</Text>
+                    <Text style={styles.headerTitle}>{t('visit_requests')}</Text>
                     <Text style={styles.headerSubtitle}>
-                        <Text style={styles.pendingText}>{pendingCount} pending</Text> and{' '}
-                        <Text style={styles.acceptedText}>{acceptedCount} scheduled</Text> visits
+                        <Text style={styles.pendingText}>{t('pending_count', { count: pendingCount })}</Text> {t('and')}{' '}
+                        <Text style={styles.acceptedText}>{t('scheduled_count', { count: acceptedCount })}</Text> {t('visits')}
                     </Text>
                 </View>
                 <TouchableOpacity onPress={() => fetchRequests(true)} style={styles.refreshButton}>
@@ -156,7 +156,7 @@ const VetVisitRequestsScreen = ({ navigation }) => {
                     <Ionicons name="search" size={18} color={theme.subtext} />
                     <TextInput
                         style={[styles.searchInput, { color: theme.text }]}
-                        placeholder="Search farmer or animal..."
+                        placeholder={t('search_farmer_animal')}
                         placeholderTextColor={theme.subtext}
                         value={searchTerm}
                         onChangeText={setSearchTerm}
@@ -164,7 +164,7 @@ const VetVisitRequestsScreen = ({ navigation }) => {
                 </View>
 
                 <Text style={[styles.resultsCount, { color: theme.subtext }]}>
-                    Showing {filteredRequests.length} of {requests.length} requests
+                    {t('showing_results', { filtered: filteredRequests.length, total: requests.length })}
                 </Text>
             </View>
 
@@ -187,6 +187,7 @@ const VetVisitRequestsScreen = ({ navigation }) => {
                             key={request._id}
                             request={request}
                             theme={theme}
+                            t={t}
                             getUrgencyStyle={getUrgencyStyle}
                             getStatusStyle={getStatusStyle}
                             onRespond={() => setRespondingTo(request)}
@@ -197,11 +198,11 @@ const VetVisitRequestsScreen = ({ navigation }) => {
                         <View style={[styles.emptyIconContainer, { backgroundColor: theme.card }]}>
                             <Ionicons name="medkit-outline" size={48} color={theme.subtext} />
                         </View>
-                        <Text style={[styles.emptyTitle, { color: theme.text }]}>No visit requests</Text>
+                        <Text style={[styles.emptyTitle, { color: theme.text }]}>{t('no_visit_requests')}</Text>
                         <Text style={[styles.emptySubtitle, { color: theme.subtext }]}>
                             {statusFilter !== 'all'
-                                ? "Try changing the filter to see more requests."
-                                : "Farmers will request visits here when they need you."}
+                                ? t('try_changing_filter')
+                                : t('farmers_request_here')}
                         </Text>
                     </View>
                 )}
@@ -225,11 +226,29 @@ const VetVisitRequestsScreen = ({ navigation }) => {
 };
 
 // Visit Request Card Component
-const VisitRequestCard = ({ request, theme, getUrgencyStyle, getStatusStyle, onRespond }) => {
+const VisitRequestCard = ({ request, theme, t, getUrgencyStyle, getStatusStyle, onRespond }) => {
     const isPending = request.status === 'Requested';
     const isAccepted = request.status === 'Accepted';
     const urgencyStyle = getUrgencyStyle(request.urgency);
     const statusStyle = getStatusStyle(request.status);
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'Requested': return t('status_pending');
+            case 'Accepted': return t('status_accepted');
+            case 'Declined': return t('status_declined');
+            case 'Completed': return t('status_completed');
+            default: return status;
+        }
+    };
+
+    const getUrgencyText = (urgency) => {
+        switch (urgency) {
+            case 'Emergency': return t('urgency_emergency');
+            case 'Urgent': return t('urgency_urgent');
+            default: return t('urgency_routine');
+        }
+    };
 
     return (
         <View style={[styles.card, { backgroundColor: theme.card }]}>
@@ -250,7 +269,7 @@ const VisitRequestCard = ({ request, theme, getUrgencyStyle, getStatusStyle, onR
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor, borderColor: statusStyle.borderColor }]}>
                     <Text style={[styles.statusText, { color: statusStyle.color }]}>
-                        {request.status === 'Requested' ? 'Pending' : request.status}
+                        {getStatusText(request.status)}
                     </Text>
                 </View>
             </View>
@@ -292,7 +311,7 @@ const VisitRequestCard = ({ request, theme, getUrgencyStyle, getStatusStyle, onR
                 <View style={[styles.urgencyBadge, { backgroundColor: urgencyStyle.backgroundColor }]}>
                     <Ionicons name={urgencyStyle.icon} size={14} color="#fff" />
                     <Text style={styles.urgencyText}>
-                        {request.urgency === 'Emergency' ? '🚨 ' : ''}{request.urgency}
+                        {request.urgency === 'Emergency' ? '🚨 ' : ''}{getUrgencyText(request.urgency)}
                     </Text>
                 </View>
                 <View style={styles.dateRow}>
@@ -308,7 +327,7 @@ const VisitRequestCard = ({ request, theme, getUrgencyStyle, getStatusStyle, onR
                 <View style={[styles.scheduledBox, { backgroundColor: '#d1fae5', borderColor: '#10b981' }]}>
                     <Ionicons name="calendar" size={16} color="#059669" />
                     <Text style={styles.scheduledText}>
-                        Scheduled: {format(new Date(request.scheduledDate), 'PPP')}
+                        {t('scheduled_label')} {format(new Date(request.scheduledDate), 'PPP')}
                     </Text>
                 </View>
             )}
@@ -317,7 +336,7 @@ const VisitRequestCard = ({ request, theme, getUrgencyStyle, getStatusStyle, onR
             {isPending && (
                 <TouchableOpacity style={[styles.respondButton, { backgroundColor: '#14b8a6' }]} onPress={onRespond}>
                     <Ionicons name="checkmark-circle" size={18} color="#fff" />
-                    <Text style={styles.respondButtonText}>Respond to Request</Text>
+                    <Text style={styles.respondButtonText}>{t('respond_to_request')}</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -342,7 +361,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
 
     const handleSubmit = async () => {
         if (action === 'accept' && !scheduledDate) {
-            Alert.alert(t('error'), 'Please select a visit date.');
+            Alert.alert(t('error'), t('select_visit_date'));
             return;
         }
 
@@ -356,12 +375,12 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
             Alert.alert(
                 t('success'),
                 action === 'accept'
-                    ? 'The farmer has been notified of your visit date.'
-                    : 'The farmer has been notified.'
+                    ? t('farmer_notified_visit')
+                    : t('farmer_notified')
             );
             onSuccess();
         } catch (error) {
-            Alert.alert(t('error'), error.response?.data?.message || 'Failed to respond. Please try again.');
+            Alert.alert(t('error'), error.response?.data?.message || t('failed_respond'));
         } finally {
             setIsSubmitting(false);
         }
@@ -389,9 +408,9 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                                 <Ionicons name="medkit" size={20} color="#fff" />
                             </View>
                             <View>
-                                <Text style={[styles.modalTitle, { color: theme.text }]}>Respond to Visit Request</Text>
+                                <Text style={[styles.modalTitle, { color: theme.text }]}>{t('respond_to_visit_request')}</Text>
                                 <Text style={[styles.modalSubtitle, { color: theme.subtext }]}>
-                                    From {request?.farmerId?.farmOwner} for {request?.animalName || request?.animalId}
+                                    {t('from_for', { farmer: request?.farmerId?.farmOwner, animal: request?.animalName || request?.animalId })}
                                 </Text>
                             </View>
                         </View>
@@ -404,17 +423,17 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                         {/* Request Details */}
                         <View style={[styles.detailsBox, { backgroundColor: theme.background }]}>
                             <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: theme.subtext }]}>Reason:</Text>
+                                <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('reason_label')}</Text>
                                 <Text style={[styles.detailValue, { color: theme.text }]}>{request.reason}</Text>
                             </View>
                             {request.notes && (
                                 <View style={styles.detailNotes}>
-                                    <Text style={[styles.detailLabel, { color: theme.subtext }]}>Notes:</Text>
+                                    <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('notes_label')}</Text>
                                     <Text style={[styles.detailNotesText, { color: theme.text }]}>"{request.notes}"</Text>
                                 </View>
                             )}
                             <View style={styles.detailRow}>
-                                <Text style={[styles.detailLabel, { color: theme.subtext }]}>Urgency:</Text>
+                                <Text style={[styles.detailLabel, { color: theme.subtext }]}>{t('urgency_label')}</Text>
                                 <View style={[styles.urgencyBadge, { backgroundColor: urgencyStyle.backgroundColor }]}>
                                     <Text style={styles.urgencyText}>{request.urgency}</Text>
                                 </View>
@@ -422,7 +441,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                         </View>
 
                         {/* Action Selection */}
-                        <Text style={[styles.sectionLabel, { color: theme.text }]}>Your Response</Text>
+                        <Text style={[styles.sectionLabel, { color: theme.text }]}>{t('your_response')}</Text>
                         <View style={styles.actionButtons}>
                             <TouchableOpacity
                                 style={[
@@ -439,7 +458,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                                     color={action === 'accept' ? '#fff' : theme.text}
                                 />
                                 <Text style={[styles.actionButtonText, { color: action === 'accept' ? '#fff' : theme.text }]}>
-                                    Accept
+                                    {t('action_accept')}
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -457,7 +476,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                                     color={action === 'decline' ? '#fff' : theme.text}
                                 />
                                 <Text style={[styles.actionButtonText, { color: action === 'decline' ? '#fff' : theme.text }]}>
-                                    Decline
+                                    {t('action_decline')}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -466,7 +485,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                         {action === 'accept' && (
                             <View style={styles.dateSection}>
                                 <Text style={[styles.sectionLabel, { color: theme.text }]}>
-                                    Visit Date <Text style={{ color: '#ef4444' }}>*</Text>
+                                    {t('visit_date')} <Text style={{ color: '#ef4444' }}>{t('required')}</Text>
                                 </Text>
                                 <TouchableOpacity
                                     style={[styles.dateInput, { borderColor: theme.border, backgroundColor: theme.background }]}
@@ -491,15 +510,15 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
 
                         {/* Notes */}
                         <Text style={[styles.sectionLabel, { color: theme.text }]}>
-                            Notes for Farmer <Text style={{ color: theme.subtext }}>(Optional)</Text>
+                            {t('notes_for_farmer')} <Text style={{ color: theme.subtext }}>{t('optional')}</Text>
                         </Text>
                         <TextInput
                             style={[styles.notesInput, { borderColor: theme.border, backgroundColor: theme.background, color: theme.text }]}
                             value={vetNotes}
                             onChangeText={setVetNotes}
                             placeholder={action === 'accept'
-                                ? "Any preparation instructions for the farmer..."
-                                : "Reason for declining (optional)..."}
+                                ? t('preparation_instructions')
+                                : t('decline_reason_optional')}
                             placeholderTextColor={theme.subtext}
                             multiline
                             numberOfLines={3}
@@ -513,7 +532,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                             onPress={onClose}
                             disabled={isSubmitting}
                         >
-                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
+                            <Text style={[styles.cancelButtonText, { color: theme.text }]}>{t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
@@ -533,7 +552,7 @@ const RespondModal = ({ request, isOpen, onClose, onSuccess, theme, t, getUrgenc
                                         color="#fff"
                                     />
                                     <Text style={styles.submitButtonText}>
-                                        {action === 'accept' ? 'Schedule Visit' : 'Decline Request'}
+                                        {action === 'accept' ? t('schedule_visit') : t('decline_request')}
                                     </Text>
                                 </>
                             )}

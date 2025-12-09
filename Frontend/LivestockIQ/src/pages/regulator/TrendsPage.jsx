@@ -233,25 +233,32 @@ const TrendsPage = () => {
                 </Card>
             )}
 
-            {/* Treatment vs Feed Chart */}
+            {/* Total AMU Over Time Chart */}
             <Card className="border-0 shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
                     <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5" />
-                        AMU by Administration Method
+                        AMU Over Time
                     </CardTitle>
-                    <CardDescription>Antimicrobials via direct treatment vs medicated feed (PS Requirement)</CardDescription>
+                    <CardDescription>Total antimicrobial usage trends across the period</CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 h-96">
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={trendData.amuByMethod.data}>
+                        <AreaChart data={trendData.amuByMethod.data.map(item => ({
+                            ...item,
+                            total: (item.treatment || 0) + (item.feed || 0)
+                        }))}>
+                            <defs>
+                                <linearGradient id="amuGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.1} />
+                                </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" />
                             <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Area type="monotone" dataKey="treatment" stackId="1" stroke="#0088FE" fill="#0088FE" name="Direct Treatment" />
-                            <Area type="monotone" dataKey="feed" stackId="1" stroke="#00C49F" fill="#00C49F" name="Medicated Feed" />
+                            <Tooltip formatter={(value) => [value, 'Total AMU']} />
+                            <Area type="monotone" dataKey="total" stroke="#6366f1" fill="url(#amuGradient)" name="Total AMU" strokeWidth={2} />
                         </AreaChart>
                     </ResponsiveContainer>
                 </CardContent>
