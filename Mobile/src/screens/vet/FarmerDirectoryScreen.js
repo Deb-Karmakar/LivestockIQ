@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getMyFarmers, getAnimalsForFarmer, reportFarmer } from '../../services/vetService';
+import { getMyFarmers, getAnimalsForFarmer, reportFarmer, addTreatmentByVet } from '../../services/vetService';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNetwork } from '../../contexts/NetworkContext';
@@ -41,6 +41,19 @@ const FarmerDirectoryScreen = () => {
     // Report Form
     const [reportReason, setReportReason] = useState('');
     const [reportDetails, setReportDetails] = useState('');
+
+    // Treatment Form
+    const [treatmentModalVisible, setTreatmentModalVisible] = useState(false);
+    const [selectedAnimal, setSelectedAnimal] = useState(null);
+    const [treatmentSubmitting, setTreatmentSubmitting] = useState(false);
+    const [treatmentForm, setTreatmentForm] = useState({
+        drugName: '',
+        drugClass: 'Unclassified',
+        dose: '',
+        route: 'Intramuscular',
+        withdrawalDays: '',
+        notes: ''
+    });
 
     const fetchFarmers = useCallback(async () => {
         try {
@@ -147,6 +160,42 @@ const FarmerDirectoryScreen = () => {
             Linking.openURL(`mailto:${email}`);
         } else {
             Alert.alert(t('error'), t('no_email'));
+        }
+    };
+
+    const handleAddTreatment = (animal) => {
+        setSelectedAnimal(animal);
+        setTreatmentForm({
+            drugName: '',
+            drugClass: 'Unclassified',
+            dose: '',
+            route: 'Intramuscular',
+            withdrawalDays: '',
+            notes: ''
+        });
+        setTreatmentModalVisible(true);
+    };
+
+    const submitTreatment = async () => {
+        if (!treatmentForm.drugName || !treatmentForm.withdrawalDays) {
+            Alert.alert(t('error'), 'Drug name and withdrawal period are required.');
+            return;
+        }
+
+        try {
+            setTreatmentSubmitting(true);
+            await addTreatmentByVet({
+                farmerId: selectedFarmer._id,
+                animalId: selectedAnimal.tagId,
+                ...treatmentForm,
+                withdrawalStartDate: new Date().toISOString().split('T')[0]
+            });
+            setTreatmentModalVisible(false);
+            Alert.alert(t('success'), 'Treatment has been saved and the farmer has been notified of the withdrawal period.');
+        } catch (error) {
+            Alert.alert(t('error'), error.response?.data?.message || 'Failed to add treatment.');
+        } finally {
+            setTreatmentSubmitting(false);
         }
     };
 
@@ -293,14 +342,18 @@ const FarmerDirectoryScreen = () => {
                             contentContainerStyle={styles.animalsList}
                             renderItem={({ item }) => (
                                 <View style={[styles.animalRow, { backgroundColor: theme.card }]}>
-                                    <View>
+                                    <View style={{ flex: 1 }}>
                                         <Text style={[styles.animalId, { color: theme.text }]}>{item.tagId}</Text>
                                         <Text style={[styles.animalSpecies, { color: theme.subtext }]}>{item.species} • {item.gender}</Text>
+                                        <Text style={[styles.animalName, { color: theme.subtext }]}>{item.name || 'No Name'} • {calculateAge(item.dob)}</Text>
                                     </View>
-                                    <View style={{ alignItems: 'flex-end' }}>
-                                        <Text style={[styles.animalAge, { color: theme.text }]}>{calculateAge(item.dob)}</Text>
-                                        <Text style={[styles.animalName, { color: theme.subtext }]}>{item.name || 'No Name'}</Text>
-                                    </View>
+                                    <TouchableOpacity
+                                        style={[styles.addTreatmentBtn, { backgroundColor: '#14b8a6' }]}
+                                        onPress={() => handleAddTreatment(item)}
+                                    >
+                                        <Ionicons name="medkit" size={16} color="#fff" />
+                                        <Text style={styles.addTreatmentBtnText}>Add Treatment</Text>
+                                    </TouchableOpacity>
                                 </View>
                             )}
                             ListEmptyComponent={
@@ -383,6 +436,207 @@ const FarmerDirectoryScreen = () => {
                     </View>
                 </View>
             </Modal>
+
+            {/* Add Treatment Modal - Full Screen Bottom Sheet */}
+            <Modal
+                visible={treatmentModalVisible}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={() => setTreatmentModalVisible(false)}
+            >
+                <View style={[styles.treatmentModalContainer, { backgroundColor: theme.background }]}>
+                    {/* Header */}
+                    <View style={[styles.treatmentModalHeader, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
+                        <TouchableOpacity onPress={() => setTreatmentModalVisible(false)} style={styles.treatmentCloseBtn}>
+                            <Ionicons name="close" size={24} color={theme.text} />
+                        </TouchableOpacity>
+                        <View style={styles.treatmentHeaderCenter}>
+                            <Text style={[styles.treatmentModalTitle, { color: theme.text }]}>Add Treatment</Text>
+                            <Text style={[styles.treatmentModalSubtitle, { color: theme.subtext }]}>
+                                {selectedAnimal?.tagId}
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={submitTreatment}
+                            disabled={treatmentSubmitting}
+                            style={[styles.treatmentSaveBtn, { backgroundColor: '#14b8a6' }]}
+                        >
+                            {treatmentSubmitting ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.treatmentSaveBtnText}>Save</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Scrollable Form */}
+                    <FlatList
+                        data={[1]}
+                        keyExtractor={() => 'form'}
+                        renderItem={() => (
+                            <View style={styles.treatmentFormContainer}>
+                                {/* Animal Info Card */}
+                                <View style={[styles.treatmentAnimalCard, { backgroundColor: theme.card }]}>
+                                    <View style={[styles.treatmentAnimalIcon, { backgroundColor: '#14b8a620' }]}>
+                                        <Ionicons name="paw" size={24} color="#14b8a6" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.treatmentAnimalName, { color: theme.text }]}>
+                                            {selectedAnimal?.name || 'Unnamed Animal'}
+                                        </Text>
+                                        <Text style={[styles.treatmentAnimalDetails, { color: theme.subtext }]}>
+                                            {selectedAnimal?.tagId} • {selectedAnimal?.species}
+                                        </Text>
+                                    </View>
+                                </View>
+
+                                {/* Drug Name */}
+                                <View style={styles.treatmentFieldGroup}>
+                                    <Text style={[styles.treatmentLabel, { color: theme.text }]}>
+                                        Drug Name <Text style={{ color: '#ef4444' }}>*</Text>
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.treatmentTextInput, { borderColor: theme.border, backgroundColor: theme.card, color: theme.text }]}
+                                        placeholder="e.g., Amoxicillin"
+                                        placeholderTextColor={theme.subtext}
+                                        value={treatmentForm.drugName}
+                                        onChangeText={(text) => setTreatmentForm(prev => ({ ...prev, drugName: text }))}
+                                    />
+                                </View>
+
+                                {/* WHO AWaRe Class */}
+                                <View style={styles.treatmentFieldGroup}>
+                                    <Text style={[styles.treatmentLabel, { color: theme.text }]}>WHO AWaRe Class</Text>
+                                    <View style={styles.treatmentChipsRow}>
+                                        {[
+                                            { value: 'Access', color: '#22c55e' },
+                                            { value: 'Watch', color: '#f59e0b' },
+                                            { value: 'Reserve', color: '#ef4444' },
+                                            { value: 'Unclassified', color: '#6b7280' }
+                                        ].map((cls) => (
+                                            <TouchableOpacity
+                                                key={cls.value}
+                                                style={[
+                                                    styles.treatmentChip,
+                                                    { borderColor: theme.border, backgroundColor: theme.card },
+                                                    treatmentForm.drugClass === cls.value && {
+                                                        borderColor: cls.color,
+                                                        backgroundColor: `${cls.color}15`
+                                                    }
+                                                ]}
+                                                onPress={() => setTreatmentForm(prev => ({ ...prev, drugClass: cls.value }))}
+                                            >
+                                                <View style={[
+                                                    styles.treatmentChipDot,
+                                                    { backgroundColor: cls.color }
+                                                ]} />
+                                                <Text style={[
+                                                    styles.treatmentChipText,
+                                                    { color: theme.text },
+                                                    treatmentForm.drugClass === cls.value && { fontWeight: '600' }
+                                                ]}>{cls.value}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+
+                                {/* Dose */}
+                                <View style={styles.treatmentFieldGroup}>
+                                    <Text style={[styles.treatmentLabel, { color: theme.text }]}>Dose</Text>
+                                    <TextInput
+                                        style={[styles.treatmentTextInput, { borderColor: theme.border, backgroundColor: theme.card, color: theme.text }]}
+                                        placeholder="e.g., 10mg/kg"
+                                        placeholderTextColor={theme.subtext}
+                                        value={treatmentForm.dose}
+                                        onChangeText={(text) => setTreatmentForm(prev => ({ ...prev, dose: text }))}
+                                    />
+                                </View>
+
+                                {/* Route */}
+                                <View style={styles.treatmentFieldGroup}>
+                                    <Text style={[styles.treatmentLabel, { color: theme.text }]}>Administration Route</Text>
+                                    <View style={styles.treatmentRouteGrid}>
+                                        {[
+                                            { value: 'Oral', label: 'Oral', icon: 'water' },
+                                            { value: 'Intramuscular', label: 'IM (Muscle)', icon: 'fitness' },
+                                            { value: 'Subcutaneous', label: 'SC (Under skin)', icon: 'body' },
+                                            { value: 'Intravenous', label: 'IV (Vein)', icon: 'pulse' }
+                                        ].map((route) => (
+                                            <TouchableOpacity
+                                                key={route.value}
+                                                style={[
+                                                    styles.treatmentRouteCard,
+                                                    { borderColor: theme.border, backgroundColor: theme.card },
+                                                    treatmentForm.route === route.value && {
+                                                        borderColor: '#14b8a6',
+                                                        backgroundColor: '#14b8a610'
+                                                    }
+                                                ]}
+                                                onPress={() => setTreatmentForm(prev => ({ ...prev, route: route.value }))}
+                                            >
+                                                <Ionicons
+                                                    name={route.icon}
+                                                    size={20}
+                                                    color={treatmentForm.route === route.value ? '#14b8a6' : theme.subtext}
+                                                />
+                                                <Text style={[
+                                                    styles.treatmentRouteLabel,
+                                                    { color: treatmentForm.route === route.value ? '#14b8a6' : theme.text }
+                                                ]}>{route.label}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+
+                                {/* Withdrawal Period */}
+                                <View style={[styles.treatmentWithdrawalCard, { backgroundColor: '#fef3c7', borderColor: '#f59e0b' }]}>
+                                    <View style={styles.treatmentWithdrawalHeader}>
+                                        <Ionicons name="warning" size={20} color="#b45309" />
+                                        <Text style={styles.treatmentWithdrawalTitle}>Withdrawal Period</Text>
+                                    </View>
+                                    <Text style={styles.treatmentWithdrawalDesc}>
+                                        How many days until products from this animal are safe for sale?
+                                    </Text>
+                                    <TextInput
+                                        style={[styles.treatmentWithdrawalInput]}
+                                        placeholder="Enter days (e.g., 14)"
+                                        placeholderTextColor="#b45309"
+                                        keyboardType="numeric"
+                                        value={treatmentForm.withdrawalDays}
+                                        onChangeText={(text) => setTreatmentForm(prev => ({ ...prev, withdrawalDays: text }))}
+                                    />
+                                    {treatmentForm.withdrawalDays && (
+                                        <View style={styles.treatmentWithdrawalResult}>
+                                            <Ionicons name="calendar" size={16} color="#059669" />
+                                            <Text style={styles.treatmentWithdrawalDate}>
+                                                Safe after: {new Date(Date.now() + parseInt(treatmentForm.withdrawalDays) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                {/* Notes */}
+                                <View style={styles.treatmentFieldGroup}>
+                                    <Text style={[styles.treatmentLabel, { color: theme.text }]}>Notes (Optional)</Text>
+                                    <TextInput
+                                        style={[styles.treatmentNotesInput, { borderColor: theme.border, backgroundColor: theme.card, color: theme.text }]}
+                                        placeholder="Additional notes about this treatment..."
+                                        placeholderTextColor={theme.subtext}
+                                        value={treatmentForm.notes}
+                                        onChangeText={(text) => setTreatmentForm(prev => ({ ...prev, notes: text }))}
+                                        multiline
+                                        numberOfLines={3}
+                                        textAlignVertical="top"
+                                    />
+                                </View>
+
+                                {/* Bottom spacing */}
+                                <View style={{ height: 40 }} />
+                            </View>
+                        )}
+                    />
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -450,6 +704,129 @@ const styles = StyleSheet.create({
     submitReportBtn: {},
     cancelBtnText: { fontWeight: '600' },
     submitReportBtnText: { color: '#fff', fontWeight: '600' },
+
+    // Add Treatment Button in Animals List
+    addTreatmentBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    addTreatmentBtnText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+
+    // Treatment Modal - Full Screen
+    treatmentModalContainer: { flex: 1 },
+    treatmentModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        paddingTop: 50,
+        borderBottomWidth: 1
+    },
+    treatmentCloseBtn: { padding: 8 },
+    treatmentHeaderCenter: { alignItems: 'center' },
+    treatmentModalTitle: { fontSize: 17, fontWeight: '600' },
+    treatmentModalSubtitle: { fontSize: 13, marginTop: 2 },
+    treatmentSaveBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+    treatmentSaveBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+    treatmentFormContainer: { padding: 16 },
+
+    // Animal Info Card
+    treatmentAnimalCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 16,
+        marginBottom: 20,
+        gap: 12
+    },
+    treatmentAnimalIcon: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    treatmentAnimalName: { fontSize: 16, fontWeight: '600' },
+    treatmentAnimalDetails: { fontSize: 14, marginTop: 2 },
+
+    // Field Groups
+    treatmentFieldGroup: { marginBottom: 20 },
+    treatmentLabel: { fontSize: 15, fontWeight: '600', marginBottom: 10 },
+    treatmentTextInput: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 16,
+        fontSize: 16
+    },
+
+    // Chips Row (for drug class)
+    treatmentChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    treatmentChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1.5
+    },
+    treatmentChipDot: { width: 10, height: 10, borderRadius: 5 },
+    treatmentChipText: { fontSize: 14 },
+
+    // Route Grid
+    treatmentRouteGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10
+    },
+    treatmentRouteCard: {
+        width: '47%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        padding: 14,
+        borderRadius: 12,
+        borderWidth: 1.5
+    },
+    treatmentRouteLabel: { fontSize: 13, fontWeight: '500' },
+
+    // Withdrawal Card
+    treatmentWithdrawalCard: {
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1.5,
+        marginBottom: 20
+    },
+    treatmentWithdrawalHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    treatmentWithdrawalTitle: { fontSize: 16, fontWeight: '600', color: '#b45309' },
+    treatmentWithdrawalDesc: { fontSize: 14, color: '#92400e', marginBottom: 12, lineHeight: 20 },
+    treatmentWithdrawalInput: {
+        borderWidth: 1.5,
+        borderColor: '#d97706',
+        borderRadius: 12,
+        padding: 14,
+        fontSize: 16,
+        backgroundColor: '#fff',
+        color: '#92400e'
+    },
+    treatmentWithdrawalResult: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#fcd34d'
+    },
+    treatmentWithdrawalDate: { fontSize: 14, fontWeight: '600', color: '#059669' },
+
+    // Notes Input
+    treatmentNotesInput: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 16,
+        fontSize: 16,
+        minHeight: 100,
+        textAlignVertical: 'top'
+    },
 });
 
 export default FarmerDirectoryScreen;

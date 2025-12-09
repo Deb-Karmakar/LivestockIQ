@@ -184,3 +184,12 @@ export const getVetDetailsByCode = async (vetId) => {
         throw error.response?.data || { message: 'Failed to fetch vet details' };
     }
 };
+
+/**
+ * Add treatment directly by vet (auto-approved)
+ */
+export const addTreatmentByVet = async (treatmentData) => {
+    const response = await api.post('/treatments/vet-entry', treatmentData);
+    return response.data;
+};
+
