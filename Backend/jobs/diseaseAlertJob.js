@@ -185,7 +185,7 @@ export const runDiseasePrediction = async () => {
         }
 
         // 1. Get all unique farm locations
-        const uniqueLocations = await Farmer.distinct('location', { 
+        const uniqueLocations = await Farmer.distinct('location', {
             'location.latitude': { $exists: true, $ne: null },
             'location.longitude': { $exists: true, $ne: null }
         });
@@ -200,9 +200,9 @@ export const runDiseasePrediction = async () => {
         for (const location of uniqueLocations) {
             try {
                 const { latitude, longitude } = location;
-                
+
                 // Validate coordinates
-                if (!latitude || !longitude || 
+                if (!latitude || !longitude ||
                     isNaN(latitude) || isNaN(longitude) ||
                     latitude < -90 || latitude > 90 ||
                     longitude < -180 || longitude > 180) {
@@ -211,7 +211,7 @@ export const runDiseasePrediction = async () => {
                 }
 
                 console.log(`Checking weather for location: ${latitude}, ${longitude}`);
-                
+
                 const url = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`;
 
                 // 2. Fetch weather forecast for each location
@@ -221,9 +221,9 @@ export const runDiseasePrediction = async () => {
                         'User-Agent': 'LivestockIQ-Disease-Prediction/1.0'
                     }
                 });
-                
+
                 const forecast = response.data;
-                
+
                 // Validate forecast data
                 if (!forecast || !forecast.list || !Array.isArray(forecast.list)) {
                     console.log(`Invalid forecast data received for location ${latitude}, ${longitude}`);
@@ -231,30 +231,30 @@ export const runDiseasePrediction = async () => {
                 }
 
                 console.log(`Received ${forecast.list.length} forecast periods for location ${latitude}, ${longitude}`);
-                
+
                 // 3. Check forecast against our rules
                 const risk = checkWeatherForDiseaseRisk(forecast);
 
                 if (risk) {
                     console.log(`Disease risk detected: ${risk.diseaseName} (${risk.riskLevel}) for location ${latitude}, ${longitude}`);
-                    
+
                     // 4. If risk is found, find all farmers in that location and create alerts
-                    const farmersInRegion = await Farmer.find({ 
-                        'location.latitude': latitude, 
-                        'location.longitude': longitude 
+                    const farmersInRegion = await Farmer.find({
+                        'location.latitude': latitude,
+                        'location.longitude': longitude
                     });
-                    
+
                     console.log(`Found ${farmersInRegion.length} farmers in this region`);
-                    
+
                     for (const farmer of farmersInRegion) {
                         try {
                             // Check if a similar alert already exists
-                            const existingAlert = await DiseaseAlert.findOne({ 
-                                farmerId: farmer._id, 
-                                diseaseName: risk.diseaseName, 
-                                status: 'New' 
+                            const existingAlert = await DiseaseAlert.findOne({
+                                farmerId: farmer._id,
+                                diseaseName: risk.diseaseName,
+                                status: 'New'
                             });
-                            
+
                             if (!existingAlert) {
                                 await DiseaseAlert.create({
                                     farmerId: farmer._id,
@@ -302,5 +302,4 @@ export const runDiseasePrediction = async () => {
 export const startDiseasePredictionJob = () => {
     // Schedule to run once a day at 1 AM
     cron.schedule('0 1 * * *', runDiseasePrediction);
-    console.log('✅ Disease prediction job has been scheduled to run every night at 1:00 AM.');
 };
