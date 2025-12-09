@@ -24,3 +24,21 @@ export const getVetVisitRequestById = async (id) => {
     const response = await api.get(`/vet-visits/${id}`);
     return response.data;
 };
+
+/**
+ * Respond to a vet visit request (Vet only)
+ * @param {string} id - Visit request ID
+ * @param {Object} data - { action: 'accept'|'decline', scheduledDate?, vetNotes? }
+ */
+export const respondToVetVisitRequest = async (id, data) => {
+    const response = await api.put(`/vet-visits/${id}/respond`, data);
+    return response.data;
+};
+
+/**
+ * Mark vet visit as complete (Vet only)
+ */
+export const completeVetVisit = async (id, data = {}) => {
+    const response = await api.put(`/vet-visits/${id}/complete`, data);
+    return response.data;
+};
