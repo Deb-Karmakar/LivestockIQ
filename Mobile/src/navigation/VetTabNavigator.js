@@ -7,12 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Screens
 import VetDashboardScreen from '../screens/vet/VetDashboardScreen';
-import TreatmentRequestsScreen from '../screens/vet/TreatmentRequestsScreen';
 import FarmerDirectoryScreen from '../screens/vet/FarmerDirectoryScreen';
 import VetMoreScreen from '../screens/vet/VetMoreScreen';
 import VetSettingsScreen from '../screens/vet/VetSettingsScreen';
-import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
-import FeedAdministrationRequestsScreen from '../screens/vet/FeedAdministrationRequestsScreen';
 import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
 import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 import VetReportsScreen from '../screens/vet/VetReportsScreen';
@@ -27,12 +24,7 @@ const DashboardStack = () => (
     </Stack.Navigator>
 );
 
-const RequestsStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="TreatmentRequests" component={TreatmentRequestsScreen} />
-        <Stack.Screen name="AnimalHistory" component={AnimalHistoryScreen} />
-    </Stack.Navigator>
-);
+
 
 const MoreStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -45,12 +37,7 @@ const MoreStack = () => (
     </Stack.Navigator>
 );
 
-const FeedStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="FeedRequests" component={FeedAdministrationRequestsScreen} />
-        <Stack.Screen name="AnimalHistory" component={AnimalHistoryScreen} />
-    </Stack.Navigator>
-);
+
 
 const VetTabNavigator = () => {
     const { t } = useLanguage();
@@ -64,10 +51,6 @@ const VetTabNavigator = () => {
 
                     if (route.name === 'Dashboard') {
                         iconName = focused ? 'grid' : 'grid-outline';
-                    } else if (route.name === 'Requests') {
-                        iconName = focused ? 'clipboard' : 'clipboard-outline';
-                    } else if (route.name === 'Feed') {
-                        iconName = focused ? 'nutrition' : 'nutrition-outline';
                     } else if (route.name === 'Farmers') {
                         iconName = focused ? 'people' : 'people-outline';
                     } else if (route.name === 'More') {
@@ -86,8 +69,6 @@ const VetTabNavigator = () => {
                 tabBarLabel: (() => {
                     switch (route.name) {
                         case 'Dashboard': return t('nav_dashboard');
-                        case 'Requests': return t('nav_requests');
-                        case 'Feed': return t('nav_feed');
                         case 'Farmers': return t('nav_farmers');
                         case 'More': return t('nav_more');
                         default: return route.name;
@@ -96,8 +77,6 @@ const VetTabNavigator = () => {
             })}
         >
             <Tab.Screen name="Dashboard" component={DashboardStack} />
-            <Tab.Screen name="Requests" component={RequestsStack} />
-            <Tab.Screen name="Feed" component={FeedStack} />
             <Tab.Screen name="Farmers" component={FarmerDirectoryScreen} />
             <Tab.Screen name="More" component={MoreStack} />
         </Tab.Navigator>
