@@ -14,6 +14,7 @@ import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
 import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 import VetReportsScreen from '../screens/vet/VetReportsScreen';
 import VetVisitRequestsScreen from '../screens/vet/VetVisitRequestsScreen';
+import OfflineTreatmentsScreen from '../screens/vet/OfflineTreatmentsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -33,7 +34,7 @@ const MoreStack = () => (
         <Stack.Screen name="Settings" component={VetSettingsScreen} />
         <Stack.Screen name="Reports" component={VetReportsScreen} />
         <Stack.Screen name="VisitRequests" component={VetVisitRequestsScreen} />
-
+        <Stack.Screen name="OfflineTreatments" component={OfflineTreatmentsScreen} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
     </Stack.Navigator>

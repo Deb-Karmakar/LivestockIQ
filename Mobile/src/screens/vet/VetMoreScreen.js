@@ -21,6 +21,7 @@ const VetMoreScreen = ({ navigation }) => {
             section: t('practice'),
             items: [
                 { name: 'Visit Requests', icon: 'calendar', screen: 'VisitRequests', color: '#14b8a6' },
+                { name: 'Offline Treatments', icon: 'people-outline', screen: 'OfflineTreatments', color: '#059669' },
                 { name: t('reports'), icon: 'document-text', screen: 'Reports', color: theme.info },
             ],
         },
