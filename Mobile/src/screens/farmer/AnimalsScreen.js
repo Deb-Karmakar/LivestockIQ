@@ -20,6 +20,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNetwork } from '../../contexts/NetworkContext';
 import { useSync } from '../../contexts/SyncContext';
+import VetVisitRequestModal from '../../components/VetVisitRequestModal';
+import { Constants } from 'expo-constants'; // Ensure consistent imports if needed
 
 const AnimalsScreen = ({ navigation }) => {
     const { t } = useLanguage();
@@ -33,6 +35,8 @@ const AnimalsScreen = ({ navigation }) => {
     const [showFilterModal, setShowFilterModal] = useState(false);
     const [showAIModal, setShowAIModal] = useState(false);
     const [selectedAnimal, setSelectedAnimal] = useState(null);
+    const [showVetRequestModal, setShowVetRequestModal] = useState(false);
+    const [vetRequestAnimal, setVetRequestAnimal] = useState(null);
 
     useEffect(() => {
         fetchAnimals();
@@ -144,22 +148,46 @@ const AnimalsScreen = ({ navigation }) => {
         setShowAIModal(true);
     };
 
-    const getMRLBadgeColor = (status) => {
-        switch (status) {
-            case 'SAFE':
-                return { bg: `${theme.success}20`, text: theme.success, label: t('safe_for_sale') };
-            case 'WITHDRAWAL_ACTIVE':
-                return { bg: `${theme.error}20`, text: theme.error, label: t('active_treatments') }; // Reusing active_treatments or need new key? 'Under Withdrawal'
-            case 'TEST_REQUIRED':
-                return { bg: `${theme.warning}20`, text: theme.warning, label: 'Test Required' };
-            case 'PENDING_VERIFICATION':
-                return { bg: `${theme.info}20`, text: theme.info, label: t('pending_approval') };
-            case 'VIOLATION':
-                return { bg: `${theme.error}20`, text: theme.error, label: 'MRL Violation' };
-            default:
-                return { bg: `${theme.subtext}20`, text: theme.subtext, label: 'No Status' };
-        }
+    const handleRequestVetVisit = (animal) => {
+        setVetRequestAnimal(animal);
+        setShowVetRequestModal(true);
     };
+
+    const getAnimalStatusTag = (animal) => {
+        // Check if under withdrawal (active treatment with withdrawal period)
+        if (animal.withdrawalEndDate) {
+            const withdrawalEnd = new Date(animal.withdrawalEndDate);
+            const now = new Date();
+            if (withdrawalEnd > now) {
+                const daysRemaining = Math.ceil((withdrawalEnd - now) / (1000 * 60 * 60 * 24));
+                return {
+                    label: `Withdrawal (${daysRemaining}d)`,
+                    color: '#f97316', // Orange
+                    bg: '#ffedd5',
+                    icon: 'time'
+                };
+            }
+        }
+
+        // Check if new (created < 7 days ago & no withdrawal)
+        if (animal.createdAt && !animal.withdrawalEndDate) {
+            const createdDate = new Date(animal.createdAt);
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+            if (createdDate >= sevenDaysAgo) {
+                return {
+                    label: 'New',
+                    color: '#10b981', // Emerald
+                    bg: '#d1fae5',
+                    icon: 'star'
+                };
+            }
+        }
+        return null;
+    };
+
+
 
     const calculateAge = (dob) => {
         if (!dob) return 'N/A';
@@ -174,7 +202,7 @@ const AnimalsScreen = ({ navigation }) => {
     const speciesList = ['All', ...new Set(animals.map((a) => a.species))];
 
     const renderAnimal = ({ item }) => {
-        const mrlBadge = getMRLBadgeColor(item.mrlStatus);
+        const statusTag = getAnimalStatusTag(item);
 
         return (
             <View style={[styles.animalCard, { backgroundColor: theme.card, shadowColor: theme.text }]}>
@@ -183,10 +211,14 @@ const AnimalsScreen = ({ navigation }) => {
                         <Text style={[styles.animalTagId, { color: theme.text }]}>{item.tagId}</Text>
                         {item.name && <Text style={[styles.animalName, { color: theme.subtext }]}>{item.name}</Text>}
                     </View>
-                    <View style={[styles.mrlBadge, { backgroundColor: mrlBadge.bg }]}>
-                        <Ionicons name="shield-checkmark" size={16} color={mrlBadge.text} />
-                    </View>
                 </View>
+
+                {statusTag && (
+                    <View style={[styles.statusTagContainer, { backgroundColor: statusTag.bg }]}>
+                        <Ionicons name={statusTag.icon} size={12} color={statusTag.color} style={{ marginRight: 4 }} />
+                        <Text style={[styles.statusTagText, { color: statusTag.color }]}>{statusTag.label}</Text>
+                    </View>
+                )}
 
                 <View style={styles.statsGrid}>
                     <View style={[styles.statItem, { backgroundColor: theme.background }]}>
@@ -207,11 +239,7 @@ const AnimalsScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                <View style={[styles.mrlStatusBadge, { backgroundColor: mrlBadge.bg }]}>
-                    <Text style={[styles.mrlStatusText, { color: mrlBadge.text }]}>
-                        {mrlBadge.label}
-                    </Text>
-                </View>
+
 
                 {item.notes && (
                     <View style={[styles.notesContainer, { backgroundColor: theme.background }]}>
@@ -247,7 +275,17 @@ const AnimalsScreen = ({ navigation }) => {
                         <Ionicons name="ellipsis-horizontal" size={16} color={theme.subtext} />
                     </TouchableOpacity>
                 </View>
+
+                {/* Vet Visit Request Button - Full Width below actions */}
+                <TouchableOpacity
+                    style={[styles.vetRequestButton, { borderColor: theme.border }]}
+                    onPress={() => handleRequestVetVisit(item)}
+                >
+                    <Ionicons name="medkit-outline" size={16} color={theme.primary} />
+                    <Text style={[styles.vetRequestButtonText, { color: theme.primary }]}>Request Vet Visit</Text>
+                </TouchableOpacity>
             </View>
+
         );
     };
 
@@ -400,6 +438,19 @@ const AnimalsScreen = ({ navigation }) => {
                 onClose={() => {
                     setShowAIModal(false);
                     setSelectedAnimal(null);
+                }}
+            />
+
+            {/* Vet Visit Request Modal */}
+            <VetVisitRequestModal
+                visible={showVetRequestModal}
+                animal={vetRequestAnimal}
+                onClose={() => {
+                    setShowVetRequestModal(false);
+                    setVetRequestAnimal(null);
+                }}
+                onSuccess={() => {
+                    fetchAnimals(); // Refresh logic if needed or just close
                 }}
             />
         </View>
@@ -604,6 +655,34 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         flex: 0,
         width: 48,
+    },
+    vetRequestButton: {
+        marginTop: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: 8,
+    },
+    vetRequestButtonText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    statusTagContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+        marginBottom: 10,
+        marginTop: -4,
+    },
+    statusTagText: {
+        fontSize: 11,
+        fontWeight: '700',
     },
 
     fab: {
