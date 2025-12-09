@@ -10,19 +10,12 @@ import DashboardScreen from '../screens/farmer/DashboardScreen';
 import AnimalsScreen from '../screens/farmer/AnimalsScreen';
 import AddAnimalScreen from '../screens/farmer/AddAnimalScreen';
 import AnimalHistoryScreen from '../screens/farmer/AnimalHistoryScreen';
-import TreatmentsScreen from '../screens/farmer/TreatmentsScreen';
-import AddTreatmentScreen from '../screens/farmer/AddTreatmentScreen';
-import AlertsScreen from '../screens/farmer/AlertsScreen';
 import ReportsScreen from '../screens/farmer/ReportsScreen';
+import AlertsScreen from '../screens/farmer/AlertsScreen';
 import MoreScreen from '../screens/farmer/MoreScreen';
-import MRLComplianceScreen from '../screens/farmer/MRLComplianceScreen';
-import InventoryScreen from '../screens/farmer/InventoryScreen';
-import FeedInventoryScreen from '../screens/farmer/FeedInventoryScreen';
-import FeedAdministrationScreen from '../screens/farmer/FeedAdministrationScreen';
 import RaiseTicketScreen from '../screens/shared/RaiseTicketScreen';
 import TicketHistoryScreen from '../screens/shared/TicketHistoryScreen';
 import SettingsScreen from '../screens/farmer/SettingsScreen';
-import SalesScreen from '../screens/farmer/SalesScreen';
 import ChatbotScreen from '../screens/farmer/ChatbotScreen';
 
 const Tab = createBottomTabNavigator();
@@ -36,26 +29,15 @@ const AnimalsStack = () => (
     </Stack.Navigator>
 );
 
-const TreatmentsStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="TreatmentsList" component={TreatmentsScreen} />
-        <Stack.Screen name="AddTreatment" component={AddTreatmentScreen} />
-    </Stack.Navigator>
-);
+
 
 const MoreStack = () => (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MoreList" component={MoreScreen} />
-        <Stack.Screen name="Treatments" component={TreatmentsStack} />
         <Stack.Screen name="Reports" component={ReportsScreen} />
-        <Stack.Screen name="MRLCompliance" component={MRLComplianceScreen} />
-        <Stack.Screen name="Inventory" component={InventoryScreen} />
-        <Stack.Screen name="FeedInventory" component={FeedInventoryScreen} />
-        <Stack.Screen name="FeedAdmin" component={FeedAdministrationScreen} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} />
         <Stack.Screen name="TicketHistory" component={TicketHistoryScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
-        <Stack.Screen name="Sales" component={SalesScreen} />
         <Stack.Screen name="Chatbot" component={ChatbotScreen} />
     </Stack.Navigator>
 );

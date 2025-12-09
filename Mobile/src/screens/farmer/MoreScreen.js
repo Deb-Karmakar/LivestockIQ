@@ -18,22 +18,7 @@ const MoreScreen = ({ navigation }) => {
     const { theme } = useTheme();
 
     const menuItems = [
-        {
-            section: t('treatment_records'), // Health & Treatments
-            items: [
-                { name: t('treatment_records'), icon: 'medkit', screen: 'Treatments', color: theme.primary },
-                { name: t('mrl_compliance'), icon: 'shield-checkmark', screen: 'MRLCompliance', color: theme.success },
-            ],
-        },
-        {
-            section: t('compliance_inventory'), // Inventory & Feed
-            items: [
-                { name: t('drug_inventory'), icon: 'cube', screen: 'Inventory', color: theme.info },
-                { name: t('feed_inventory'), icon: 'nutrition', screen: 'FeedInventory', color: theme.warning },
-                { name: t('feed_administration'), icon: 'clipboard', screen: 'FeedAdmin', color: theme.primary },
-                { name: t('sales'), icon: 'cart', screen: 'Sales', color: theme.success },
-            ],
-        },
+
         {
             section: t('reports_support'), // Analytics & Support
             items: [
